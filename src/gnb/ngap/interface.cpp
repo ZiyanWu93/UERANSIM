@@ -177,6 +177,99 @@ void NgapTask::sendNgSetupRequest(int amfId)
     sendNgapNonUe(amfId, pdu);
 }
 
+
+void NgapTask::receiveNgSetupResponse_base_case()
+{
+    m_logger->debug("NG Setup Response received");
+
+    // auto *amf = findAmfContext(amfId); // hardcodeded by Ziyan
+    auto *amf = findAmfContext(2);
+    if (amf == nullptr)
+        return;
+    {
+        // modify from AssignDefaultAmfConfigs
+        {
+            amf->amfName = "open5gs-amf0";
+
+            amf->relativeCapacity = 255;
+            utils::ClearAndDelete(amf->servedGuamiList);
+            auto servedGuami = new ServedGuami();
+            servedGuami->guami.amfRegionId = 2;
+            servedGuami->guami.amfSetId = 1;
+            servedGuami->guami.amfPointer = 0;
+            servedGuami->guami.plmn = {};
+            {
+                Plmn &target = servedGuami->guami.plmn;
+                target.isLongMnc = false;
+                target.mcc = 999;
+                target.mnc = 0;
+            }
+            amf->servedGuamiList.push_back(servedGuami);
+
+            utils::ClearAndDelete(amf->plmnSupportList);
+            {
+                auto plmnSupport = new PlmnSupport();
+                Plmn &target = plmnSupport->plmn;
+                target.isLongMnc = false;
+                target.mcc = 999;
+                target.mnc = 0;
+                SingleSlice s{};
+                s.sst = (uint8_t)1; // Or 0x01 in hex notation
+                s.sd = std::nullopt;
+                plmnSupport->sliceSupportList.slices.push_back(s);
+                amf->plmnSupportList.push_back(plmnSupport);
+            }
+        }
+        amf->amfName = "open5gs-amf0";
+
+        amf->relativeCapacity = 255;
+        utils::ClearAndDelete(amf->servedGuamiList);
+        auto servedGuami = new ServedGuami();
+        servedGuami->guami.amfRegionId = 2;
+        servedGuami->guami.amfSetId = 1;
+        servedGuami->guami.amfPointer = 0;
+        servedGuami->guami.plmn = {};
+        {
+            Plmn &target = servedGuami->guami.plmn;
+            target.isLongMnc = false;
+            target.mcc = 999;
+            target.mnc = 0;
+        }
+        amf->servedGuamiList.push_back(servedGuami);
+
+        utils::ClearAndDelete(amf->plmnSupportList);
+        {
+            auto plmnSupport = new PlmnSupport();
+            Plmn &target = plmnSupport->plmn;
+            target.isLongMnc = false;
+            target.mcc = 999;
+            target.mnc = 0;
+            SingleSlice s{};
+            s.sst = (uint8_t)1; // Or 0x01 in hex notation
+            s.sd = std::nullopt;
+            plmnSupport->sliceSupportList.slices.push_back(s);
+            amf->plmnSupportList.push_back(plmnSupport);
+        }
+    }
+
+    amf->state = EAmfState::CONNECTED;
+    m_logger->info("NG Setup procedure is successful");
+
+    if (!m_isInitialized && std::all_of(m_amfCtx.begin(), m_amfCtx.end(),
+                                        [](auto &amfCtx) { return amfCtx.second->state == EAmfState::CONNECTED; }))
+    {
+        m_isInitialized = true;
+
+        auto update = std::make_unique<NmGnbStatusUpdate>(NmGnbStatusUpdate::NGAP_IS_UP);
+        update->isNgapUp = true;
+        m_base->appTask->push(std::move(update));
+
+        m_base->rrcTask->push(std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::RADIO_POWER_ON));
+    }
+}
+
+
+
 void NgapTask::receiveNgSetupResponse(int amfId, ASN_NGAP_NGSetupResponse *msg)
 {
     m_logger->debug("NG Setup Response received");
