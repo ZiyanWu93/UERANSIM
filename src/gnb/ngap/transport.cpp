@@ -276,6 +276,7 @@ void NgapTask::handleSctpMessage(int amfId, uint16_t stream, const UniqueBuffer 
             receiveSessionResourceSetupRequest(amf->ctxId, &value.choice.PDUSessionResourceSetupRequest);
             break;
         case ASN_NGAP_InitiatingMessage__value_PR_DownlinkNASTransport:
+            m_logger->info("receiveDownlinkNasTransport is called");
             receiveDownlinkNasTransport(amf->ctxId, &value.choice.DownlinkNASTransport);
             break;
         case ASN_NGAP_InitiatingMessage__value_PR_AMFConfigurationUpdate:

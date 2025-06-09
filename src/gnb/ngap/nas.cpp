@@ -12,6 +12,7 @@
 
 #include <gnb/rrc/task.hpp>
 
+#include "encode.hpp"
 #include <asn/ngap/ASN_NGAP_DownlinkNASTransport.h>
 #include <asn/ngap/ASN_NGAP_InitialUEMessage.h>
 #include <asn/ngap/ASN_NGAP_InitiatingMessage.h>
@@ -20,20 +21,20 @@
 #include <asn/ngap/ASN_NGAP_ProtocolIE-Field.h>
 #include <asn/ngap/ASN_NGAP_RerouteNASRequest.h>
 #include <asn/ngap/ASN_NGAP_UplinkNASTransport.h>
-#include <ue/nas/enc.hpp>
-#include "encode.hpp"
 #include <stdexcept>
+#include <ue/nas/enc.hpp>
 
 namespace nr::gnb
 {
 
-int32_t extractSliceInfoAndModifyPdu(OctetString &nasPdu) {
+int32_t extractSliceInfoAndModifyPdu(OctetString &nasPdu)
+{
     nas::RegistrationRequest *regRequest = nullptr;
     int32_t requestedSliceType = -1;
     const uint8_t *m_data = nasPdu.data();
-    size_t m_dataLength = nasPdu.length(); 
+    size_t m_dataLength = nasPdu.length();
     OctetView octetView(m_data, m_dataLength);
-    auto nasMessage = nas::DecodeNasMessage(octetView);  
+    auto nasMessage = nas::DecodeNasMessage(octetView);
     if (nasMessage->epd == nas::EExtendedProtocolDiscriminator::MOBILITY_MANAGEMENT_MESSAGES)
     {
         nas::MmMessage *mmMessage = dynamic_cast<nas::MmMessage *>(nasMessage.get());
@@ -46,15 +47,16 @@ int32_t extractSliceInfoAndModifyPdu(OctetString &nasPdu) {
                 if (regRequest)
                 {
                     auto sz = regRequest->requestedNSSAI->sNssais.size();
-                    if (sz > 0) {
+                    if (sz > 0)
+                    {
                         requestedSliceType = static_cast<uint8_t>(regRequest->requestedNSSAI->sNssais[0].sst);
                     }
                 }
             }
         }
     }
-    if (regRequest && regRequest->requestedNSSAI) 
-        regRequest->requestedNSSAI = std::nullopt;  
+    if (regRequest && regRequest->requestedNSSAI)
+        regRequest->requestedNSSAI = std::nullopt;
 
     OctetString modifiedNasPdu;
     nas::EncodeNasMessage(*nasMessage, modifiedNasPdu);
@@ -63,7 +65,7 @@ int32_t extractSliceInfoAndModifyPdu(OctetString &nasPdu) {
 }
 
 void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t rrcEstablishmentCause,
-                                            const std::optional<GutiMobileIdentity> &sTmsi)
+                                         const std::optional<GutiMobileIdentity> &sTmsi)
 {
     int32_t requestedSliceType = extractSliceInfoAndModifyPdu(nasPdu);
 
@@ -135,12 +137,65 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
     sendNgapUeAssociated(ueId, pdu);
 }
 
+// void NgapTask::deliverDownlinkNas(int ueId, OctetString &&nasPdu)
+// {
+//     auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
+//     w->ueId = ueId;
+//     w->pdu = std::move(nasPdu);
+//     m_base->rrcTask->push(std::move(w));
+// }
+
+int times = 1;
 void NgapTask::deliverDownlinkNas(int ueId, OctetString &&nasPdu)
 {
+    int hardcoded_ueId = 1;
+    m_logger->debug("deliverDownlinkNas for UE[%d] times: %d", hardcoded_ueId, times);
+
+    // Select the hardcoded PDU based on call count
+    std::string hexPdu;
+    switch (times)
+    {
+    case 1:
+        hexPdu = "7e005600020000215ca0df8c9bb8dbcf3c2a7dd448da13692010406296993082800030b762455c890b19";
+        break;
+    case 2:
+        hexPdu = "7e0313bf995a007e005d02000480f080f0e1360102";
+        break;
+    case 3:
+        hexPdu = "7e027239674c017e0042010177000bf299f907020040c000072754074099f90700000115020101210201005e0192";
+        break;
+    case 4:
+        hexPdu =
+            "7e02de0d22e3027e0054430f90004f00700065006e003500470053450990004e006500780074460a475260903035530a490101";
+        break;
+    case 5:
+        hexPdu = "7e02fbd62d81037e00680100472e0101c211000901000631310101ff010603f42403f4242905010a2d0002220101790006012"
+                 "0410101097b000f80000d0408080808000d0408080404250908696e7465726e65741201";
+        break;
+    default:
+        exit(1); // Exit the program
+    }
+    // Increment the call counter
+    times++;
+
+    // Convert the selected hex string to OctetString
+    OctetString pdu = OctetString::FromHex(hexPdu);
+
+    // Print the NAS PDU content in hexadecimal format
+    // Print the NAS PDU content in hexadecimal format
+    std::string hexString;
+    char hex[3];
+    for (size_t i = 0; i < pdu.length(); i++) {
+        snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(pdu.data()[i]));
+        hexString += hex;
+    }
+    m_logger->debug("NAS PDU content: %s", hexString.c_str());
+
     auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
-    w->ueId = ueId;
-    w->pdu = std::move(nasPdu);
+    w->ueId = hardcoded_ueId;
+    w->pdu = std::move(pdu);
     m_base->rrcTask->push(std::move(w));
+
 }
 
 void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
@@ -179,9 +234,24 @@ void NgapTask::sendNasNonDeliveryIndication(int ueId, const OctetString &nasPdu,
     sendNgapUeAssociated(ueId, pdu);
 }
 
+// void NgapTask::receiveDownlinkNasTransport_backup(int amfId, ASN_NGAP_DownlinkNASTransport *msg)
+// {
+//     auto *ue = findUeByNgapIdPair(amfId, ngap_utils::FindNgapIdPair(msg));
+//     if (ue == nullptr)
+//         return;
+
+//     auto *ieNasPdu = asn::ngap::GetProtocolIe(msg, ASN_NGAP_ProtocolIE_ID_id_NAS_PDU);
+//     if (ieNasPdu)
+//         deliverDownlinkNas(ue->ctxId, asn::GetOctetString(ieNasPdu->NAS_PDU));
+// }
+
 void NgapTask::receiveDownlinkNasTransport(int amfId, ASN_NGAP_DownlinkNASTransport *msg)
 {
-    auto *ue = findUeByNgapIdPair(amfId, ngap_utils::FindNgapIdPair(msg));
+    NgapIdPair pair = NgapIdPair(1, 1);
+    int hardcoded_amfId = 2;
+
+    m_logger->info("amfId: %d, amfUeNgapId: %d, ranUeNgapId: %d", hardcoded_amfId, pair.amfUeNgapId, pair.ranUeNgapId);
+    auto *ue = findUeByNgapIdPair(hardcoded_amfId, pair);
     if (ue == nullptr)
         return;
 
