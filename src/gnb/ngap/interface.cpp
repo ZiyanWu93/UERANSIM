@@ -175,6 +175,9 @@ void NgapTask::sendNgSetupRequest(int amfId)
         {ieGlobalGnbId, ieRanNodeName, ieSupportedTaList, iePagingDrx});
 
     sendNgapNonUe(amfId, pdu);
+
+    // directly trigger
+    receiveNgSetupResponse_base_case();
 }
 
 
