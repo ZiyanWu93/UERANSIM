@@ -178,7 +178,8 @@ void NgapTask::sendNgapUeAssociated(int ueId, ASN_NGAP_NGAP_PDU *pdu)
                 asn::SetBitStringLong<36>(m_base->config->nci, nr->nR_CGI.nRCellIdentity);
                 ngap_utils::ToPlmnAsn_Ref(m_base->config->plmn, nr->tAI.pLMNIdentity);
                 asn::SetOctetString3(nr->tAI.tAC, octet3{m_base->config->tac});
-                asn::SetOctetString4(*nr->timeStamp, octet4{utils::CurrentTimeStamp().seconds32()});
+                // Fixed timestamp for 2025-06-08 (June 8, 2025)
+                asn::SetOctetString4(*nr->timeStamp, octet4{1749196800});
             });
     }
 
