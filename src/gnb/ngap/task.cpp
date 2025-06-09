@@ -42,8 +42,15 @@ void NgapTask::onStart()
     }
 }
 
+int init = 0;
 void NgapTask::onLoop()
 {
+    if (init == 0)
+    {
+        receiveNgSetupResponse_base_case();
+        init = 1;
+    }
+
     auto msg = take();
     if (!msg)
         return;
@@ -74,7 +81,8 @@ void NgapTask::onLoop()
         switch (w.present)
         {
         case NmGnbSctp::ASSOCIATION_SETUP:
-            handleAssociationSetup(w.clientId, w.associationId, w.inStreams, w.outStreams);
+            // handleAssociationSetup(w.clientId, w.associationId, w.inStreams, w.outStreams);
+            // receiveNgSetupResponse_base_case();
             break;
         case NmGnbSctp::RECEIVE_MESSAGE:
             handleSctpMessage(w.clientId, w.stream, w.buffer);

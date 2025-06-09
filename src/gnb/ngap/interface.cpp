@@ -174,7 +174,7 @@ void NgapTask::sendNgSetupRequest(int amfId)
     auto *pdu = asn::ngap::NewMessagePdu<ASN_NGAP_NGSetupRequest>(
         {ieGlobalGnbId, ieRanNodeName, ieSupportedTaList, iePagingDrx});
 
-    sendNgapNonUe(amfId, pdu);
+    // sendNgapNonUe(amfId, pdu);
 
     // directly trigger
     receiveNgSetupResponse_base_case();
@@ -187,6 +187,11 @@ void NgapTask::receiveNgSetupResponse_base_case()
 
     // auto *amf = findAmfContext(amfId); // hardcodeded by Ziyan
     auto *amf = findAmfContext(2);
+
+    amf->association.associationId = 2;
+    amf->association.inStreams = 10;
+    amf->association.outStreams = 10; // to avoid error
+
     if (amf == nullptr)
         return;
     {

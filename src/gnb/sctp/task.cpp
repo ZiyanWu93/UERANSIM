@@ -119,6 +119,7 @@ void SctpTask::onStart()
 
 void SctpTask::onLoop()
 {
+    return;
     auto msg = take();
     if (!msg)
         return;
