@@ -21,6 +21,7 @@
 #include <asn/ngap/ASN_NGAP_ProtocolIE-Field.h>
 #include <asn/ngap/ASN_NGAP_RerouteNASRequest.h>
 #include <asn/ngap/ASN_NGAP_UplinkNASTransport.h>
+#include <cstring>
 #include <stdexcept>
 #include <ue/nas/enc.hpp>
 #include <unistd.h>
@@ -152,99 +153,252 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
 int times = 1;
 void NgapTask::deliverDownlinkNas(int ueId, OctetString &&nasPdu)
 {
-    int hardcoded_ueId = 1;
-    m_logger->debug("deliverDownlinkNas for UE[%d] times: %d", hardcoded_ueId, times);
+    return;
+}
 
-    // Select the hardcoded PDU based on call count
-    std::string hexPdu;
-    switch (times)
+constexpr size_t MAX_NAS_HEX_LEN = 300;             // big enough for the longest hard-coded hex string
+static char nas_payload_buf[MAX_NAS_HEX_LEN] = {0}; // single reusable buffer
+
+static const char *prepare_payload(const char *src)
+{
+    std::strncpy(nas_payload_buf, src, MAX_NAS_HEX_LEN - 1);
+    nas_payload_buf[MAX_NAS_HEX_LEN - 1] = '\0'; // ensure null-termination
+    return nas_payload_buf;
+}
+
+const char *generate_auth_req()
+{
+    // Prepare parts using C-style character arrays (modifiable).
+    char epd_header[] = "7e00"; // Extended Protocol Discriminator (126) + spare + security header type (plain)
+    char msg_type[] = "56";     // Message Type = Authentication Request
+    char ngksi_field[] = "00";  // NAS Key Set Identifier (ngKSI) + spare half-octet (native, id=0)
+    char abba_ie[] = "020000";  // ABBA IE: length 2, value 0x0000
+    char rand_iei[] = "21";     // IEI for RAND
+    char rand_val[] = "5ca0df8c9bb8dbcf3c2a7dd448da1369"; // 128-bit RAND challenge (example)
+    char autn_iei[] = "20";                               // IEI for AUTN
+    char autn_len[] = "10";                               // AUTN length = 16 bytes (0x10)
+    char autn_val[] = "406296993082800030b762455c890b19"; // AUTN value (SQN⊕AK|AMF|MAC)
+
+    char *parts[] = {epd_header, msg_type, ngksi_field, abba_ie, rand_iei, rand_val, autn_iei, autn_len, autn_val};
+
+    size_t offset = 0;
+    for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
-    case 1:
-        hexPdu = "7e005600020000215ca0df8c9bb8dbcf3c2a7dd448da13692010406296993082800030b762455c890b19";
-        break;
-    case 2:
-        hexPdu = "7e0313bf995a007e005d02000480f080f0e1360102";
-        break;
-    case 3:
-        hexPdu = "7e027239674c017e0042010177000bf299f907020040c000072754074099f90700000115020101210201005e0192";
-        break;
-    case 4:
-        hexPdu =
-            "7e02de0d22e3027e0054430f90004f00700065006e003500470053450990004e006500780074460a475260903035530a490101";
-        break;
-    case 5:
-        hexPdu = "7e02fbd62d81037e00680100472e0101c211000901000631310101ff010603f42403f4242905010a2d0002220101790006012"
-                 "0410101097b000f80000d0408080808000d0408080404250908696e7465726e65741201";
-        break;
-    default:
-        exit(1); // Exit the program
+        const char *part = parts[i];
+        size_t len = std::strlen(part);
+        if (offset + len >= MAX_NAS_HEX_LEN)
+        {
+            // Should never happen; guard to prevent overflow.
+            nas_payload_buf[0] = '\0';
+            return nas_payload_buf;
+        }
+        std::memcpy(nas_payload_buf + offset, part, len);
+        offset += len;
     }
-    // Increment the call counter
-    times++;
+    nas_payload_buf[offset] = '\0'; // null-terminate
+    return nas_payload_buf;
+}
 
-    // Convert the selected hex string to OctetString
-    OctetString pdu = OctetString::FromHex(hexPdu);
+const char *generate_security_cmd()
+{
+    // Prepare parts using C-style character arrays (modifiable).
+    char outer_header[] = "7e03"; // Extended Protocol Discriminator + Security header type (3)
+    char mac[] = "13bf995a";      // Message authentication code (example)
+    char seq_num[] = "00";        // Sequence number
 
-    // Print the NAS PDU content in hexadecimal format
-    // Print the NAS PDU content in hexadecimal format
-    std::string hexString;
-    char hex[3];
-    for (size_t i = 0; i < pdu.length(); i++)
+    char inner_header[] = "7e00"; // Extended Protocol Discriminator + Security header type (0)
+    char msg_type[] = "5d";       // Message Type = Security Mode Command
+
+    char nas_alg[] = "02";     // NAS security algorithms: ciphering (0), integrity (2)
+    char ngksi_field[] = "00"; // NAS Key Set Identifier (ngKSI) + spare half-octet
+
+    char ue_sec_cap_len[] = "04";       // UE security capability length
+    char ue_sec_cap_val[] = "80f080f0"; // UE security capabilities bitmap
+
+    char imeisv_req[] = "e1";       // IMEISV request IE: ID (0xe), value (0x1)
+    char add_sec_info[] = "360102"; // Additional 5G security information: IEI (0x36), length (1), value (0x02)
+
+    char *parts[] = {outer_header,   mac,        seq_num,     inner_header,
+                     msg_type,       nas_alg,    ngksi_field, ue_sec_cap_len,
+                     ue_sec_cap_val, imeisv_req, add_sec_info};
+
+    size_t offset = 0;
+    for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
-        snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(pdu.data()[i]));
-        hexString += hex;
+        const char *part = parts[i];
+        size_t len = std::strlen(part);
+        if (offset + len >= MAX_NAS_HEX_LEN)
+        {
+            nas_payload_buf[0] = '\0';
+            return nas_payload_buf;
+        }
+        std::memcpy(nas_payload_buf + offset, part, len);
+        offset += len;
     }
-    m_logger->debug("NAS PDU content: %s", hexString.c_str());
+    nas_payload_buf[offset] = '\0'; // null-terminate
+    return nas_payload_buf;
+}
 
-    auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
-    w->ueId = hardcoded_ueId;
-    w->pdu = std::move(pdu);
-    m_base->rrcTask->push(std::move(w));
+const char *generate_registration_accept()
+{
+    /* Outer (security-protected) header */
+    char outer_header[] = "7e02"; /* EPD 0x7e, security hdr type 0x02 */
+    char mac[] = "7239674c";      /* 32-bit message authentication code */
+    char seq_num[] = "01";        /* Sequence number */
+
+    /* Inner plain NAS header */
+    char inner_header[] = "7e00"; /* EPD 0x7e, plain message */
+    char msg_type[] = "42";       /* Registration Accept */
+
+    /* Information elements */
+    char reg_result[] = "0101";                      /* IEI 0x01, value 0x01 */
+    char guti_ie[] = "77000bf299f907020040c0000727"; /* 5G-GUTI, length 0x000b */
+    char tai_list[] = "54074099f907000001";          /* TAI list, length 0x07 */
+    char nssai[] = "15020101";                       /* Allowed NSSAI */
+    char net_feat[] = "21020100";                    /* Network feature support */
+    char gprs_timer[] = "5e0192";                    /* T3512 value: 540 s */
+
+    /* Assemble */
+    char *parts[] = {outer_header, mac,      seq_num, inner_header, msg_type,  reg_result,
+                     guti_ie,      tai_list, nssai,   net_feat,     gprs_timer};
+
+    size_t offset = 0;
+    for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
+    {
+        size_t len = std::strlen(parts[i]);
+        if (offset + len >= MAX_NAS_HEX_LEN)
+        {
+            nas_payload_buf[0] = '\0';
+            return nas_payload_buf;
+        }
+        std::memcpy(nas_payload_buf + offset, parts[i], len);
+        offset += len;
+    }
+    nas_payload_buf[offset] = '\0';
+    return nas_payload_buf;
+}
+
+const char *generate_configuration_update()
+{
+    /* outer security-protected header */
+    char outer_header[] = "7e02"; /* EPD 0x7e, integrity-ciphered (2)       */
+    char mac[] = "de0d22e3";      /* message authentication code            */
+    char seq_num[] = "02";        /* sequence number                        */
+
+    /* inner plain NAS header */
+    char inner_header[] = "7e00"; /* EPD 0x7e, plain message                */
+    char msg_type[] = "54";       /* configuration update command           */
+
+    /* information elements */
+    char net_name_full[] = "430f90004f00700065006e003500470053"; /* “Open5GS” */
+    char net_name_short[] = "450990004e006500780074";            /* “Next”    */
+    char tz_local[] = "460a";                                    /* GMT-5     */
+    char tz_and_time[] = "475260903035530a";                     /* 2025-06-09 03:53:35, GMT-5 */
+    char dst[] = "490101";                                       /* DST +1 h  */
+
+    char *parts[] = {outer_header,   mac,      seq_num,     inner_header, msg_type, net_name_full,
+                     net_name_short, tz_local, tz_and_time, dst};
+
+    size_t offset = 0;
+    for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
+    {
+        size_t len = std::strlen(parts[i]);
+        if (offset + len >= MAX_NAS_HEX_LEN)
+        {
+            nas_payload_buf[0] = '\0';
+            return nas_payload_buf;
+        }
+        std::memcpy(nas_payload_buf + offset, parts[i], len);
+        offset += len;
+    }
+    nas_payload_buf[offset] = '\0';
+    return nas_payload_buf;
+}
+
+const char *generate_pdu_session_establishment()
+{
+    /* outer security-protected header */
+    char outer_hdr[] = "7e02"; /* EPD 0x7e, integrity-protected & ciphered (2) */
+    char mac[] = "fbd62d81";   /* message authentication code                  */
+    char seq[] = "03";         /* sequence number                              */
+
+    /* inner plain NAS header (DL NAS Transport) */
+    char inner_hdr[] = "7e00"; /* EPD 0x7e, plain message                      */
+    char dl_msg[] = "68";      /* DL NAS transport                             */
+
+    /* DL transport payload-container header */
+    char spare_pt[] = "01"; /* spare half-octet + payload-container type N1SM */
+    char pc_len[] = "0047"; /* payload-container length = 0x47 (= 71)          */
+
+    /* N1 SM payload: PDU Session Establishment Accept */
+    char sm_epd[] = "2e";                                 /* EPD 0x2e (SM)            */
+    char pdu_id[] = "01";                                 /* PDU Session ID           */
+    char pti[] = "01";                                    /* Procedure Tx ID          */
+    char sm_msg[] = "c2";                                 /* Establishment Accept     */
+    char ssc_pdu[] = "11";                                /* SSC mode 1, IPv4         */
+    char qos_rule[] = "000901000631310101ff01";           /* authorised QoS rule      */
+    char ambr[] = "0603f42403f424";                       /* Session-AMBR 1 000 000 kbps */
+    char pdu_addr[] = "2905010a2d0002";                   /* IPv4 address 10.45.0.2   */
+    char snssai[] = "220101";                             /* SST = eMBB               */
+    char qos_flow[] = "790006012041010109";               /* QoS flow 5QI = 9         */
+    char epco[] = "7b000f80000d0408080808000d0408080404"; /* DNS 8.8.8.8 & 8.8.4.4    */
+    char dnn[] = "250908696e7465726e6574";                /* DNN “internet”           */
+    char pdu_id_ie[] = "1201";                            /* PDU Session ID (IE)      */
+
+    char *parts[] = {outer_hdr, mac,     seq,      inner_hdr, dl_msg,   spare_pt, pc_len,   sm_epd, pdu_id, pti,
+                     sm_msg,    ssc_pdu, qos_rule, ambr,      pdu_addr, snssai,   qos_flow, epco,   dnn,    pdu_id_ie};
+
+    size_t off = 0;
+    for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
+    {
+        size_t len = std::strlen(parts[i]);
+        if (off + len >= MAX_NAS_HEX_LEN)
+        {
+            nas_payload_buf[0] = '\0';
+            return nas_payload_buf;
+        }
+        std::memcpy(nas_payload_buf + off, parts[i], len);
+        off += len;
+    }
+    nas_payload_buf[off] = '\0';
+    return nas_payload_buf;
 }
 
 void NgapTask::deliverDownlinkNasRefactored()
 {
-    int hardcoded_ueId = 1;
+    constexpr int hardcoded_ueId = 1;
     m_logger->debug("deliverDownlinkNas for UE[%d] times: %d", hardcoded_ueId, times);
 
-    // Select the hardcoded PDU based on call count
-    std::string hexPdu;
-    switch (times)
+    struct NasEntry
     {
-    case 1:
-        hexPdu = "7e005600020000215ca0df8c9bb8dbcf3c2a7dd448da13692010406296993082800030b762455c890b19";
-        m_logger->info("Authentication Request Ziyan");
-        break;
-    case 2:
-        hexPdu = "7e0313bf995a007e005d02000480f080f0e1360102";
-        m_logger->info("Security Command Ziyan");
-        break;
-    case 3:
-        hexPdu = "7e027239674c017e0042010177000bf299f907020040c000072754074099f90700000115020101210201005e0192";
-        m_logger->info("Registration Accept Ziyan");
-        break;
-    case 4:
-        hexPdu =
-            "7e02de0d22e3027e0054430f90004f00700065006e003500470053450990004e006500780074460a475260903035530a490101";
-        m_logger->info("Configuration Update Ziyan");
-        break;
-    case 5:
-        hexPdu = "7e02fbd62d81037e00680100472e0101c211000901000631310101ff010603f42403f4242905010a2d0002220101790006012"
-                 "0410101097b000f80000d0408080808000d0408080404250908696e7465726e65741201";
-        m_logger->info("PDU Session Establishment Ziyan");
+        const char *(*generator)(); // Function returning NAS PDU in hex format
+        const char *description;    // Human-readable description for logging
+    };
 
-        break;
-    default:
-        exit(1); // Exit the program
+    static const NasEntry entries[] = {{generate_auth_req, "Authentication Request"},
+                                       {generate_security_cmd, "Security Command"},
+                                       {generate_registration_accept, "Registration Accept"},
+                                       {generate_configuration_update, "Configuration Update"},
+                                       {generate_pdu_session_establishment, "PDU Session Establishment"}};
+
+    const size_t entryCount = sizeof(entries) / sizeof(entries[0]);
+    if (times > static_cast<int>(entryCount))
+    {
+        exit(1); // No more predefined PDUs – terminate as before
     }
+
+    const NasEntry &entry = entries[times - 1];
+    const char *hexPduC = entry.generator();
+    std::string hexPdu(hexPduC); // create std::string view for FromHex helper
+    m_logger->info("%s Ziyan", entry.description);
+
     // Increment the call counter
     times++;
 
     // Convert the selected hex string to OctetString
     OctetString pdu = OctetString::FromHex(hexPdu);
 
-    // Print the NAS PDU content in hexadecimal format
-    // Print the NAS PDU content in hexadecimal format
+    // Print the NAS PDU content in hexadecimal format for debugging
     std::string hexString;
     char hex[3];
     for (size_t i = 0; i < pdu.length(); i++)
@@ -254,6 +408,7 @@ void NgapTask::deliverDownlinkNasRefactored()
     }
     m_logger->debug("NAS PDU content: %s", hexString.c_str());
 
+    // Push message to RRC task
     auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
     w->ueId = hardcoded_ueId;
     w->pdu = std::move(pdu);
@@ -314,7 +469,6 @@ void NgapTask::sendNasNonDeliveryIndication(int ueId, const OctetString &nasPdu,
 //     if (ieNasPdu)
 //         deliverDownlinkNas(ue->ctxId, asn::GetOctetString(ieNasPdu->NAS_PDU));
 // }
-
 
 void NgapTask::receiveDownlinkNasTransport(int amfId, ASN_NGAP_DownlinkNASTransport *msg)
 {
