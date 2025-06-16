@@ -53,3 +53,7 @@ After successful authentication and security setup, the **AMF** sends the **Regi
 
 ---
 
+<<<<<<< HEAD
+=======
+Would you like me to **decode and explain each hex field in detail**, especially for GUTI or TAI list?
+>>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d

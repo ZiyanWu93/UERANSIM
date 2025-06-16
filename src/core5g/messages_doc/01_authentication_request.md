@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 
 
@@ -66,6 +67,15 @@ Non-Access-Stratum 5GS (NAS)PDU
 
 
 
+=======
+You're generating a **5G NAS Authentication Request** message in plaintext format (i.e., before NAS security is activated). Below is a **step-by-step breakdown** of each field included in your `generate_auth_req()` function, explaining:
+
+* 🔢 **Step number** in the procedure
+* ✅ **Who generates** the field
+* 📌 **What the field means**
+
+---
+>>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d
 
 ### 📦 Field-by-Field Breakdown with Step Numbers
 
@@ -110,6 +120,7 @@ Total length: 16 bytes = 6 + 2 + 8
 * **AMF**: Authentication Management Field (e.g., 0x8000)
 * **MAC**: Message Authentication Code for integrity of the AV
 
+<<<<<<< HEAD
 
 # What happens between
 
@@ -224,3 +235,13 @@ This entire sequence typically occurs within milliseconds as the AMF rapidly pro
 
 
 
+=======
+---
+
+### ✅ Final Notes
+
+* The message is **unauthenticated and unencrypted**, as it’s sent **before NAS security** is established.
+* Once the UE verifies the AUTN and computes the expected RES, it sends an **Authentication Response** back to the AMF.
+
+Would you like to go deeper into how **AUTN is constructed** using the shared secret key `K`, or how \**RES* is derived by the UE?
+>>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d

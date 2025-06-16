@@ -46,3 +46,7 @@ The **AMF** sends a **Configuration Update Command** to inform the **UE** about 
 
 ---
 
+<<<<<<< HEAD
+=======
+Would you like me to **decode `tz_and_time` and explain how each byte maps to the date/time**?
+>>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d
