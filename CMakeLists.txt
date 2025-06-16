@@ -23,6 +23,7 @@ add_subdirectory(src/asn/asn1c)
 add_subdirectory(src/asn/rrc)
 add_subdirectory(src/asn/ngap)
 add_subdirectory(src/lib)
+add_subdirectory(src/core5g)
 add_subdirectory(src/gnb)
 add_subdirectory(src/ue)
 
@@ -38,6 +39,7 @@ target_link_libraries(nr-gnb asn-rrc)
 target_link_libraries(nr-gnb asn-ngap)
 target_link_libraries(nr-gnb common-lib)
 target_link_libraries(nr-gnb gnb)
+target_link_libraries(nr-gnb core5g)
 
 #################### UE EXECUTABLE ####################
 

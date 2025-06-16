@@ -1,10 +1,71 @@
-You're generating a **5G NAS Authentication Request** message in plaintext format (i.e., before NAS security is activated). Below is a **step-by-step breakdown** of each field included in your `generate_auth_req()` function, explaining:
 
-* 🔢 **Step number** in the procedure
-* ✅ **Who generates** the field
-* 📌 **What the field means**
 
----
+
+NAS input
+
+
+Non-Access-Stratum 5GS (NAS)PDU
+    Plain NAS 5GS Message
+        Extended protocol discriminator: 5G mobility management messages (126)
+        0000 .... = Spare Half Octet: 0
+        .... 0000 = Security header type: Plain NAS message, not security protected (0)
+        Message type: Registration request (0x41)
+        5GS registration type
+            .... 1... = Follow-On Request bit (FOR): Follow-on request pending
+            .... .001 = 5GS registration type: initial registration (1)
+        NAS key set identifier
+            0... .... = Type of security context flag (TSC): Native security context (for KSIAMF)
+            .111 .... = NAS key set identifier: 7
+        5GS mobile identity
+            Length: 13
+            0... .... = Spare: 0
+            .000 .... = SUPI format: IMSI (0)
+            .... 0... = Spare: 0
+            .... .001 = Type of identity: SUCI (1)
+            Mobile Country Code (MCC): Private network (999)
+            Mobile Network Code (MNC): Unknown (70)
+            Routing indicator: 0000
+            .... 0000 = Protection scheme Id: NULL scheme (0)
+            Home network public key identifier: 0
+            MSIN: 0000000001
+        UE security capability
+            Element ID: 0x2e
+            Length: 4
+            1... .... = 5G-EA0: Supported
+            .0.. .... = 128-5G-EA1: Not supported
+            ..0. .... = 128-5G-EA2: Not supported
+            ...0 .... = 128-5G-EA3: Not supported
+            .... 0... = 5G-EA4: Not supported
+            .... .0.. = 5G-EA5: Not supported
+            .... ..0. = 5G-EA6: Not supported
+            .... ...0 = 5G-EA7: Not supported
+            1... .... = 5G-IA0: Supported
+            .1.. .... = 128-5G-IA1: Supported
+            ..1. .... = 128-5G-IA2: Supported
+            ...1 .... = 128-5G-IA3: Supported
+            .... 0... = 5G-IA4: Not supported
+            .... .0.. = 5G-IA5: Not supported
+            .... ..0. = 5G-IA6: Not supported
+            .... ...0 = 5G-IA7: Not supported
+            1... .... = EEA0: Supported
+            .0.. .... = 128-EEA1: Not supported
+            ..0. .... = 128-EEA2: Not supported
+            ...0 .... = 128-EEA3: Not supported
+            .... 0... = EEA4: Not supported
+            .... .0.. = EEA5: Not supported
+            .... ..0. = EEA6: Not supported
+            .... ...0 = EEA7: Not supported
+            1... .... = EIA0: Supported
+            .1.. .... = 128-EIA1: Supported
+            ..1. .... = 128-EIA2: Supported
+            ...1 .... = 128-EIA3: Supported
+            .... 0... = EIA4: Not supported
+            .... .0.. = EIA5: Not supported
+            .... ..0. = EIA6: Not supported
+            .... ...0 = EIA7: Not supported
+
+
+
 
 ### 📦 Field-by-Field Breakdown with Step Numbers
 
@@ -49,10 +110,117 @@ Total length: 16 bytes = 6 + 2 + 8
 * **AMF**: Authentication Management Field (e.g., 0x8000)
 * **MAC**: Message Authentication Code for integrity of the AV
 
----
 
-### ✅ Final Notes
+# What happens between
 
-* The message is **unauthenticated and unencrypted**, as it’s sent **before NAS security** is established.
-* Once the UE verifies the AUTN and computes the expected RES, it sends an **Authentication Response** back to the AMF.
+
+What Happens Between Registration Request and Authentication Request
+When the AMF receives the Registration Request PDU you provided and then sends an Authentication Request, these are the key processing steps that happen in between:
+
+1. Initial Processing of Registration Request
+Message Parsing: The Registration Request is decoded from the NAS PDU format
+Protocol discriminator: 5G mobility management (126)
+Message type: Registration request (0x41)
+Registration type: Initial registration with Follow-on request pending
+Security Context Check:
+TSC flag: Native security context
+NAS key set identifier (KSI): 7
+Since this is an initial registration, no prior security context exists
+2. SUCI Processing
+5GS Mobile Identity Processing:
+Identity type: SUCI (Subscription Concealed Identifier)
+SUPI format: IMSI
+MCC: 999 (Private network)
+MNC: 70 (Unknown)
+Protection scheme: NULL scheme
+MSIN: 0000000001
+PLMN Access Control:
+c
+ogs_nas_to_plmn_id(&amf_ue->home_plmn_id, &mobile_identity_suci->nas_plmn_id);
+
+// Find matching GUAMI for this PLMN
+for (i = 0; i < amf_self()->num_of_served_guami; i++) {
+    if (!memcmp(&amf_ue->home_plmn_id, &amf_self()->served_guami[i].plmn_id, ...)) {
+        amf_ue->guami = &amf_self()->served_guami[i];
+    }
+}
+
+// Check if this PLMN is allowed
+gmm_cause = gmm_cause_from_access_control(&amf_ue->home_plmn_id);
+if (gmm_cause != OGS_5GMM_CAUSE_REQUEST_ACCEPTED) {
+    return gmm_cause; // Would lead to Registration Reject
+}
+
+// Store SUCI in AMF UE context
+amf_ue_set_suci(amf_ue, mobile_identity);
+3. UE Security Capability Processing
+Supported Algorithms Evaluation:
+5G-EA0 (NULL encryption), 5G-IA1/2/3 (Integrity algorithms) supported
+EEA0 (NULL encryption), EIA1/2/3 (Integrity algorithms) supported
+Security Algorithm Selection:
+Based on the UE capability and operator policy
+Null encryption (EA0/5G-EA0) requires non-null integrity algorithm
+Your UE supports 5G-IA1/2/3, so one will be selected
+4. State Machine Transition
+After handling the registration request, the AMF's state machine transitions to authentication:
+
+c
+// From gmm-sm.c
+case OGS_NAS_5GS_REGISTRATION_REQUEST:
+    // ... various checks
+
+    if (!AMF_UE_HAVE_SUCI(amf_ue)) {
+        // If no SUCI, would send Identity Request
+    } else {
+        // SUCI is available, proceed to authentication
+        amf_ue_sbi_discover_and_send(
+                OGS_SBI_SERVICE_TYPE_NAUSF_AUTH, NULL,
+                amf_nausf_auth_build_authenticate,
+                amf_ue, NULL, NULL);
+    }
+5. Authentication Vector Retrieval
+AUSF Communication:
+AMF sends an authentication request to AUSF (Authentication Server Function)
+Includes the UE's SUCI/SUPI
+Uses SBI (Service-Based Interface) communication
+UDM Interaction:
+AUSF communicates with UDM (Unified Data Management)
+UDM generates authentication vectors specific to this UE based on its USIM credentials
+Authentication Vector Processing:
+AMF receives authentication data from AUSF including RAND, AUTN, XRES*/HXRES*
+AMF stores HXRES* for later verification
+AMF generates a ngKSI (Key Set Identifier) to be used in subsequent messages
+6. Authentication Request Message Building
+c
+// In gmm-build.c
+ogs_pkbuf_t *gmm_build_authentication_request(amf_ue_t *amf_ue)
+{
+    ogs_nas_5gs_message_t message;
+    ogs_nas_5gs_authentication_request_t *authentication_request =
+        &message.gmm.authentication_request;
+    ogs_nas_authentication_parameter_rand_t *authentication_parameter_rand =
+        &authentication_request->authentication_parameter_rand;
+    ogs_nas_authentication_parameter_autn_t *authentication_parameter_autn =
+        &authentication_request->authentication_parameter_autn;
+    
+    // Set authentication parameters from auth vectors
+    memcpy(authentication_parameter_rand->rand,
+            amf_ue->rand, OGS_RAND_LEN);
+    memcpy(authentication_parameter_autn->autn,
+            amf_ue->autn, OGS_AUTN_LEN);
+    authentication_parameter_autn->length = OGS_AUTN_LEN;
+
+    // Set key set identifier
+    authentication_request->ngksi.tsc = amf_ue->nas.amf.tsc;
+    authentication_request->ngksi.value = amf_ue->nas.amf.ksi;
+    
+    // Build NAS message
+    return nas_5gs_security_encode(amf_ue, &message);
+}
+NAS Downlink Transport:
+Finally, the AMF sends the Authentication Request to the UE via the NGAP Downlink NAS Transport procedure.
+
+This entire sequence typically occurs within milliseconds as the AMF rapidly processes the registration request and initiates the authentication procedure to verify the UE's identity.
+
+
 
