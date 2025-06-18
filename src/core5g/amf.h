@@ -4,5 +4,12 @@
 
 #ifndef AMF_H
 #define AMF_H
+#include "event.h"
+
+EVENT_HANDLER(generate_auth_req);
+EVENT_HANDLER(generate_security_cmd);
+EVENT_HANDLER(generate_registration_accept);
+EVENT_HANDLER(generate_configuration_update);
+EVENT_HANDLER(generate_pdu_session_establishment);
 
 #endif //AMF_H

@@ -62,3 +62,8 @@ target_link_libraries(nr-cli pthread)
 target_compile_options(nr-cli PRIVATE -Wall -Wextra -pedantic)
 
 target_link_libraries(nr-cli common-lib)
+
+################### 5G Core EXECUTABLE ##################
+add_executable(runtime src/core5g/runtime.c)
+target_link_libraries(runtime core5g)
+target_compile_options(runtime PRIVATE -Wall -Wextra -pedantic)
