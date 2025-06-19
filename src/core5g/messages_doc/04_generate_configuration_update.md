@@ -6,6 +6,12 @@ Let's break down your `generate_configuration_update()` function and explain **w
 
 The **AMF** sends a **Configuration Update Command** to inform the **UE** about changes in network-related configuration, like the **PLMN name**, **time zone**, **daylight saving time**, or **network time** after registration or handover.
 
+
+The DownlinkNASTransport message shown contains three key Information Elements (IEs) used in 5G NAS signaling between the Access and Mobility Management Function (AMF) and the Radio Access Network (RAN). The first IE, AMF-UE-NGAP-ID, and the second, RAN-UE-NGAP-ID, both hold identifiers (value: 1) that uniquely associate the UE context between AMF and RAN. The third IE, NAS-PDU, encapsulates a 5G NAS message that is not security protected (indicated by the security header type) and carries a Configuration Update Command (message type 0x54). This command includes multiple components: the Full Network Name ("Open5GS") and Short Network Name ("Next") encoded in UCS2, the Local Time Zone (GMT-5), Universal Time with Time Zone (June 9, 2025, 03:53:35), and a Daylight Saving Time adjustment of +1 hour. These parameters enable the UE to align with network settings and time configuration, facilitating accurate display of operator identity and synchronization.
+
+
+The Downlink NAS Transport carrying a Configuration Update Command is not intrinsically linked to PDU session establishment; it operates at the NAS level and simply piggy-backs on the NGAP transport mechanism to deliver management information from the AMF to the UE. While the command is defined in the context of the broader registration framework—because parameters such as network name, time zone, T3512, or spare PLMN lists may change after the UE has registered—it can be sent at any moment during an active 5G context without opening, modifying, or relying on any specific PDU session. Thus, its transmission neither requires an ongoing PDU session establishment procedure nor alters one, and it is only indirectly related to the registration procedure in that registration provides the signalling channel over which later configuration updates can be delivered.
+
 ---
 
 ### 📦 Field-by-Field Breakdown with Step Number
@@ -46,7 +52,3 @@ The **AMF** sends a **Configuration Update Command** to inform the **UE** about 
 
 ---
 
-<<<<<<< HEAD
-=======
-Would you like me to **decode `tz_and_time` and explain how each byte maps to the date/time**?
->>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d

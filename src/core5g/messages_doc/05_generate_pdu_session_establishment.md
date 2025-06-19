@@ -62,7 +62,3 @@ Let’s walk through the **step-by-step process** of each field’s **generation
 
 ---
 
-<<<<<<< HEAD
-=======
-Would you like a **full decoded breakdown** of the SM payload (e.g., AMBR fields, EPCO layout, QoS flow granularity)?
->>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d
