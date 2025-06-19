@@ -67,3 +67,13 @@ target_link_libraries(nr-cli common-lib)
 add_executable(runtime src/core5g/runtime.c)
 target_link_libraries(runtime core5g)
 target_compile_options(runtime PRIVATE -Wall -Wextra -pedantic)
+
+################### MEMORY TEST EXECUTABLE ##################
+add_executable(memory_test src/core5g/memory/memory_test.c)
+target_link_libraries(memory_test core5g)
+target_compile_options(memory_test PRIVATE -Wall -Wextra -pedantic)
+
+################### MAILBOX TEST EXECUTABLE ##################
+add_executable(mailbox_test src/core5g/mailbox/mailbox_test.c)
+target_link_libraries(mailbox_test core5g)
+target_compile_options(mailbox_test PRIVATE -Wall -Wextra -pedantic)
