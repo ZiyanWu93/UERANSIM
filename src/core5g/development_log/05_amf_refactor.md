@@ -59,4 +59,7 @@
 
 1. [X] Create {nf}_actor file for all related network functions
 2. [X] Create related event handler for all the functions above, with EVENT_HANDLER macro; for the implementation, just leave it empty for now.
-3. Implement each function using memory management system
+3. [X] Group all the actors into actor folder [Commit: f40a308]
+    - create folder, move all the {nf}_actor.c and {nf}_actor.h files into the actor folder
+    - create CMakeLists.txt file in the actor folder
+    - update CMakeLists.txt in the root folder

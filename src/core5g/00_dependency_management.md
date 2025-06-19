@@ -3,6 +3,7 @@
 ## Files and Modules Listing
 <!-- BEGIN_FILE_MODULE_LIST -->
 ### Modules
+- actor
 - event_pool
 - mailbox
 - memory
@@ -11,6 +12,13 @@
 
 **CMakeFiles/3.22.1/CompilerIdC/**
 - CMakeCCompilerId.c
+
+**actor/**
+- amf_actor.c
+- amf_actor.h
+- ausf_actor.c
+- smf_actor.c
+- udm_actor.c
 
 **event_pool/**
 - event_pool.c
@@ -33,19 +41,14 @@
 **Root Directory**
 - amf.c
 - amf.h
-- amf_actor.c
-- amf_actor.h
 - ausf.c
 - ausf.h
-- ausf_actor.c
 - core5g.h
 - event.c
 - event.h
 - runtime.c
-- smf_actor.c
 - udm.c
 - udm.h
-- udm_actor.c
 
 <!-- END_FILE_MODULE_LIST -->
 
