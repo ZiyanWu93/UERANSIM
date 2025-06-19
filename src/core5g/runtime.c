@@ -2,69 +2,10 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include "event.h"
+#include "event_pool/event_pool.h"
 
 volatile sig_atomic_t keep_running = 1;
-
-// Event pool configuration
-#define EVENT_POOL_SIZE 32
-
-// Event pool structure
-typedef struct {
-    EventNf events[EVENT_POOL_SIZE];
-    bool used[EVENT_POOL_SIZE];
-    int count;  // Number of events in use
-} EventPool;
-
-EventPool event_pool = {0};
-
-// Event pool management functions
-EventNf* allocate_event(void)
-{
-    // Find first available event in the pool
-    for (int i = 0; i < EVENT_POOL_SIZE; i++) {
-        if (!event_pool.used[i]) {
-            event_pool.used[i] = true;
-            event_pool.count++;
-            // Clear the event structure
-            event_pool.events[i].event_id = -1;
-            memset(event_pool.events[i].input_payload, 0, MAX_NAS_HEX_LEN);
-            memset(event_pool.events[i].output_payload, 0, MAX_NAS_HEX_LEN);
-            printf("Allocated event %d from pool, %d/%d in use\n", 
-                   i, event_pool.count, EVENT_POOL_SIZE);
-            return &event_pool.events[i];
-        }
-    }
-    
-    // No available events in the pool
-    printf("ERROR: Event pool is full! Cannot allocate new event.\n");
-    return NULL;
-}
-
-void return_event_to_pool(EventNf* event)
-{
-    // Find the event in the pool by its address
-    for (int i = 0; i < EVENT_POOL_SIZE; i++) {
-        if (&event_pool.events[i] == event) {
-            if (event_pool.used[i]) {
-                event_pool.used[i] = false;
-                event_pool.count--;
-                printf("Returned event %d to pool, %d/%d in use\n", 
-                       i, event_pool.count, EVENT_POOL_SIZE);
-                return;
-            }
-        }
-    }
-    
-    printf("WARNING: Attempted to return an event not from the pool\n");
-}
-
-void initialize_event_pool(void)
-{
-    memset(&event_pool, 0, sizeof(EventPool));
-    printf("Event pool initialized with %d slots\n", EVENT_POOL_SIZE);
-}
 
 void handle_sigint(int sig)
 {

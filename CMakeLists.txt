@@ -77,3 +77,8 @@ target_compile_options(memory_test PRIVATE -Wall -Wextra -pedantic)
 add_executable(mailbox_test src/core5g/mailbox/mailbox_test.c)
 target_link_libraries(mailbox_test core5g)
 target_compile_options(mailbox_test PRIVATE -Wall -Wextra -pedantic)
+
+################### EVENT POOL TEST EXECUTABLE ##################
+add_executable(event_pool_test src/core5g/event_pool/event_pool_test.c)
+target_link_libraries(event_pool_test core5g)
+target_compile_options(event_pool_test PRIVATE -Wall -Wextra -pedantic)
