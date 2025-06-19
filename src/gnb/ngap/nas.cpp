@@ -140,6 +140,16 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
     // sendNgapUeAssociated(ueId, pdu);
     // sleep for 0.3 seconds.
     usleep(300000);
+    // print the Nas PDU content in hexadecimal format for debugging
+    std::string hexString;
+    char hex[3];
+    for (size_t i = 0; i < nasPdu.length(); i++)
+    {
+        snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(nasPdu.data()[i]));
+        hexString += hex;
+    }
+    m_logger->debug("UplinkNAS PDU content: %s", hexString.c_str());
+    
     deliverDownlinkNasRefactored();
 }
 
@@ -203,7 +213,7 @@ void NgapTask::deliverDownlinkNasRefactored()
         snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(pdu.data()[i]));
         hexString += hex;
     }
-    m_logger->debug("NAS PDU content: %s", hexString.c_str());
+    m_logger->debug("Downlink NAS PDU content: %s", hexString.c_str());
 
     // Push message to RRC task
     auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
@@ -228,6 +238,14 @@ void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
 
     auto *pdu = asn::ngap::NewMessagePdu<ASN_NGAP_UplinkNASTransport>({ieNasPdu});
     // sendNgapUeAssociated(ueId, pdu);
+    std::string hexString;
+    char hex[3];
+    for (size_t i = 0; i < nasPdu.length(); i++)
+    {
+        snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(nasPdu.data()[i]));
+        hexString += hex;
+    }
+    m_logger->debug("Uplink NAS PDU content: %s", hexString.c_str());
 
     if (times <= guard)
     {

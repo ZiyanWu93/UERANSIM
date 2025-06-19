@@ -20,3 +20,5 @@
     - Add a CMakeLists.txt file to the UERANSIM root folder
 
 4. Integrate Mailbox system for the runtime [Commit: ]
+
+5. Add an event listener that can listen to the gNB for integration

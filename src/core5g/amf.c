@@ -5,6 +5,11 @@
 #include "amf.h"
 
 
+/*
+ * generate_auth_req - Generates an Authentication Request NAS message
+ * Input NAS PDU: 7e004179000d0199f9070000000000000000102e0480f080f0 (Initial Registration Request)
+ * Output NAS PDU: 7e005600020000215ca0df8c9bb8dbcf3c2a7dd448da13692010406296993082800030b762455c890b19 (Authentication Request)
+ */
 EVENT_HANDLER(generate_auth_req)
 {
 
@@ -43,6 +48,11 @@ EVENT_HANDLER(generate_auth_req)
 
 
 
+/*
+ * generate_security_cmd - Generates a Security Mode Command NAS message
+ * Input NAS PDU: 7e00572d10ef2770c69e7382aa38e8134f602234e1 (Authentication Response)
+ * Output NAS PDU: 7e0313bf995a007e005d02000480f080f0e1360102 (Security Mode Command)
+ */
 EVENT_HANDLER(generate_security_cmd)
 {
 
@@ -90,6 +100,11 @@ EVENT_HANDLER(generate_security_cmd)
     EVENT_PAYLOAD[offset] = '\0'; // null-terminate
 }
 
+/*
+ * generate_registration_accept - Generates a Registration Accept NAS message
+ * Input NAS PDU: 7e0422e4ee19007e005e7700094573806121856151f17100237e004179000d0199f9070000000000000000101001002e0480f080f02f020101530100 (Security Mode Complete)
+ * Output NAS PDU: 7e027239674c017e0042010177000bf299f907020040c000072754074099f90700000115020101210201005e0192 (Registration Accept)
+ */
 EVENT_HANDLER(generate_registration_accept)
 {
 
@@ -131,6 +146,11 @@ EVENT_HANDLER(generate_registration_accept)
     EVENT_PAYLOAD[offset] = '\0';
 }
 
+/*
+ * generate_configuration_update - Generates a Configuration Update Command NAS message
+ * Input NAS PDU: 7e02469d6a8b017e0043 (Registration Complete)
+ * Output NAS PDU: 7e02de0d22e3027e0054430f90004f00700065006e003500470053450990004e006500780074460a475260903035530a490101 (Configuration Update Command)
+ */
 EVENT_HANDLER(generate_configuration_update)
 {
 
@@ -176,6 +196,11 @@ EVENT_HANDLER(generate_configuration_update)
     EVENT_PAYLOAD[offset] = '\0';
 }
 
+/*
+ * generate_pdu_session_establishment - Generates a PDU Session Establishment Accept message
+ * Input NAS PDU: 7e02ba0292cd027e00670100152e0101c1ffff91a12801007b000780000a00000d00120181220101250908696e7465726e6574 (PDU Session Establishment Request)
+ * Output NAS PDU: 7e02fbd62d81037e00680100472e0101c211000901000631310101ff010603f42403f4242905010a2d00022201017900060120410101097b000f80000d0408080808000d0408080404250908696e7465726e65741201 (PDU Session Establishment Accept)
+ */
 EVENT_HANDLER(generate_pdu_session_establishment)
 {
     /* outer security-protected header */
