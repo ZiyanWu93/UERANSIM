@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include "event.h"
 
 volatile sig_atomic_t keep_running = 1;
@@ -43,6 +44,27 @@ void listen_to_events()
 void exit_condition()
 {
     printf("Exit condition met, exiting...\n");
+}
+
+void trigger_event(int event_id, const char* payload)
+{
+    if (event_id >= 0 && event_id < MAX_EVENTS && routing_table[event_id] != NULL) {
+        // Acquire a new event from the event pool (currently just using the global event_nf)
+        
+        // Populate the event with the provided payload
+        event_nf_ptr->event_id = event_id;
+        strncpy(event_nf_ptr->input_payload, payload, MAX_NAS_HEX_LEN - 1);
+        event_nf_ptr->input_payload[MAX_NAS_HEX_LEN - 1] = '\0'; // Ensure null-termination
+        
+        // Clear output payload
+        memset(event_nf_ptr->output_payload, 0, MAX_NAS_HEX_LEN);
+        
+        printf("Event %d triggered with payload: %s\n", event_id, payload);
+    } else {
+        printf("Invalid event ID %d or no handler registered\n", event_id);
+        // Mark event as discarded
+        event_nf_ptr->event_id = -1;
+    }
 }
 
 void process_events()
