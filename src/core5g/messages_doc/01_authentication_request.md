@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 
 
-
-NAS input
-
-
+```
 Non-Access-Stratum 5GS (NAS)PDU
     Plain NAS 5GS Message
         Extended protocol discriminator: 5G mobility management messages (126)
@@ -64,18 +60,7 @@ Non-Access-Stratum 5GS (NAS)PDU
             .... .0.. = EIA5: Not supported
             .... ..0. = EIA6: Not supported
             .... ...0 = EIA7: Not supported
-
-
-
-=======
-You're generating a **5G NAS Authentication Request** message in plaintext format (i.e., before NAS security is activated). Below is a **step-by-step breakdown** of each field included in your `generate_auth_req()` function, explaining:
-
-* 🔢 **Step number** in the procedure
-* ✅ **Who generates** the field
-* 📌 **What the field means**
-
----
->>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d
+```
 
 ### 📦 Field-by-Field Breakdown with Step Numbers
 
@@ -95,7 +80,6 @@ You're generating a **5G NAS Authentication Request** message in plaintext forma
 
 ### 🧠 Procedure Flow (Step-by-Step)
 
-```
 [1] UE sends Registration Request to gNB → AMF
 [2] AMF identifies UE and queries UDM for authentication method
 [3] UDM delegates authentication to AUSF
@@ -103,7 +87,6 @@ You're generating a **5G NAS Authentication Request** message in plaintext forma
 [5] AUSF returns AV to AMF
 [6] AMF assembles Authentication Request with EPD, msg_type, KSI, ABBA, RAND, AUTN
 [7] AMF sends Authentication Request → UE via gNB
-```
 
 ---
 
@@ -120,7 +103,6 @@ Total length: 16 bytes = 6 + 2 + 8
 * **AMF**: Authentication Management Field (e.g., 0x8000)
 * **MAC**: Message Authentication Code for integrity of the AV
 
-<<<<<<< HEAD
 
 # What happens between
 
@@ -232,16 +214,3 @@ NAS Downlink Transport:
 Finally, the AMF sends the Authentication Request to the UE via the NGAP Downlink NAS Transport procedure.
 
 This entire sequence typically occurs within milliseconds as the AMF rapidly processes the registration request and initiates the authentication procedure to verify the UE's identity.
-
-
-
-=======
----
-
-### ✅ Final Notes
-
-* The message is **unauthenticated and unencrypted**, as it’s sent **before NAS security** is established.
-* Once the UE verifies the AUTN and computes the expected RES, it sends an **Authentication Response** back to the AMF.
-
-Would you like to go deeper into how **AUTN is constructed** using the shared secret key `K`, or how \**RES* is derived by the UE?
->>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d

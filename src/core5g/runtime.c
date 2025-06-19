@@ -126,14 +126,9 @@ void trigger_event(int event_id, const char* payload)
         
         printf("Event %d triggered with payload: %s\n", event_id, payload);
     } else {
+        // raise error
         printf("Invalid event ID %d or no handler registered\n", event_id);
-        
-        // Allocate an event to mark as discarded
-        EventNf* event = allocate_event();
-        if (event != NULL) {
-            event_nf_ptr = event;
-            event_nf_ptr->event_id = -1; // Mark event as discarded
-        }
+        exit(1);
     }
 }
 

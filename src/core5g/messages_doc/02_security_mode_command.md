@@ -44,7 +44,3 @@ Let's break down the **Security Mode Command** generation in 5G NAS, like you di
 
 ---
 
-<<<<<<< HEAD
-=======
-Would you like the **corresponding NAS PDU hex result**, or a visualization (sequence chart) of this interaction?
->>>>>>> 19dedd6f11fed6bb999a611db4bdda4205a2996d

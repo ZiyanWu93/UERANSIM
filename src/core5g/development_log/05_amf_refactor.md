@@ -2,13 +2,8 @@
 
 ## steps
 
-<!-- EVENT_HANDLER(generate_auth_req);
-EVENT_HANDLER(generate_security_cmd);
-EVENT_HANDLER(generate_registration_accept);
-EVENT_HANDLER(generate_configuration_update);
-EVENT_HANDLER(generate_pdu_session_establishment); -->
-
 ### Refactoring for Initial Registration High Level Goal
+
 1. **Refactor generate_auth_req**
 
    **Function Chain:**
@@ -59,7 +54,6 @@ EVENT_HANDLER(generate_pdu_session_establishment); -->
    - `amf_build_pdu_session_establishment_accept()` - Assemble accept message
    - `amf_compute_mac_and_wrap_security_container()` - Apply integrity protection
    - `amf_send_downlink_nas_transport()` - Deliver to gNB
-
 
 ### Steps
 
