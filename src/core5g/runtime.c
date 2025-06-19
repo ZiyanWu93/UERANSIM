@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "event.h"
-#include "event_pool/event_pool.h"
+#include "event_system/event_pool.h"
 
 volatile sig_atomic_t keep_running = 1;
 
