@@ -60,6 +60,9 @@
 1. [X] Create {nf}_actor file for all related network functions
 2. [X] Create related event handler for all the functions above, with EVENT_HANDLER macro; for the implementation, just leave it empty for now.
 3. [X] Group all the actors into actor folder [Commit: f40a308]
-    - create folder, move all the {nf}_actor.c and {nf}_actor.h files into the actor folder
-    - create CMakeLists.txt file in the actor folder
-    - update CMakeLists.txt in the root folder
+    - [X] create folder, move all the {nf}_actor.c and {nf}_actor.h files into the actor folder
+    - [X] create CMakeLists.txt file in the actor folder
+    - [X] update CMakeLists.txt in the root folder
+4. [] Include the input NAS as the input to the event handler from the gNB
+      - make sure the event struct can support this
+      - have evidence that the event handler can read the input NAS
