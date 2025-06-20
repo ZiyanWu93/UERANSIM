@@ -1,7 +1,7 @@
 #ifndef EVENT_POOL_H
 #define EVENT_POOL_H
 
-#include "../event.h"
+#include "../event_system/event.h"
 #include <stdbool.h>
 
 // Event pool configuration

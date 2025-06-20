@@ -25,10 +25,27 @@
 #include <stdexcept>
 #include <ue/nas/enc.hpp>
 #include <unistd.h>
+#include <algorithm>  // For std::min
 #include "core5g/core5g.h"
+#include "core5g/event_system/event.h"
 
 namespace nr::gnb
 {
+
+// Utility function to copy OctetString data - avoids copy assignment issues
+static void copyOctetString(OctetString& dest, const OctetString& src)
+{
+    // Create a new empty OctetString instead of using clear()
+    dest = OctetString();
+    
+    // Copy all bytes from source to destination
+    const int srcLength = src.length();
+    if (srcLength > 0)
+    {
+        for (int i = 0; i < srcLength; i++)
+            dest.appendOctet(src.data()[i]);
+    }
+}
 
 int32_t extractSliceInfoAndModifyPdu(OctetString &nasPdu)
 {
@@ -71,6 +88,10 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
                                          const std::optional<GutiMobileIdentity> &sTmsi)
 {
     int32_t requestedSliceType = extractSliceInfoAndModifyPdu(nasPdu);
+    
+    // Save the initial NAS PDU (registration request)
+    copyOctetString(m_initialUplinkNasPdu, nasPdu);
+    m_logger->debug("Stored initial uplink NAS PDU (registration request), size: %zu bytes", m_initialUplinkNasPdu.length());
 
     m_logger->debug("Initial NAS message received from UE[%d]", ueId);
 
@@ -143,7 +164,8 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
     // print the Nas PDU content in hexadecimal format for debugging
     std::string hexString;
     char hex[3];
-    for (size_t i = 0; i < nasPdu.length(); i++)
+    const int pduLength = nasPdu.length();
+    for (int i = 0; i < pduLength; i++)
     {
         snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(nasPdu.data()[i]));
         hexString += hex;
@@ -179,8 +201,6 @@ void NgapTask::deliverDownlinkNasRefactored()
         const char *description;    // Human-readable description for logging
     };
 
-    
-
     static const NasEntry entries[] = {{generate_auth_req, "Authentication Request"},
                                        {generate_security_cmd, "Security Command"},
                                        {generate_registration_accept, "Registration Accept"},
@@ -194,8 +214,58 @@ void NgapTask::deliverDownlinkNasRefactored()
     }
 
     const NasEntry &entry = entries[times - 1];
+    
+    // Copy the appropriate uplink NAS PDU to the event struct input payload before calling the handler
+    const OctetString* selectedNasPdu = nullptr;
+    switch (times) {
+        case 1: // Authentication Request - needs initial registration request
+            selectedNasPdu = &m_initialUplinkNasPdu;
+            m_logger->debug("Using initial uplink NAS PDU for Authentication Request handler");
+            break;
+        case 2: // Security Command - needs authentication response
+            selectedNasPdu = &m_authRespUplinkNasPdu;
+            m_logger->debug("Using authentication response uplink NAS PDU for Security Command handler");
+            break;
+        case 3: // Registration Accept - needs security mode complete
+            selectedNasPdu = &m_secModeUplinkNasPdu;
+            m_logger->debug("Using security mode complete uplink NAS PDU for Registration Accept handler");
+            break;
+        case 4: // Configuration Update - needs registration complete
+            selectedNasPdu = &m_regCmpUplinkNasPdu;
+            m_logger->debug("Using registration complete uplink NAS PDU for Configuration Update handler");
+            break;
+        case 5: // PDU Session Establishment - needs PDU session request
+            selectedNasPdu = &m_pduReqUplinkNasPdu;
+            m_logger->debug("Using PDU session request uplink NAS PDU for PDU Session Establishment handler");
+            break;
+        default:
+            m_logger->warn("No matching uplink NAS PDU for times=%d", times);
+            break;
+    }
+    
+    // Copy the selected NAS PDU to the event struct's input payload if available
+    if (selectedNasPdu != nullptr && selectedNasPdu->length() > 0) {
+        // Get PDU length and determine how much we can copy safely
+        const int pduLength = selectedNasPdu->length();
+        const int maxLen = MAX_NAS_HEX_LEN - 1;
+        const int copySize = (pduLength < maxLen) ? pduLength : maxLen;
+        
+        memcpy(EVENT_PAYLOAD, selectedNasPdu->data(), static_cast<size_t>(copySize));
+        EVENT_PAYLOAD[copySize] = '\0'; // Ensure null termination for legacy string functions
+        
+        // Set the actual binary length in the event struct
+        event_nf_ptr->input_payload_length = copySize;
+        
+        m_logger->debug("Copied uplink NAS PDU to event input payload, size: %d bytes", copySize);
+    } else {
+        m_logger->warn("No valid uplink NAS PDU available to copy, event will receive empty input");
+        EVENT_PAYLOAD[0] = '\0'; // Empty string
+        event_nf_ptr->input_payload_length = 0; // Set length to zero for empty input
+    }
+    
+    // Call the event handler
     entry.generator();
-    const char *hexPduC = EVENT_PAYLOAD;
+    const char *hexPduC = EVENT_OUTPUT_PAYLOAD;
     std::string hexPdu(hexPduC); // create std::string view for FromHex helper
     m_logger->info("%s Ziyan", entry.description);
 
@@ -208,7 +278,8 @@ void NgapTask::deliverDownlinkNasRefactored()
     // Print the NAS PDU content in hexadecimal format for debugging
     std::string hexString;
     char hex[3];
-    for (size_t i = 0; i < pdu.length(); i++)
+    const int pduLength = pdu.length();
+    for (int i = 0; i < pduLength; i++)
     {
         snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(pdu.data()[i]));
         hexString += hex;
@@ -238,14 +309,42 @@ void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
 
     auto *pdu = asn::ngap::NewMessagePdu<ASN_NGAP_UplinkNASTransport>({ieNasPdu});
     // sendNgapUeAssociated(ueId, pdu);
+    
+    // Format NAS PDU as hex string for logging
     std::string hexString;
     char hex[3];
-    for (size_t i = 0; i < nasPdu.length(); i++)
+    const int pduLength = nasPdu.length();
+    for (int i = 0; i < pduLength; i++)
     {
         snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(nasPdu.data()[i]));
         hexString += hex;
     }
     m_logger->debug("Uplink NAS PDU content: %s", hexString.c_str());
+    
+    // Save the uplink NAS PDU to the appropriate OctetString based on times
+    // Note: Initial registration is handled in handleInitialNasTransport
+    switch (times)
+    {
+        case 2: // Authentication response
+            copyOctetString(m_authRespUplinkNasPdu, nasPdu);
+            m_logger->debug("Stored authentication response uplink NAS PDU, size: %zu bytes", m_authRespUplinkNasPdu.length());
+            break;
+        case 3: // Security mode complete
+            copyOctetString(m_secModeUplinkNasPdu, nasPdu);
+            m_logger->debug("Stored security mode complete uplink NAS PDU, size: %zu bytes", m_secModeUplinkNasPdu.length());
+            break;
+        case 4: // Registration complete
+            copyOctetString(m_regCmpUplinkNasPdu, nasPdu);
+            m_logger->debug("Stored registration complete uplink NAS PDU, size: %zu bytes", m_regCmpUplinkNasPdu.length());
+            break;
+        case 5: // PDU session establishment request
+            copyOctetString(m_pduReqUplinkNasPdu, nasPdu);
+            m_logger->debug("Stored PDU session establishment request uplink NAS PDU, size: %zu bytes", m_pduReqUplinkNasPdu.length());
+            break;
+        default:
+            m_logger->debug("Unhandled times value: %d, not storing uplink NAS PDU", times);
+            break;
+    }
 
     if (times <= guard)
     {

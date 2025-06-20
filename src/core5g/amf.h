@@ -4,7 +4,7 @@
 
 #ifndef AMF_H
 #define AMF_H
-#include "event.h"
+#include "event_system/event.h"
 
 EVENT_HANDLER(generate_auth_req);
 EVENT_HANDLER(generate_security_cmd);

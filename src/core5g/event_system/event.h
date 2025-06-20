@@ -2,11 +2,12 @@
 #define EVENT_H
 
 #include <string.h>
-#define MAX_NAS_HEX_LEN 300             // big enough for the longest hard-coded hex string
+#define MAX_NAS_HEX_LEN 1000             // big enough for the longest hard-coded hex string
 
 typedef struct EventNf {
     int event_id;
     char input_payload[MAX_NAS_HEX_LEN];
+    int input_payload_length;      // Actual binary length of input_payload
     char output_payload[MAX_NAS_HEX_LEN];
 } EventNf;
 

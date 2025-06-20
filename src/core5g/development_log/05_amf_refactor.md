@@ -63,6 +63,11 @@
     - [X] create folder, move all the {nf}_actor.c and {nf}_actor.h files into the actor folder
     - [X] create CMakeLists.txt file in the actor folder
     - [X] update CMakeLists.txt in the root folder
-4. [] Include the input NAS as the input to the event handler from the gNB
-      - make sure the event struct can support this
-      - have evidence that the event handler can read the input NAS
+4. [X] Include the input NAS as the input to the event handler from the gNB
+      - 4.1 [X] make sure the event struct can support this
+      - 4.2 [X] declare five OctetString in nas.cpp
+      - 4.3 [X] copy the nas payload to the five OctetString based on the times variable; if it is initial nas, copy to the first OctetString
+      - 4.4 [X] in deliverDownlinkNasRefactored, copy the nas payload to the event struct input before calling the event handler
+      - 4.5 [X] fix the bug that event handlers do not print the correct input NAS correctly
+5. [X] Currently the event handler can receive the expected input NAS PDU and print it correctly and the output NAS PDU is also correct.
+       - 5.1 [X] Commit it to (commit: 1c71dc2)

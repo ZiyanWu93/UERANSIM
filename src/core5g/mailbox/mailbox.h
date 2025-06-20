@@ -1,7 +1,7 @@
 #ifndef MAILBOX_H
 #define MAILBOX_H
 
-#include "../event.h"
+#include "../event_system/event.h"
 #include "../memory/allocator.h"
 
 // Define mailbox capacity - adjust as needed

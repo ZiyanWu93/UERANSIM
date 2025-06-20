@@ -3,6 +3,7 @@
 //
 
 #include "amf.h"
+#include "event_utils.h"
 
 
 /*
@@ -12,7 +13,9 @@
  */
 EVENT_HANDLER(generate_auth_req)
 {
-
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("generate_auth_req");
+    
     // The call graph that replaces `EVENT_HANDLER(generate_auth_req)` flows through the network-function layers in this order: **amf\_process\_registration\_request() → udm\_decrypt\_suci() → ausf\_initiate\_authentication() → udm\_generate\_5g\_aka\_vector() → ausf\_prepare\_hxres\_star() → amf\_build\_auth\_request\_pdu() → amf\_send\_downlink\_nas\_transport()**.
 
     // `amf_process_registration_request()` parses the plain Registration Request and caches a provisional UE context. `udm_decrypt_suci()` recovers the SUPI from the SUCI using the home-network private key. `ausf_initiate_authentication()` raises a Nausf\_UEAuthentication request that in turn triggers `udm_generate_5g_aka_vector()`, where the RAND, AUTN, XRES\* and Kseaf are calculated from the long-term key K. Back at the AUSF, `ausf_prepare_hxres_star()` stores HXRES\* and returns RAND + AUTN to the AMF. The AMF then calls `amf_build_auth_request_pdu()` to concatenate the header, ABBA, RAND and AUTN fields exactly as in your original snippet, and finally `amf_send_downlink_nas_transport()` wraps that PDU in a Downlink NAS Transport NGAP message and hands it to the gNB for delivery to the UE.
@@ -37,13 +40,13 @@ EVENT_HANDLER(generate_auth_req)
         size_t len = strlen(part);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_PAYLOAD[0] = '\0';
+            EVENT_OUTPUT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_PAYLOAD + offset, part, len);
+        memcpy(EVENT_OUTPUT_PAYLOAD + offset, part, len);
         offset += len;
     }
-    EVENT_PAYLOAD[offset] = '\0'; // null-terminate
+    EVENT_OUTPUT_PAYLOAD[offset] = '\0'; // null-terminate
 }
 
 
@@ -55,6 +58,9 @@ EVENT_HANDLER(generate_auth_req)
  */
 EVENT_HANDLER(generate_security_cmd)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("generate_security_cmd");
+
 
     // The execution path that replaces `EVENT_HANDLER(generate_security_cmd)` stays entirely inside the AMF because, once authentication has succeeded, only the AMF needs to derive keys and create the **Security Mode Command**.  The functions are invoked in this strict order: **amf\_handle\_auth\_response() → amf\_verify\_res\_star() → amf\_derive\_kamf() → amf\_select\_security\_algorithms() → amf\_derive\_nas\_keys() → amf\_build\_security\_mode\_command\_pdu() → amf\_compute\_mac\_and\_wrap\_security\_container() → amf\_send\_downlink\_nas\_transport()**.
 
@@ -91,13 +97,13 @@ EVENT_HANDLER(generate_security_cmd)
         size_t len = strlen(part);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_PAYLOAD[0] = '\0';
+            EVENT_OUTPUT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_PAYLOAD + offset, part, len);
+        memcpy(EVENT_OUTPUT_PAYLOAD + offset, part, len);
         offset += len;
     }
-    EVENT_PAYLOAD[offset] = '\0'; // null-terminate
+    EVENT_OUTPUT_PAYLOAD[offset] = '\0'; // null-terminate
 }
 
 /*
@@ -107,6 +113,9 @@ EVENT_HANDLER(generate_security_cmd)
  */
 EVENT_HANDLER(generate_registration_accept)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("generate_registration_accept");
+
 
     // After the UE returns Security Mode Complete, the AMF continues the mobility-management procedure entirely inside its own process context. First it invokes **amf\_handle\_security\_mode\_complete()**, which flips the UE context to “MM-REGISTER-PENDING” and notes the negotiated NAS algorithms and KAMF. Because the AMF now needs subscription, slice and timer details, it calls **nudm\_get\_subscription\_data()** to fetch the UE’s service profile, authentication status and registration timers from the UDM; that data arrives securely over the service-based Nudm interface. Using the subscription’s slice-selection information, the AMF next triggers **nssf\_select\_allowed\_slices()** so the Network Slice Selection Function can filter and/or reorder the list of Single NSSAI values that are permitted in the current PLMN; the result forms the Allowed NSSAI IE that will appear in the NAS message. With the slice choice settled, **amf\_allocate\_5g\_guti()** constructs a fresh 5G-GUTI by concatenating the serving PLMN identifier, the AMF region and set IDs, and a locally unique temporary mobile identifier; it also compiles the Tracking Area List and decides on the T3512 periodic-registration timer, honouring any policy hints received from the PCF. Now the actual NAS payload is produced by **amf\_build\_registration\_accept\_pdu()**, which strings together the inner plain-NAS header “7e00”, the message-type byte “42”, the Registration-Result IE, the GUTI IE, the TAI list, the Allowed NSSAI, the Network-Feature-Support IE and the T3512 timer exactly as in your original C arrays. Because the UE is already in secured NAS mode, **amf\_compute\_mac\_and\_wrap\_security\_container()** wraps this plaintext in a security container: it prepends the outer header “7e02”, computes the 32-bit MAC with KNASint, inserts an incremented sequence number “01” and records that SQN for replay detection. Finally, **amf\_send\_downlink\_nas\_transport()** places the completed hex string in the NAS-PDU field of a Downlink NAS Transport NGAP message and hands it to the gNB, which delivers the Registration Accept to the UE and moves the UE context to the “MM-REGISTERED” state.
 
@@ -137,13 +146,13 @@ EVENT_HANDLER(generate_registration_accept)
         size_t len = strlen(parts[i]);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_PAYLOAD[0] = '\0';
+            EVENT_OUTPUT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_PAYLOAD + offset, parts[i], len);
+        memcpy(EVENT_OUTPUT_PAYLOAD + offset, parts[i], len);
         offset += len;
     }
-    EVENT_PAYLOAD[offset] = '\0';
+    EVENT_OUTPUT_PAYLOAD[offset] = '\0';
 }
 
 /*
@@ -153,6 +162,9 @@ EVENT_HANDLER(generate_registration_accept)
  */
 EVENT_HANDLER(generate_configuration_update)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("generate_configuration_update");
+
 
     //     When the AMF receives the NAS **PDU Session Establishment Request** from the UE, it first passes control to `amf_handle_pdu_session_establishment_request()`, which validates the request and calls `amf_select_smf()` to discover a suitable SMF instance via NRF.  `amf_select_smf()` itself issues an **Nnrf\_Discover** query, then invokes the **Nsmf\_PDUSession\_CreateSMContext** service operation on the chosen SMF; the asynchronous result returns a provisional SM-context reference.  Directly afterward the AMF asks the NSSF to verify that the requested Single NSSAI can be served in the current tracking area by calling `nssf_select_allowed_slices()`; if the slice is admitted, the AMF proceeds.
 
@@ -187,13 +199,13 @@ EVENT_HANDLER(generate_configuration_update)
         size_t len = strlen(parts[i]);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_PAYLOAD[0] = '\0';
+            EVENT_OUTPUT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_PAYLOAD + offset, parts[i], len);
+        memcpy(EVENT_OUTPUT_PAYLOAD + offset, parts[i], len);
         offset += len;
     }
-    EVENT_PAYLOAD[offset] = '\0';
+    EVENT_OUTPUT_PAYLOAD[offset] = '\0';
 }
 
 /*
@@ -203,6 +215,9 @@ EVENT_HANDLER(generate_configuration_update)
  */
 EVENT_HANDLER(generate_pdu_session_establishment)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("generate_pdu_session_establishment");
+
     /* outer security-protected header */
     char outer_hdr[] = "7e02"; /* EPD 0x7e, integrity-protected & ciphered (2) */
     char mac[] = "fbd62d81";   /* message authentication code                  */
@@ -240,11 +255,11 @@ EVENT_HANDLER(generate_pdu_session_establishment)
         size_t len = strlen(parts[i]);
         if (off + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_PAYLOAD[0] = '\0';
+            EVENT_OUTPUT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_PAYLOAD + off, parts[i], len);
+        memcpy(EVENT_OUTPUT_PAYLOAD + off, parts[i], len);
         off += len;
     }
-    EVENT_PAYLOAD[off] = '\0';
+    EVENT_OUTPUT_PAYLOAD[off] = '\0';
 }

@@ -3,8 +3,9 @@
 // Created on 2025-06-18
 //
 
-#include "../event.h"
+#include "../event_system/event.h"
 #include "../amf.h"
+#include "../event_utils.h"
 
 // ----------------------------------------------------------------------------------
 // Authentication Request Functions
@@ -13,6 +14,9 @@
 // Authentication Request - First step in registration sequence
 EVENT_HANDLER(amf_process_registration_request)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("amf_process_registration_request");
+    
     // Parse registration request and cache provisional UE context
     // To be implemented
 }
@@ -31,6 +35,9 @@ EVENT_HANDLER(amf_build_auth_request_pdu)
 // Security Command - Process UE Authentication Response
 EVENT_HANDLER(amf_handle_auth_response)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("amf_handle_auth_response");
+    
     // Process the Authentication Response from UE
     // To be implemented
 }
@@ -84,6 +91,9 @@ EVENT_HANDLER(amf_compute_mac_and_wrap_security_container)
 // Registration Accept - Process Security Mode Complete
 EVENT_HANDLER(amf_handle_security_mode_complete)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("amf_handle_security_mode_complete");
+    
     // Process security mode complete message
     // To be implemented
 }
@@ -155,6 +165,9 @@ EVENT_HANDLER(amf_build_configuration_update_pdu)
 // PDU Session - Process Establishment Request
 EVENT_HANDLER(amf_handle_pdu_session_establishment_request)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("amf_handle_pdu_session_establishment_request");
+    
     // Process PDU session request
     // To be implemented
 }
@@ -180,6 +193,9 @@ EVENT_HANDLER(amf_build_pdu_session_establishment_accept)
 // Common - Send to gNB
 EVENT_HANDLER(amf_send_downlink_nas_transport)
 {
+    // Print the input NAS PDU using the shared utility function
+    print_event_input_payload("amf_send_downlink_nas_transport");
+    
     // Wrap PDU in Downlink NAS Transport NGAP message for gNB
     // To be implemented
 }

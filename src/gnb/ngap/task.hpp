@@ -56,6 +56,13 @@ class NgapTask : public NtsTask
     uint32_t m_downlinkTeidCounter;
     bool m_isInitialized;
 
+    // NAS PDU storage for uplink requests
+    OctetString m_initialUplinkNasPdu;    // For initial registration request
+    OctetString m_authRespUplinkNasPdu;  // For authentication response
+    OctetString m_secModeUplinkNasPdu;   // For security mode complete
+    OctetString m_regCmpUplinkNasPdu;    // For registration complete
+    OctetString m_pduReqUplinkNasPdu;    // For PDU session establishment request
+
     friend class GnbCmdHandler;
 
   public:
