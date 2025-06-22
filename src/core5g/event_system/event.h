@@ -20,4 +20,12 @@ typedef void (*event_handler_t)();
 #define EVENT_PAYLOAD event_nf_ptr->input_payload
 #define EVENT_OUTPUT_PAYLOAD event_nf_ptr->output_payload
 
+// NAS Event Type Definitions
+// These events simulate uplink NAS messages from UE
+#define EVENT_NAS_REGISTRATION_REQUEST     100
+#define EVENT_NAS_AUTH_RESPONSE           101
+#define EVENT_NAS_SECURITY_MODE_COMPLETE  102
+#define EVENT_NAS_REGISTRATION_COMPLETE   103
+#define EVENT_NAS_PDU_SESSION_REQUEST     104
+
 #endif //EVENT_H

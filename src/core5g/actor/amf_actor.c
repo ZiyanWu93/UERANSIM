@@ -18,7 +18,9 @@ EVENT_HANDLER(amf_process_registration_request)
     print_event_input_payload("amf_process_registration_request");
     
     // Parse registration request and cache provisional UE context
-    // To be implemented
+    // For now, directly generate the authentication request
+    extern void generate_auth_req(void);
+    generate_auth_req();
 }
 
 // Authentication Request - Build PDU
@@ -39,7 +41,9 @@ EVENT_HANDLER(amf_handle_auth_response)
     print_event_input_payload("amf_handle_auth_response");
     
     // Process the Authentication Response from UE
-    // To be implemented
+    // For now, directly generate the security command
+    extern void generate_security_cmd(void);
+    generate_security_cmd();
 }
 
 // Security Command - Verify RES*
@@ -95,7 +99,9 @@ EVENT_HANDLER(amf_handle_security_mode_complete)
     print_event_input_payload("amf_handle_security_mode_complete");
     
     // Process security mode complete message
-    // To be implemented
+    // For now, directly generate the registration accept
+    extern void generate_registration_accept(void);
+    generate_registration_accept();
 }
 
 // Registration Accept - Verify UE Security Capabilities
@@ -141,7 +147,9 @@ EVENT_HANDLER(amf_build_registration_accept_pdu)
 EVENT_HANDLER(amf_handle_configuration_update_trigger)
 {
     // Process configuration update trigger
-    // To be implemented
+    // For now, directly generate the configuration update
+    extern void generate_configuration_update(void);
+    generate_configuration_update();
 }
 
 // Configuration Update - Prepare Network Parameters
@@ -169,7 +177,9 @@ EVENT_HANDLER(amf_handle_pdu_session_establishment_request)
     print_event_input_payload("amf_handle_pdu_session_establishment_request");
     
     // Process PDU session request
-    // To be implemented
+    // For now, directly generate the PDU session establishment accept
+    extern void generate_pdu_session_establishment(void);
+    generate_pdu_session_establishment();
 }
 
 // PDU Session - Select SMF

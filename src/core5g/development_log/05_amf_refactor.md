@@ -71,3 +71,6 @@
       - 4.5 [X] fix the bug that event handlers do not print the correct input NAS correctly
 5. [X] Currently the event handler can receive the expected input NAS PDU and print it correctly and the output NAS PDU is also correct.
        - 5.1 [X] Commit it to (commit: 1c71dc2)
+6. [] Make the runtime able to schedule the computation of the Whole process of the Initial Registration and PDU Session Establishment independent of the gNB and UE
+    - 6.1 [] Make the runtime simulate the event (corresponding to the one associated with uplink NAS transport, with the payload of NAS PDU)
+    - 6.2 [] Able to schedule the computation in a way that the output NAS PDU is correct
