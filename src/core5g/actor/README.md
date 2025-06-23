@@ -1,5 +1,7 @@
 # Actor Framework
 
+*Part of [Core5G](../overview.md) > Actor Framework*
+
 ## Overview
 
 The Actor framework implements network functions (NFs) as independent actors in the Core5G system. Each actor represents a specific 5G network function (AMF, SMF, UDM, AUSF) and processes events according to 3GPP specifications. The framework provides a clean abstraction for network function implementation with event-driven processing and message-based communication.
@@ -116,28 +118,16 @@ Each init function:
 
 ### Event Handler Pattern
 
-All event handlers follow this pattern:
-```c
-void nf_handle_event_type(void) {
-    // 1. Parse input from EVENT_PAYLOAD
-    char* nas_pdu = EVENT_PAYLOAD;
-    
-    // 2. Process according to 3GPP specs
-    // ... implementation ...
-    
-    // 3. Generate response
-    char response[MAX_NAS_PDU_SIZE];
-    generate_response(response);
-    
-    // 4. Write output to EVENT_PAYLOAD
-    strcpy(EVENT_PAYLOAD, response);
-    
-    // 5. Optionally trigger follow-up events
-    if (need_authentication) {
-        trigger_event(EVENT_REQUEST_AUTHENTICATION, context);
-    }
-}
-```
+Event handlers follow a standardized pattern for consistency and maintainability. 
+For detailed handler implementation guidelines and best practices, see the 
+[Runtime Module documentation](../runtime/README.md#handler-best-practices).
+
+Key handler requirements:
+- Access event data via `EVENT_PAYLOAD` macro
+- Process according to 3GPP specifications  
+- Modify payload in-place for responses
+- Use `trigger_event()` for follow-up events
+- Keep execution time under 1ms
 
 ### Message Generation
 
@@ -302,3 +292,10 @@ void test_authentication_flow(void) {
 - Inter-NF secure communication
 - Configuration management
 - Metrics and monitoring
+
+## See Also
+
+- [Core5G Overview](../overview.md) - System architecture and component overview
+- [Event System](../event_system/README.md) - Event definitions and handling
+- [Runtime Module](../runtime/README.md) - Handler registration and execution
+- [Mailbox System](../mailbox/README.md) - Inter-actor communication mechanisms

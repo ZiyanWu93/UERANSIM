@@ -1,5 +1,7 @@
 # Event System
 
+*Part of [Core5G](../overview.md) > Event System*
+
 ## Overview
 
 The Event System is the core message processing infrastructure of Core5G, providing event definitions, memory management, and utilities for handling NAS (Non-Access Stratum) messages. It implements a type-safe, efficient event handling mechanism with pre-allocated memory pools for predictable performance.
@@ -35,16 +37,21 @@ The Event System is the core message processing infrastructure of Core5G, provid
 ### EventNf Definition
 
 ```c
-typedef struct {
-    int event_id;           // Event type identifier
-    char payload[2048];     // Event payload (hex-encoded NAS PDU)
+#define MAX_NAS_HEX_LEN 1000    // Maximum hex string length
+
+typedef struct EventNf {
+    int event_id;                          // Event type identifier
+    char input_payload[MAX_NAS_HEX_LEN];   // Event payload (hex-encoded NAS PDU)
+    int input_payload_length;              // Actual binary length of input_payload
 } EventNf;
 ```
 
-The payload field contains:
-- For NAS events: Hex-encoded NAS PDU
-- For internal events: Application-specific data
-- For responses: Modified/generated NAS PDU
+The structure fields:
+- **event_id**: Identifies the event type (e.g., EVENT_NAS_REGISTRATION_REQUEST)
+- **input_payload**: Contains hex-encoded NAS PDU or application-specific data
+- **input_payload_length**: Tracks the actual binary length of the payload
+
+Note: The payload is used for both input and output - handlers modify it in-place.
 
 ### Event Types
 
@@ -369,3 +376,10 @@ Typical performance metrics:
 - Lock-free pool implementation
 - Event batching
 - Hardware acceleration for NAS parsing
+
+## See Also
+
+- [Core5G Overview](../overview.md) - High-level architecture and design principles
+- [Runtime Module](../runtime/README.md) - Event processing and dispatch mechanisms
+- [Actor Framework](../actor/README.md) - Network function implementations using events
+- [Memory Management](../memory/README.md) - Understanding pool allocation strategies

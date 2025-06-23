@@ -1,5 +1,7 @@
 # Mailbox System
 
+*Part of [Core5G](../overview.md) > Mailbox System*
+
 ## Overview
 
 The Mailbox system provides a high-performance, thread-safe message queue for inter-actor communication in Core5G. It implements a circular buffer with integrated memory management, enabling zero-copy message passing between system components. The mailbox serves as the central communication hub for event-driven processing.
@@ -457,3 +459,10 @@ mailbox_stats_t mailbox_get_stats(const Mailbox* mbox);
 // Callbacks
 void mailbox_set_full_callback(Mailbox* mbox, void (*cb)(void));
 ```
+
+## See Also
+
+- [Core5G Overview](../overview.md) - System architecture and design principles
+- [Event System](../event_system/README.md) - EventNf structure and usage
+- [Memory Management](../memory/README.md) - Pool allocator implementation details
+- [Runtime Module](../runtime/README.md) - Event processing flow and integration

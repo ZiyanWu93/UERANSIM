@@ -1,5 +1,7 @@
 # Memory Management
 
+*Part of [Core5G](../overview.md) > Memory Management*
+
 ## Overview
 
 The Memory Management module provides efficient, predictable memory allocation for the Core5G system. It implements a pool-based allocation strategy that eliminates dynamic memory allocation overhead, prevents fragmentation, and ensures deterministic performance. The module includes a generic allocator interface and a high-performance pool allocator implementation.
@@ -507,3 +509,9 @@ void* pool_alloc_lockfree(PoolAllocator* pool) {
 - Machine learning for pool size prediction
 - Automatic pool tuning based on workload
 - Integration with kernel memory management
+
+## See Also
+
+- [Core5G Overview](../overview.md) - Memory efficiency design principles
+- [Event System](../event_system/README.md) - Event pool implementation example
+- [Mailbox System](../mailbox/README.md) - Integrated memory management usage
