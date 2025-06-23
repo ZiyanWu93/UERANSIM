@@ -64,21 +64,7 @@ target_compile_options(nr-cli PRIVATE -Wall -Wextra -pedantic)
 target_link_libraries(nr-cli common-lib)
 
 ################### 5G Core EXECUTABLE ##################
-add_executable(runtime src/core5g/runtime.c)
-target_link_libraries(runtime core5g)
-target_compile_options(runtime PRIVATE -Wall -Wextra -pedantic)
+# Runtime executable is built in src/core5g/runtime subdirectory
 
-################### MEMORY TEST EXECUTABLE ##################
-add_executable(memory_test src/core5g/memory/memory_test.c)
-target_link_libraries(memory_test core5g)
-target_compile_options(memory_test PRIVATE -Wall -Wextra -pedantic)
-
-################### MAILBOX TEST EXECUTABLE ##################
-add_executable(mailbox_test src/core5g/mailbox/mailbox_test.c)
-target_link_libraries(mailbox_test core5g)
-target_compile_options(mailbox_test PRIVATE -Wall -Wextra -pedantic)
-
-################### EVENT SYSTEM TEST EXECUTABLE ##################
-add_executable(event_system_test src/core5g/event_system/event_system_test.c)
-target_link_libraries(event_system_test core5g)
-target_compile_options(event_system_test PRIVATE -Wall -Wextra -pedantic)
+################### TEST EXECUTABLES ##################
+# Test executables are built in their respective module directories

@@ -2,8 +2,8 @@
 #define CORE5G_RUNTIME_H
 
 #include <signal.h>
-#include "event_system/event.h"
-#include "mailbox/mailbox.h"
+#include "../event_system/event.h"
+#include "../mailbox/mailbox.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -4,10 +4,10 @@
 #include <string.h>
 #include <unistd.h>  // For usleep
 #include "runtime.h"
-#include "event_system/event.h"
-#include "event_system/event_pool.h"
-#include "mailbox/mailbox.h"
-#include "actor/amf_actor.h"
+#include "../event_system/event.h"
+#include "../event_system/event_pool.h"
+#include "../mailbox/mailbox.h"
+#include "../actor/amf_actor.h"
 
 volatile sig_atomic_t keep_running = 1;
 // Global mailbox for event queue

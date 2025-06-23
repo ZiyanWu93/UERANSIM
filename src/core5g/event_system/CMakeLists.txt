@@ -1,6 +1,23 @@
-file(GLOB HDR_FILES *.h)
-file(GLOB SRC_FILES *.c)
-list(REMOVE_ITEM SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/event_system_test.c")
+# Event System module
+add_library(event_system STATIC
+    event.c
+    event.h
+    event_pool.c
+    event_pool.h
+)
 
-# Add the source files to the core5g library
-# This is handled by the parent CMakeLists.txt that collects all .c files
+target_include_directories(event_system PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+# Event system test executable
+add_executable(event_system_test event_system_test.c)
+target_link_libraries(event_system_test
+    event_system
+)
+
+# Event pool test executable
+add_executable(event_pool_test event_pool_test.c)
+target_link_libraries(event_pool_test
+    event_system
+)
