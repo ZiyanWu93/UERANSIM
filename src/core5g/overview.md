@@ -17,7 +17,7 @@ Core5G is a new high-performance 5G core network implementation for UERANSIM, de
 
 #### 1. Event System (`event_system/`)
 The heart of the processing pipeline, handling NAS message events:
-- **EventNf Structure**: Core event data containing event ID and input payload (hex-encoded NAS PDU)
+- **EventNf Structure**: Core event data structure (see [EventNf definition](event_system/README.md#eventnf-definition))
 - **Event Types**: Registration, Authentication, Security Mode, PDU Session events
 - **Event Pool**: Memory management for event objects
 - **Utilities**: Helper functions for event debugging and logging
@@ -33,11 +33,11 @@ Inter-actor communication mechanism:
 For detailed information about the mailbox system, see [mailbox/README.md](mailbox/README.md).
 
 #### 3. Runtime (`runtime/`)
-Main execution environment:
-- **Event Loop**: Continuous processing with signal handling
-- **Routing Table**: Maps events to handler functions (200 max routes)
-- **Event Dispatcher**: Routes events to appropriate handlers
-- **Lifecycle Management**: Initialization and cleanup procedures
+Generic event-driven framework providing infrastructure:
+- **Event Loop**: Pluggable event sources and flexible exit conditions
+- **Routing Table**: Dynamic handler registration without coupling
+- **Event Dispatcher**: Routes events with error handling and statistics
+- **Framework APIs**: Event sources, exit conditions, handler registrars
 
 For detailed information about the runtime system, see [runtime/README.md](runtime/README.md).
 
@@ -66,7 +66,13 @@ For detailed information about the actor framework and network functions, see [a
 
 ## Runtime Architecture
 
-The runtime module serves as the central orchestrator for the Core5G system, implementing an event-driven execution environment with single-threaded, cooperative multitasking for predictable performance.
+The runtime module provides a generic, decoupled event-driven framework that serves as infrastructure for the Core5G system. It implements a pluggable architecture where actors, event sources, and exit conditions can be registered without the runtime having any knowledge of their specific functionality.
+
+Key features:
+- **Pluggable Event Sources**: External sources poll for events and trigger them
+- **Dynamic Handler Registration**: Actors register handlers through registrar functions
+- **Flexible Exit Conditions**: Multiple conditions can trigger graceful shutdown
+- **Built-in Monitoring**: Statistics and error handling without intrusion
 
 For detailed information about the runtime module, including architecture, API reference, integration guidelines, and performance characteristics, see [runtime/README.md](runtime/README.md).
 

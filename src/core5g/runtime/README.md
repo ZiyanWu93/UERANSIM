@@ -1,5 +1,7 @@
 # Runtime Module
 
+*Part of [Core5G](../overview.md) > Runtime Module*
+
 ## Overview
 
 The Runtime module is the central orchestrator of the Core5G system, implementing an event-driven execution environment that manages the lifecycle of network function actors, event processing, and system resources. It provides a single-threaded, cooperative multitasking framework designed for predictable performance and efficient resource utilization.
@@ -38,25 +40,79 @@ while (!check_exit_conditions()) {
 
 ## API Reference
 
-### Public Functions
+### Core Functions
 
 #### `void runtime(void)`
 Main entry point for the runtime system.
-- Initializes all subsystems
+- Registers built-in exit conditions (signal handler)
+- Calls all handler registrars
+- Initializes event pool and mailbox
 - Runs the event loop
-- Handles cleanup on exit
+- Handles cleanup and prints statistics on exit
 
 #### `void trigger_event(int event_id, const char* payload)`
 Enqueues a new event for processing.
 - **event_id**: Numeric identifier for the event type
 - **payload**: Hex-encoded NAS PDU data
+- Validates event ID and handler registration
 - Creates an EventNf structure and adds it to the mailbox
+- Tracks dropped events if mailbox is full
 
 #### `int register_event_handler(int event_id, event_handler_t handler)`
 Registers a handler function for a specific event type.
 - **event_id**: Event type to handle (must be < MAX_EVENTS)
 - **handler**: Function pointer to the handler
 - Returns: 0 on success, -1 on error
+
+### Event Source Management
+
+#### `int register_event_source(const char* name, event_source_fn fn)`
+Registers an event source that will be polled during listen_to_events.
+- **name**: Descriptive name for the event source
+- **fn**: Function to call for polling events
+- Returns: 0 on success, -1 if maximum sources reached (MAX_EVENT_SOURCES)
+
+#### `int set_event_source_enabled(const char* name, bool enabled)`
+Enable or disable an event source by name.
+- **name**: Name of the event source
+- **enabled**: true to enable, false to disable
+- Returns: 0 on success, -1 if source not found
+
+### Exit Condition Management
+
+#### `int register_exit_condition(const char* name, exit_condition_fn fn)`
+Registers an exit condition that will be checked in the main loop.
+- **name**: Descriptive name for the exit condition
+- **fn**: Function that returns true when runtime should exit
+- Returns: 0 on success, -1 if maximum conditions reached (MAX_EXIT_CONDITIONS)
+- Built-in "signal" condition is registered automatically
+
+### Handler Registration
+
+#### `int register_handler_registrar(handler_registrar_fn fn)`
+Registers a handler registrar function to be called during initialization.
+- **fn**: Function that registers event handlers
+- Returns: 0 on success, -1 if maximum registrars reached (MAX_HANDLER_REGISTRARS)
+- Allows modules to register handlers without coupling to runtime
+
+### Error Handling
+
+#### `void set_error_handler(error_handler_fn fn)`
+Sets a custom error handler for runtime errors.
+- **fn**: Error handler function (NULL to use default)
+- Default handler prints to stderr
+
+### Monitoring
+
+#### `RuntimeStats* get_runtime_stats(void)`
+Returns pointer to runtime statistics structure.
+- **events_processed**: Total events successfully processed
+- **events_dropped**: Events dropped due to full mailbox
+- **handler_errors**: Invalid events or missing handlers
+- **max_queue_depth**: Maximum queue depth observed
+- **current_queue_depth**: Current number of queued events
+
+### Utility Functions
 
 #### `event_handler_t* get_routing_table(void)`
 Returns pointer to the routing table for direct access.
@@ -68,24 +124,25 @@ Returns pointer to the global event mailbox.
 - Enables direct mailbox operations
 - Used for advanced event management
 
-### Handler Functions
+### Internal Functions
 
 #### `void register_handlers(void)`
-Called during initialization to register all event handlers.
-- Currently empty - handlers register themselves
-- Can be extended for static handler registration
+Called during initialization to execute all handler registrars.
+- Iterates through registered handler registrar functions
+- Each registrar is responsible for calling register_event_handler()
 
 #### `void listen_to_events(void)`
-Abstraction point for external event sources.
-- Monitors network interfaces
-- Checks timers
-- Polls user input
-- Converts external data to events via `trigger_event()`
+Polls all enabled event sources.
+- Iterates through registered event sources
+- Calls poll function for each enabled source
+- Sources are responsible for calling trigger_event()
 
 #### `void process_events(void)`
 Processes all events in the mailbox queue.
+- Updates queue depth statistics
 - Pops events from mailbox
-- Dispatches to appropriate handlers
+- Dispatches to handlers via routing table
+- Handles errors for invalid events
 - Returns events to memory pool
 
 ## Event Processing Flow
@@ -116,23 +173,42 @@ Handlers can trigger additional events:
 
 ## Exit Conditions
 
-The runtime supports flexible termination through user-defined exit condition functions:
+The runtime supports flexible termination through registered exit condition functions. The main loop continues until any exit condition returns true.
 
 ### Exit Condition Function Signature
 ```c
-bool exit_condition_function(void) {
+typedef bool (*exit_condition_fn)(void);
+
+bool my_exit_condition(void) {
     // Check condition
     return true;   // Request exit
     return false;  // Continue running
 }
 ```
 
-### Common Exit Conditions
-- **Signal Handlers**: SIGINT/SIGTERM for graceful shutdown
-- **Resource Limits**: Memory or event pool exhaustion
-- **Error States**: Critical failures requiring termination
+### Built-in Exit Conditions
+- **Signal Handler**: Automatically registered as "signal" condition
+  - Responds to SIGINT (Ctrl+C)
+  - Sets keep_running flag to 0
+
+### Registering Exit Conditions
+```c
+// Register a timeout condition
+bool timeout_condition(void) {
+    static time_t start = 0;
+    if (start == 0) start = time(NULL);
+    return (time(NULL) - start) > 3600;  // Exit after 1 hour
+}
+
+register_exit_condition("timeout", timeout_condition);
+```
+
+### Common Exit Condition Patterns
 - **Time Limits**: Maximum runtime duration
-- **User Commands**: Interactive shutdown requests
+- **Event Counts**: Exit after processing N events
+- **Resource Limits**: Memory or event pool exhaustion
+- **Error Thresholds**: Too many consecutive errors
+- **External Triggers**: File existence, network conditions
 
 ## Memory Management
 
@@ -205,13 +281,18 @@ bool exit_condition_function(void) {
 
 ### Compile-Time Settings
 - `MAX_EVENTS`: Maximum number of event types (default: 200)
+- `MAX_EVENT_SOURCES`: Maximum registered event sources (default: 32)
+- `MAX_EXIT_CONDITIONS`: Maximum exit conditions (default: 16)
+- `MAX_HANDLER_REGISTRARS`: Maximum handler registrars (default: 32)
 - Mailbox size configured in mailbox module
 - Memory pool size set during initialization
 
 ### Runtime Configuration
-- Handlers registered dynamically
-- Exit conditions user-defined
-- Event sources pluggable
+- Handlers registered dynamically via registrars
+- Exit conditions registered at startup
+- Event sources pluggable and can be enabled/disabled
+- Error handlers can be customized
+- Statistics available for monitoring
 
 ## Debugging
 
@@ -233,37 +314,122 @@ bool exit_condition_function(void) {
 
 ## Example Usage
 
-### Basic Handler Registration
+### Complete Actor Integration
 ```c
+// actor_example.c
+
 // Define handler
-void handle_registration_request(void) {
-    // Process EVENT_PAYLOAD
-    char* nas_pdu = EVENT_PAYLOAD;
-    // Generate response
-    strcpy(EVENT_PAYLOAD, "response_pdu_hex");
+void handle_my_event(void) {
+    // Access event data
+    char* payload = EVENT_PAYLOAD;
+    int event_id = EVENT_ID;
+    
+    // Process event
+    printf("Processing event %d with payload: %s\n", event_id, payload);
+    
+    // Modify payload for response
+    strcpy(EVENT_PAYLOAD, "response_data");
+    
+    // Trigger follow-up event if needed
+    trigger_event(NEXT_EVENT_ID, "follow_up_data");
 }
 
-// Register during initialization
-void register_my_handlers(void) {
-    register_event_handler(EVENT_NAS_REGISTRATION_REQUEST, 
-                          handle_registration_request);
+// Handler registration function
+void my_actor_register_handlers(void) {
+    register_event_handler(MY_EVENT_ID, handle_my_event);
+    register_event_handler(OTHER_EVENT_ID, handle_other_event);
+}
+
+// Initialize actor
+void my_actor_init(void) {
+    // Register our handler registrar
+    register_handler_registrar(my_actor_register_handlers);
 }
 ```
 
-### Triggering Events
+### Event Source Integration
 ```c
-// From external source
-void on_nas_message_received(const char* hex_pdu) {
-    trigger_event(EVENT_NAS_REGISTRATION_REQUEST, hex_pdu);
+// event_source_example.c
+
+// Poll function for external events
+void network_event_source(void) {
+    // Check for incoming data (non-blocking)
+    if (has_network_data()) {
+        char* data = read_network_data();
+        int event_type = determine_event_type(data);
+        trigger_event(event_type, data);
+    }
+}
+
+// Timer event source
+void timer_event_source(void) {
+    static time_t last_tick = 0;
+    time_t now = time(NULL);
+    
+    if (now - last_tick >= 10) {  // Every 10 seconds
+        trigger_event(TIMER_TICK_EVENT, "tick");
+        last_tick = now;
+    }
+}
+
+// Register event sources
+void init_event_sources(void) {
+    register_event_source("network", network_event_source);
+    register_event_source("timer", timer_event_source);
 }
 ```
 
-### Custom Exit Condition
+### Custom Exit Conditions
 ```c
-bool check_timeout(void) {
-    static time_t start_time = 0;
-    if (start_time == 0) start_time = time(NULL);
-    return (time(NULL) - start_time) > 3600; // Exit after 1 hour
+// exit_conditions.c
+
+// Exit after processing N events
+bool event_count_exit(void) {
+    RuntimeStats* stats = get_runtime_stats();
+    return stats->events_processed >= 10000;
+}
+
+// Exit on error threshold
+bool error_threshold_exit(void) {
+    RuntimeStats* stats = get_runtime_stats();
+    return stats->handler_errors > 100;
+}
+
+// Exit on file existence
+bool file_trigger_exit(void) {
+    return access("/tmp/stop_runtime", F_OK) == 0;
+}
+
+// Register exit conditions
+void setup_exit_conditions(void) {
+    register_exit_condition("event_count", event_count_exit);
+    register_exit_condition("error_threshold", error_threshold_exit);
+    register_exit_condition("file_trigger", file_trigger_exit);
+}
+```
+
+### Main Application
+```c
+// main.c
+
+int main(int argc, char* argv[]) {
+    // Initialize actors
+    amf_actor_init();
+    smf_actor_init();
+    
+    // Initialize event sources
+    init_event_sources();
+    
+    // Setup custom exit conditions
+    setup_exit_conditions();
+    
+    // Optionally set custom error handler
+    set_error_handler(my_error_handler);
+    
+    // Run the runtime
+    runtime();
+    
+    return 0;
 }
 ```
 
@@ -281,3 +447,11 @@ bool check_timeout(void) {
 - Lock-free data structures
 - NUMA-aware memory allocation
 - Hardware event acceleration
+
+## See Also
+
+- [Core5G Overview](../overview.md) - Overall system architecture
+- [Event System](../event_system/README.md) - Event types and structures
+- [Actor Framework](../actor/README.md) - Handler implementations
+- [Mailbox System](../mailbox/README.md) - Event queue management
+- [Memory Management](../memory/README.md) - Resource allocation strategies
