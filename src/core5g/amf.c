@@ -40,13 +40,13 @@ EVENT_HANDLER(generate_auth_req)
         size_t len = strlen(part);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_OUTPUT_PAYLOAD[0] = '\0';
+            EVENT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_OUTPUT_PAYLOAD + offset, part, len);
+        memcpy(EVENT_PAYLOAD + offset, part, len);
         offset += len;
     }
-    EVENT_OUTPUT_PAYLOAD[offset] = '\0'; // null-terminate
+    EVENT_PAYLOAD[offset] = '\0'; // null-terminate
 }
 
 
@@ -97,13 +97,13 @@ EVENT_HANDLER(generate_security_cmd)
         size_t len = strlen(part);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_OUTPUT_PAYLOAD[0] = '\0';
+            EVENT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_OUTPUT_PAYLOAD + offset, part, len);
+        memcpy(EVENT_PAYLOAD + offset, part, len);
         offset += len;
     }
-    EVENT_OUTPUT_PAYLOAD[offset] = '\0'; // null-terminate
+    EVENT_PAYLOAD[offset] = '\0'; // null-terminate
 }
 
 /*
@@ -146,13 +146,13 @@ EVENT_HANDLER(generate_registration_accept)
         size_t len = strlen(parts[i]);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_OUTPUT_PAYLOAD[0] = '\0';
+            EVENT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_OUTPUT_PAYLOAD + offset, parts[i], len);
+        memcpy(EVENT_PAYLOAD + offset, parts[i], len);
         offset += len;
     }
-    EVENT_OUTPUT_PAYLOAD[offset] = '\0';
+    EVENT_PAYLOAD[offset] = '\0';
 }
 
 /*
@@ -199,13 +199,13 @@ EVENT_HANDLER(generate_configuration_update)
         size_t len = strlen(parts[i]);
         if (offset + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_OUTPUT_PAYLOAD[0] = '\0';
+            EVENT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_OUTPUT_PAYLOAD + offset, parts[i], len);
+        memcpy(EVENT_PAYLOAD + offset, parts[i], len);
         offset += len;
     }
-    EVENT_OUTPUT_PAYLOAD[offset] = '\0';
+    EVENT_PAYLOAD[offset] = '\0';
 }
 
 /*
@@ -255,11 +255,11 @@ EVENT_HANDLER(generate_pdu_session_establishment)
         size_t len = strlen(parts[i]);
         if (off + len >= MAX_NAS_HEX_LEN)
         {
-            EVENT_OUTPUT_PAYLOAD[0] = '\0';
+            EVENT_PAYLOAD[0] = '\0';
             return;
         }
-        memcpy(EVENT_OUTPUT_PAYLOAD + off, parts[i], len);
+        memcpy(EVENT_PAYLOAD + off, parts[i], len);
         off += len;
     }
-    EVENT_OUTPUT_PAYLOAD[off] = '\0';
+    EVENT_PAYLOAD[off] = '\0';
 }

@@ -265,7 +265,7 @@ void NgapTask::deliverDownlinkNasRefactored()
     
     // Call the event handler
     entry.generator();
-    const char *hexPduC = EVENT_OUTPUT_PAYLOAD;
+    const char *hexPduC = EVENT_PAYLOAD;
     std::string hexPdu(hexPduC); // create std::string view for FromHex helper
     m_logger->info("%s Ziyan", entry.description);
 

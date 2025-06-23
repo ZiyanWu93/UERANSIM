@@ -8,7 +8,6 @@ typedef struct EventNf {
     int event_id;
     char input_payload[MAX_NAS_HEX_LEN];
     int input_payload_length;      // Actual binary length of input_payload
-    char output_payload[MAX_NAS_HEX_LEN];
 } EventNf;
 
 extern EventNf event_nf;
@@ -18,7 +17,6 @@ typedef void (*event_handler_t)();
 #define EVENT_HANDLER(name)  void name()
 #define EVENT_ID event_nf_ptr->event_id
 #define EVENT_PAYLOAD event_nf_ptr->input_payload
-#define EVENT_OUTPUT_PAYLOAD event_nf_ptr->output_payload
 
 // NAS Event Type Definitions
 // These events simulate uplink NAS messages from UE

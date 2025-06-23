@@ -21,7 +21,6 @@ EventNf* allocate_event(void)
             // Clear the event structure
             event_pool.events[i].event_id = -1;
             memset(event_pool.events[i].input_payload, 0, MAX_NAS_HEX_LEN);
-            memset(event_pool.events[i].output_payload, 0, MAX_NAS_HEX_LEN);
             printf("Allocated event %d from pool, %d/%d in use\n", 
                    i, event_pool.count, EVENT_POOL_SIZE);
             return &event_pool.events[i];

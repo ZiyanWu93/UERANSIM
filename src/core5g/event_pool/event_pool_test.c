@@ -26,7 +26,6 @@ int main()
         // Set some test data
         events[i]->event_id = i;
         sprintf(events[i]->input_payload, "Test input payload %d", i);
-        sprintf(events[i]->output_payload, "Test output payload %d", i);
     }
     
     // Check pool usage
