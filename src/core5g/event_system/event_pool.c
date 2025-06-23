@@ -1,56 +1,75 @@
 #include "event_pool.h"
+#include "../memory/memory_utils.h"
 #include <stdio.h>
 #include <string.h>
 
-// Global event pool
-static EventPool event_pool = {0};
+// Global event pool allocator
+static memory_allocator_t* event_allocator = NULL;
+static int allocated_count = 0;
 
 void initialize_event_pool(void)
 {
-    memset(&event_pool, 0, sizeof(EventPool));
-    printf("Event pool initialized with %d slots\n", EVENT_POOL_SIZE);
+    // Get an allocator for EventNf objects from the memory system
+    event_allocator = memory_get_allocator(sizeof(EventNf), EVENT_POOL_SIZE);
+    
+    if (event_allocator == NULL) {
+        printf("ERROR: Failed to get memory allocator for event pool\n");
+        return;
+    }
+    
+    allocated_count = 0;
+    printf("Event pool initialized with %d slots using memory system\n", EVENT_POOL_SIZE);
 }
 
 EventNf* allocate_event(void)
 {
-    // Find first available event in the pool
-    for (int i = 0; i < EVENT_POOL_SIZE; i++) {
-        if (!event_pool.used[i]) {
-            event_pool.used[i] = true;
-            event_pool.count++;
-            // Clear the event structure
-            event_pool.events[i].event_id = -1;
-            memset(event_pool.events[i].input_payload, 0, MAX_NAS_HEX_LEN);
-            printf("Allocated event %d from pool, %d/%d in use\n", 
-                   i, event_pool.count, EVENT_POOL_SIZE);
-            return &event_pool.events[i];
-        }
+    if (event_allocator == NULL) {
+        printf("ERROR: Event pool not initialized\n");
+        return NULL;
     }
     
-    // No available events in the pool
-    printf("ERROR: Event pool is full! Cannot allocate new event.\n");
-    return NULL;
+    // Allocate from the memory pool
+    EventNf* event = (EventNf*)event_allocator->allocate(event_allocator->impl);
+    
+    if (event == NULL) {
+        printf("ERROR: Event pool is full! Cannot allocate new event.\n");
+        return NULL;
+    }
+    
+    // Clear the event structure
+    event->event_id = -1;
+    memset(event->input_payload, 0, MAX_NAS_HEX_LEN);
+    event->input_payload_length = 0;
+    
+    allocated_count++;
+    printf("Allocated event from pool, %d/%d in use\n", 
+           allocated_count, EVENT_POOL_SIZE);
+    
+    return event;
 }
 
 void return_event_to_pool(EventNf* event)
 {
-    // Find the event in the pool by its address
-    for (int i = 0; i < EVENT_POOL_SIZE; i++) {
-        if (&event_pool.events[i] == event) {
-            if (event_pool.used[i]) {
-                event_pool.used[i] = false;
-                event_pool.count--;
-                printf("Returned event %d to pool, %d/%d in use\n", 
-                       i, event_pool.count, EVENT_POOL_SIZE);
-                return;
-            }
-        }
+    if (event_allocator == NULL || event == NULL) {
+        printf("WARNING: Invalid event pool or event pointer\n");
+        return;
     }
     
-    printf("WARNING: Attempted to return an event not from the pool\n");
+    // Check if this event belongs to our pool
+    if (!event_allocator->owns(event_allocator->impl, event)) {
+        printf("WARNING: Attempted to return an event not from the pool\n");
+        return;
+    }
+    
+    // Return to the memory pool
+    event_allocator->deallocate(event_allocator->impl, event);
+    
+    allocated_count--;
+    printf("Returned event to pool, %d/%d in use\n", 
+           allocated_count, EVENT_POOL_SIZE);
 }
 
 int get_event_pool_usage(void)
 {
-    return event_pool.count;
+    return allocated_count;
 }

@@ -38,6 +38,7 @@ Generic event-driven framework providing infrastructure:
 - **Routing Table**: Dynamic handler registration without coupling
 - **Event Dispatcher**: Routes events with error handling and statistics
 - **Framework APIs**: Event sources, exit conditions, handler registrars
+- **Library Support**: Available as both standalone executable and reusable library
 
 For detailed information about the runtime system, see [runtime/README.md](runtime/README.md).
 
@@ -73,6 +74,11 @@ Key features:
 - **Dynamic Handler Registration**: Actors register handlers through registrar functions
 - **Flexible Exit Conditions**: Multiple conditions can trigger graceful shutdown
 - **Built-in Monitoring**: Statistics and error handling without intrusion
+- **Dual Usage Mode**: Can be used as a standalone executable or linked as a library
+
+The runtime is built as:
+- `runtime_lib`: A static library for building custom applications
+- `runtime`: A standalone executable for testing and development
 
 For detailed information about the runtime module, including architecture, API reference, integration guidelines, and performance characteristics, see [runtime/README.md](runtime/README.md).
 

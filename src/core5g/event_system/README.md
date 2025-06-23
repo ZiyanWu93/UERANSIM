@@ -16,9 +16,10 @@ The Event System is the core message processing infrastructure of Core5G, provid
    - Event ID constants
 
 2. **Event Pool** (`event_pool.h/c`)
-   - Memory pool for EventNf allocations
+   - Interface to Memory System's pool allocator
    - Fixed-size allocation strategy
    - Zero-initialization guarantees
+   - Depends on Memory Management module
 
 3. **Event Utilities** (`event_utils.h`)
    - Debugging and logging helpers
@@ -99,33 +100,28 @@ Note: The payload is used for both input and output - handlers modify it in-plac
 
 ### Event Pool Management
 
-#### `void event_pool_init(void)`
-Initializes the global event pool.
-- Must be called before any event operations
-- Allocates memory for EVENT_POOL_SIZE events
-- Zero-initializes all event structures
+#### `void initialize_event_pool(void)`
+Initializes the event pool using the memory system.
+- Must be called after `memory_system_init()`
+- Requests allocator for EVENT_POOL_SIZE events
+- Requires Memory Management module to be initialized
 
-#### `EventNf* event_pool_allocate(void)`
+#### `EventNf* allocate_event(void)`
 Allocates an event from the pool.
 - Returns: Pointer to EventNf or NULL if pool exhausted
 - Guaranteed zero-initialized
-- O(1) allocation time
+- O(1) allocation time via memory system
 
-#### `void event_pool_free(EventNf* event)`
+#### `void return_event_to_pool(EventNf* event)`
 Returns an event to the pool.
-- Parameters: event - The event to free
-- Clears event data before returning to pool
+- Parameters: event - The event to return
+- Validates event ownership before deallocation
 - O(1) deallocation time
 
-#### `size_t event_pool_available(void)`
-Returns the number of available events in the pool.
+#### `int get_event_pool_usage(void)`
+Returns the number of events currently allocated.
 - Useful for monitoring pool usage
 - Can trigger backpressure mechanisms
-
-#### `void event_pool_destroy(void)`
-Destroys the event pool and frees resources.
-- Called during system shutdown
-- Ensures clean resource deallocation
 
 ### Event Utilities
 
@@ -161,7 +157,7 @@ print_nas_pdu("7e004179000d01");
 
 ```c
 // Allocate event
-EventNf* event = event_pool_allocate();
+EventNf* event = allocate_event();
 if (!event) {
     log_error("Event pool exhausted");
     return;
@@ -171,7 +167,8 @@ if (!event) {
 event->event_id = EVENT_NAS_REGISTRATION_REQUEST;
 
 // Set payload (hex-encoded NAS PDU)
-strcpy(event->payload, "7e004179000d0101f11111111100000001");
+strcpy(event->input_payload, "7e004179000d0101f11111111100000001");
+event->input_payload_length = strlen(event->input_payload);
 
 // Use event (e.g., put in mailbox)
 mailbox_put(event_mailbox, event);
@@ -216,10 +213,24 @@ void handle_registration_request(void) {
 
 ## Memory Management
 
+The Event System leverages the Core5G Memory Management module for efficient memory allocation. This provides:
+- Zero-fragmentation guarantee through pool-based allocation
+- Predictable O(1) allocation/deallocation performance
+- Automatic memory cleanup on system shutdown
+
+### Dependencies
+
+The Event System depends on the Memory Management module being initialized before use:
+```c
+// Required initialization order
+memory_system_init();      // Must be called first
+initialize_event_pool();   // Can now use memory allocators
+```
+
 ### Pool Configuration
 
 ```c
-#define EVENT_POOL_SIZE 1024  // Number of pre-allocated events
+#define EVENT_POOL_SIZE 32  // Number of pre-allocated events (configurable)
 ```
 
 Adjust based on:
@@ -227,56 +238,62 @@ Adjust based on:
 - System memory constraints
 - Performance requirements
 
-### Memory Layout
+### Memory Architecture
 
+The event pool uses the Memory Management module's pool allocator:
+```c
+// Event pool initialization
+void initialize_event_pool(void) {
+    // Get an allocator for EventNf objects
+    event_allocator = memory_get_allocator(sizeof(EventNf), EVENT_POOL_SIZE);
+}
+
+// Allocation uses the memory system
+EventNf* allocate_event(void) {
+    return (EventNf*)event_allocator->allocate(event_allocator->impl);
+}
 ```
-Event Pool Memory Layout:
-+----------------+
-| Event Pool     |
-| Metadata       |
-+----------------+
-| EventNf[0]     |
-|   event_id     |
-|   payload[2048]|
-+----------------+
-| EventNf[1]     |
-|   event_id     |
-|   payload[2048]|
-+----------------+
-| ...            |
-+----------------+
-| EventNf[1023]  |
-|   event_id     |
-|   payload[2048]|
-+----------------+
-| Free List      |
-| (Stack-based)  |
-+----------------+
-```
+
+This integration ensures:
+- Consistent memory management across Core5G
+- Efficient use of system resources
+- No memory fragmentation
+- Predictable performance characteristics
 
 ### Best Practices
 
 1. **Always check allocation success**
    ```c
-   EventNf* event = event_pool_allocate();
+   EventNf* event = allocate_event();
    if (!event) {
        // Handle pool exhaustion
        return ERROR_NO_RESOURCES;
    }
    ```
 
-2. **Free events promptly**
+2. **Return events promptly**
    ```c
    // After processing
-   event_pool_free(event);
+   return_event_to_pool(event);
    ```
 
 3. **Monitor pool usage**
    ```c
-   if (event_pool_available() < EVENT_POOL_SIZE / 10) {
-       log_warning("Event pool running low: %zu available", 
-                   event_pool_available());
+   int usage = get_event_pool_usage();
+   if (usage > EVENT_POOL_SIZE * 0.9) {
+       log_warning("Event pool usage critical: %d/%d", 
+                   usage, EVENT_POOL_SIZE);
    }
+   ```
+
+4. **Initialize in correct order**
+   ```c
+   // Memory system must be initialized first
+   if (!memory_system_init()) {
+       log_error("Failed to initialize memory system");
+       return -1;
+   }
+   initialize_event_pool();
    ```
 
 ## Error Handling
@@ -284,10 +301,18 @@ Event Pool Memory Layout:
 ### Pool Exhaustion
 
 When the event pool is exhausted:
-1. `event_pool_allocate()` returns NULL
+1. `allocate_event()` returns NULL
 2. Caller must handle gracefully
 3. Consider implementing backpressure
 4. Log for monitoring/alerting
+
+### Memory System Initialization
+
+If memory system is not initialized:
+1. `initialize_event_pool()` will fail to get allocator
+2. Error message logged to console
+3. Subsequent allocations will return NULL
+4. Always initialize memory system first
 
 ### Invalid Event IDs
 

@@ -6,6 +6,7 @@ add_subdirectory(mailbox)
 add_subdirectory(memory)
 add_subdirectory(actor)
 add_subdirectory(runtime)
+add_subdirectory(app)
 
 # Core5G library containing common components
 add_library(core5g STATIC

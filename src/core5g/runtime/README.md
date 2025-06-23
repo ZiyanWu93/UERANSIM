@@ -61,8 +61,10 @@ Enqueues a new event for processing.
 #### `int register_event_handler(int event_id, event_handler_t handler)`
 Registers a handler function for a specific event type.
 - **event_id**: Event type to handle (must be < MAX_EVENTS)
-- **handler**: Function pointer to the handler
+- **handler**: Function pointer to the handler (use EVENT_HANDLER macro to define)
 - Returns: 0 on success, -1 on error
+
+Note: Handlers should be defined using the `EVENT_HANDLER(name)` macro from event.h, which provides the correct function signature and allows access to EVENT_ID and EVENT_PAYLOAD macros.
 
 ### Event Source Management
 
@@ -318,8 +320,8 @@ register_exit_condition("timeout", timeout_condition);
 ```c
 // actor_example.c
 
-// Define handler
-void handle_my_event(void) {
+// Define handler using EVENT_HANDLER macro
+EVENT_HANDLER(handle_my_event) {
     // Access event data
     char* payload = EVENT_PAYLOAD;
     int event_id = EVENT_ID;
@@ -432,6 +434,67 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 ```
+
+## Using Runtime as a Library
+
+The runtime is available as both a standalone executable and a reusable library.
+
+### Standalone Executable
+The `runtime` executable provides a ready-to-use runtime environment with basic signal handling:
+```bash
+./build/runtime
+```
+
+### Library Usage
+Applications can link against `runtime_lib` to create custom event-driven programs:
+
+#### CMakeLists.txt
+```cmake
+add_executable(my_app
+    main.c
+    my_actors.c
+)
+
+target_link_libraries(my_app
+    runtime_lib
+    event_system
+    mailbox
+    memory
+)
+```
+
+#### Custom main.c
+```c
+#include <signal.h>
+#include "runtime/runtime.h"
+#include "my_actors.h"
+
+int main(int argc, char* argv[]) {
+    // Custom initialization
+    printf("My Application v1.0\n");
+    
+    // Register components
+    register_handler_registrar(my_actor_register_handlers);
+    register_event_source("my_source", my_event_source);
+    register_exit_condition("my_exit", my_exit_condition);
+    
+    // Setup signal handling
+    signal(SIGINT, handle_sigint);
+    
+    // Run the runtime
+    runtime();
+    
+    // Custom cleanup
+    printf("Application terminated\n");
+    return 0;
+}
+```
+
+### Build System Integration
+The runtime provides:
+- `runtime_lib`: Static library containing the framework
+- `runtime`: Standalone executable for testing
+- Headers automatically included via CMake
 
 ## Future Enhancements
 

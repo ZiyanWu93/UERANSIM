@@ -1,4 +1,4 @@
-# Runtime module library
+# Runtime module library (reusable)
 add_library(runtime_lib STATIC
     runtime.c
     runtime.h
@@ -11,13 +11,14 @@ target_include_directories(runtime_lib PUBLIC
 target_link_libraries(runtime_lib
     event_system
     mailbox
-    amf_actor
+    memory
 )
 
-# Runtime executable
-add_executable(runtime runtime.c)
+# Runtime standalone executable
+add_executable(runtime runtime_main.c)
 
 target_link_libraries(runtime
+    runtime_lib
     core5g
     event_system
     mailbox

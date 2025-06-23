@@ -8,6 +8,7 @@
 #include "../event_system/event.h"
 #include "../event_system/event_pool.h"
 #include "../mailbox/mailbox.h"
+#include "../memory/memory_utils.h"
 
 volatile sig_atomic_t keep_running = 1;
 
@@ -169,8 +170,17 @@ void runtime()
     // Call all handler registrars
     register_handlers();
     
-    // Initialize subsystems
+    // Initialize subsystems in correct order
+    // 1. Memory system first (foundation for everything)
+    if (!memory_system_init()) {
+        fprintf(stderr, "Failed to initialize memory system\n");
+        return;
+    }
+    
+    // 2. Event pool (now uses memory system)
     initialize_event_pool();
+    
+    // 3. Mailbox (also uses memory system)
     mailbox_init(&event_mailbox);
     
     printf("Runtime initialized successfully\n");
@@ -191,6 +201,8 @@ void runtime()
     
     // Cleanup
     mailbox_cleanup(&event_mailbox);
+    memory_system_cleanup();  // Clean up memory system last
+    
     printf("Runtime statistics:\n");
     printf("  Events processed: %lu\n", runtime_stats.events_processed);
     printf("  Events dropped: %lu\n", runtime_stats.events_dropped);
@@ -280,9 +292,3 @@ int set_event_source_enabled(const char* name, bool enabled)
     return -1;
 }
 
-int main(int argc, char* argv[])
-{
-    signal(SIGINT, handle_sigint);
-    runtime();
-    return 0;
-}

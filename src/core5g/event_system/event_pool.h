@@ -7,13 +7,6 @@
 // Event pool configuration
 #define EVENT_POOL_SIZE 32
 
-// Event pool structure
-typedef struct {
-    EventNf events[EVENT_POOL_SIZE];
-    bool used[EVENT_POOL_SIZE];
-    int count;  // Number of events in use
-} EventPool;
-
 // Initialize the event pool
 void initialize_event_pool(void);
 
