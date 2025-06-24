@@ -6,6 +6,7 @@ Core message processing infrastructure for NAS events and inter-actor communicat
 
 The Event System provides:
 - **Event definitions** for NAS messages and control signals
+- **IPC event source** for external application communication
 - **Memory pool** for zero-allocation event handling
 - **Utilities** for debugging and logging
 
@@ -31,6 +32,9 @@ typedef struct EventNf {
 ### Control Events
 - Internal coordination (Context Setup, Bearer Management)
 - Application-specific (Start, Stop, Timer)
+
+### IPC Events
+- **MESSAGE_RECEIVED**: External application sent message via IPC
 
 See `event.h` for complete event ID definitions.
 
@@ -97,7 +101,14 @@ In `event.h`:
 
 See implementations in:
 - [AMF Actor](../app/amf/fiveg_core_actor.c) - NAS message handling
+- [IPC Echo Demo](../app/ipc_echo/) - IPC event handling
 - [Event Tests](event_pool_test.c) - Unit tests
+
+## IPC Integration
+
+For Inter-Process Communication, see:
+- **[IPC System Documentation](IPC.md)** - Complete IPC guide
+- **[IPC Echo Demo](../app/ipc_echo/)** - Working example
 
 ## API Details
 

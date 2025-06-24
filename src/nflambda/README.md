@@ -12,6 +12,7 @@ make build
 ./build/runtime         # Standalone runtime
 ./build/ping_pong_demo  # Simple actor demonstration
 ./build/amf_demo       # 5G AMF example
+./build/ipc_echo_demo   # IPC communication demo
 ```
 
 ## What is NFLambda?
@@ -43,6 +44,7 @@ NFLambda implements an event-driven, single-threaded architecture optimized for:
 
 Applications built on NFLambda:
 - **[ping_pong](app/ping_pong/)** - Basic actor communication pattern
+- **[ipc_echo](app/ipc_echo/)** - Inter-process communication demo
 - **[amf](app/amf/)** - 5G AMF protocol implementation
 - **[5gcore](app/5gcore/)** - Full 5G core components
 
@@ -63,6 +65,7 @@ nflambda/
 ├── memory/          # Memory management
 ├── app/            # Example applications
 │   ├── ping_pong/  # Actor demo
+│   ├── ipc_echo/   # IPC communication demo
 │   ├── amf/        # 5G AMF demo
 │   └── 5gcore/     # Full 5G core implementation
 ├── docs/           # Detailed documentation
@@ -98,6 +101,7 @@ int main() {
 
 NFLambda is ideal for:
 - **Network protocols** - 5G, SDN controllers, protocol gateways
+- **IPC servers** - High-performance inter-process communication
 - **High-frequency trading** - Low-latency order processing
 - **IoT gateways** - Event-driven sensor data processing
 - **Real-time analytics** - Stream processing with predictable latency

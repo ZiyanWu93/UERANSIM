@@ -157,14 +157,16 @@ You can modify this demo to experiment:
 ## Learning Path
 
 After understanding this demo:
-1. Study the runtime framework documentation
-2. Examine how AMF actor is implemented
-3. Create your own actors
-4. Build more complex applications
+1. Study the [Runtime Framework](../../runtime/) documentation
+2. Examine the [IPC Echo Demo](../ipc_echo/) for external communication
+3. Review how [AMF actor](../amf/) implements protocol handling
+4. Create your own actors
+5. Build more complex applications
 
 ## See Also
 
-- [Runtime Module](../../runtime/) - Framework documentation
-- [Event System](../../event_system/) - Event handling details
-- [NFLambda Overview](../../README.md) - System architecture
-- [AMF Demo](../amf/) - Protocol implementation example
+- **[Runtime Module](../../runtime/)** - Framework documentation
+- **[Event System](../../event_system/)** - Event handling details
+- **[IPC Echo Demo](../ipc_echo/)** - External communication example
+- **[NFLambda Overview](../../README.md)** - System architecture
+- **[AMF Demo](../amf/)** - Protocol implementation example

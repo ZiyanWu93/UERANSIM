@@ -33,6 +33,8 @@ cmake --build cmake-build-debug --target all
 # - runtime: NFLambda runtime executable
 # - libdevbnd.so: Network binding library
 # - nr-binder: Network binding tool
+# - ipc_echo_demo: NFLambda IPC echo server demo
+# - ipc_client_demo: IPC client demo application
 ```
 
 ## Running the Simulator
@@ -46,6 +48,10 @@ cmake --build cmake-build-debug --target all
 
 # Use CLI tool to interact with running instances
 ./build/nr-cli <gnb-id/ue-id> --exec <command>
+
+# Run NFLambda IPC demos
+./build/ipc_echo_demo                    # Start IPC server
+./build/ipc_client_demo "Hello World"    # Send test message
 ```
 
 Configuration files are in YAML format and located in `config/` directory with presets for free5gc and open5gs.
@@ -67,6 +73,7 @@ The project is developing a new high-performance 5G core based on:
 - Memory pool allocation for predictable performance
 - Zero-copy message passing between actors
 - Unified context matching for efficient state management
+- Built-in IPC system for external application integration
 
 ### Key Design Patterns
 - Command pattern for actor messages
@@ -130,6 +137,13 @@ make build
 3. Implement message handlers
 4. Register with actor system
 5. Use mailbox for inter-actor communication
+
+### Adding IPC to NFLambda applications
+1. Initialize IPC event source with `ipc_event_source_init()`
+2. Register IPC event source: `register_event_source("ipc", ipc_event_source_poll)`
+3. Register handler for `EVENT_IPC_MESSAGE_RECEIVED`
+4. Use `ipc_send_response()` to reply to messages
+5. See `src/nflambda/app/ipc_echo/` for complete example
 
 ### Debugging protocol issues
 1. Enable detailed logging in configuration

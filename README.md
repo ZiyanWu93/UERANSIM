@@ -31,10 +31,11 @@ On the other hand, UERANSIM does not fully provide physical layer. 5G-NR radio i
 
 ## Documentation
 
-You can find the documentation on [UERANSIM Wiki](https://github.com/aligungr/UERANSIM/wiki).
+- **[UERANSIM Wiki](https://github.com/aligungr/UERANSIM/wiki)** - Comprehensive user documentation
+- **[CLAUDE.md](CLAUDE.md)** - Developer guidance and build instructions  
+- **[NFLambda](src/nflambda/README.md)** - Event-driven runtime framework
 
-And, since the project is rapidly developing, please make sure that you have always
-the [latest](https://github.com/aligungr/UERANSIM/releases) UERANSIM.
+For the latest features and updates, ensure you have the [latest release](https://github.com/aligungr/UERANSIM/releases).
 
 ## Contributing
 

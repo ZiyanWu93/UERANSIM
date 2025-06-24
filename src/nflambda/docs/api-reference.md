@@ -100,6 +100,32 @@ void memory_system_shutdown(void)
 Allocator* memory_get_allocator(size_t size, size_t count)
 ```
 
+## IPC APIs
+
+### Server-Side (NFLambda Applications)
+```c
+int ipc_event_source_init(const char* socket_path)
+void ipc_event_source_poll(void)
+int ipc_send_response(const void* data, size_t len)
+bool ipc_is_client_connected(void)
+void ipc_event_source_cleanup(void)
+```
+
+### Client-Side (External Applications)
+```c
+int ipc_client_connect(const char* socket_path)
+int ipc_client_send_recv(int fd, const void* send_data, size_t send_len,
+                        void* recv_data, size_t* recv_len)
+void ipc_client_close(int fd)
+```
+
+### IPC Events
+```c
+#define EVENT_IPC_MESSAGE_RECEIVED  200
+```
+
+For detailed IPC documentation, see [IPC System Guide](../event_system/IPC.md).
+
 ## Common Patterns
 
 ### Creating an Actor
@@ -141,3 +167,20 @@ bool my_exit_condition(void) {
 
 register_exit_condition("my_exit", my_exit_condition);
 ```
+
+### IPC Integration
+```c
+// IPC event handler
+EVENT_HANDLER(handle_ipc_message) {
+    const char* message = EVENT_PAYLOAD;
+    // Process message
+    ipc_send_response(message, strlen(message));
+}
+
+// Initialize IPC
+ipc_event_source_init(NULL);
+register_event_source("ipc", ipc_event_source_poll);
+register_event_handler(EVENT_IPC_MESSAGE_RECEIVED, handle_ipc_message);
+```
+
+See [IPC Echo Demo](../app/ipc_echo/) for complete example.
