@@ -19,9 +19,4 @@ add_executable(runtime runtime_main.c)
 
 target_link_libraries(runtime
     runtime_lib
-    core5g
-    event_system
-    mailbox
-    memory
-    amf_actor
 )

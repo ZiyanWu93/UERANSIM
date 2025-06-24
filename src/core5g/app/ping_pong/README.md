@@ -164,6 +164,7 @@ After understanding this demo:
 
 ## See Also
 
-- [Runtime Module](../../runtime/README.md) - Framework documentation
-- [Event System](../../event_system/README.md) - Event handling details
-- [Core5G Overview](../../overview.md) - System architecture
+- [Runtime Module](../../runtime/) - Framework documentation
+- [Event System](../../event_system/) - Event handling details
+- [Core5G Overview](../../README.md) - System architecture
+- [AMF Demo](../amf/) - Protocol implementation example

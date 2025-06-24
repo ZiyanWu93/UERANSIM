@@ -1,58 +1,92 @@
-# Dependency Management
+# Core5G Dependency Management
 
-## Files and Modules Listing
-<!-- BEGIN_FILE_MODULE_LIST -->
-### Modules
-- actor
-- event_pool
-- mailbox
-- memory
+## Module Dependencies
 
-### Files
+```
+┌─────────────────┐
+│     Runtime     │ (Orchestrator)
+└────────┬────────┘
+         │ depends on
+         ▼
+┌─────────────────┐     ┌─────────────────┐
+│  Event System   │────▶│     Memory      │
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐
+│     Mailbox     │────▶│  Pool Allocator │
+└─────────────────┘     └─────────────────┘
+```
 
-**CMakeFiles/3.22.1/CompilerIdC/**
-- CMakeCCompilerId.c
+## Initialization Order
 
-**actor/**
-- amf_actor.c
-- amf_actor.h
-- ausf_actor.c
-- smf_actor.c
-- udm_actor.c
+1. **Memory System** - Must be initialized first
+2. **Event Pool** - Depends on memory system
+3. **Mailbox** - Can be created after memory init
+4. **Runtime** - Requires all components initialized
 
-**event_pool/**
-- event_pool.c
-- event_pool.h
-- event_pool_test.c
+```c
+// Correct initialization sequence
+memory_system_init();      // 1. Memory
+initialize_event_pool();   // 2. Event pool
+mailbox = mailbox_create(); // 3. Mailbox
+runtime();                 // 4. Runtime
+```
 
-**mailbox/**
-- mailbox.c
-- mailbox.h
-- mailbox_test.c
+## Component Dependencies
 
-**memory/**
-- allocator.h
-- memory_test.c
-- memory_utils.c
-- memory_utils.h
-- pool_allocator.c
-- pool_allocator.h
+### Runtime
+- **Depends on**: Event System, Mailbox
+- **Used by**: All applications
 
-**Root Directory**
-- amf.c
-- amf.h
-- ausf.c
-- ausf.h
-- core5g.h
-- event.c
-- event.h
-- runtime.c
-- udm.c
-- udm.h
+### Event System  
+- **Depends on**: Memory System
+- **Used by**: Runtime, all actors
 
-<!-- END_FILE_MODULE_LIST -->
+### Mailbox
+- **Depends on**: Memory System (internal pool)
+- **Used by**: Runtime
 
-## Dependencies Graph
-<!-- BEGIN_DEPENDENCY_GRAPH -->
-This section will be populated in a future step
-<!-- END_DEPENDENCY_GRAPH -->
+### Memory System
+- **Depends on**: None (base component)
+- **Used by**: All components
+
+## Build Dependencies
+
+### Libraries
+```cmake
+runtime_lib
+├── event_system
+├── mailbox
+└── memory
+
+Applications link with:
+- runtime_lib
+- pthread
+```
+
+### Header Dependencies
+- `runtime.h` includes `event.h`
+- `event_pool.h` includes `allocator.h`
+- `mailbox.h` is standalone
+- Applications include `runtime/runtime.h`
+
+## Application Structure
+
+### Minimal App
+```
+my_app/
+├── CMakeLists.txt
+└── main.c (includes runtime/runtime.h)
+```
+
+### Actor-based App
+```
+my_app/
+├── CMakeLists.txt
+├── main.c
+├── my_actor.c (EVENT_HANDLERs)
+└── my_actor.h
+```
+
+See [app/ping_pong/](app/ping_pong/) and [app/amf/](app/amf/) for examples.

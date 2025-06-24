@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.10)
 add_subdirectory(event_system)
 add_subdirectory(mailbox) 
 add_subdirectory(memory)
-add_subdirectory(actor)
 add_subdirectory(runtime)
 add_subdirectory(app)
 

@@ -25,6 +25,7 @@ build-release: FORCE
 	@if [ -f cmake-build-release/src/core5g/event_system/event_system_test ]; then cp cmake-build-release/src/core5g/event_system/event_system_test build/; fi
 	@if [ -f cmake-build-release/src/core5g/event_system/event_pool_test ]; then cp cmake-build-release/src/core5g/event_system/event_pool_test build/; fi
 	@if [ -f cmake-build-release/src/core5g/app/ping_pong/ping_pong_demo ]; then cp cmake-build-release/src/core5g/app/ping_pong/ping_pong_demo build/; fi
+	@if [ -f cmake-build-release/src/core5g/app/amf/amf_demo ]; then cp cmake-build-release/src/core5g/app/amf/amf_demo build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Release).${NC}\n"
 
@@ -49,6 +50,7 @@ build-debug: FORCE
 	@if [ -f cmake-build-debug/src/core5g/event_system/event_system_test ]; then cp cmake-build-debug/src/core5g/event_system/event_system_test build/; fi
 	@if [ -f cmake-build-debug/src/core5g/event_system/event_pool_test ]; then cp cmake-build-debug/src/core5g/event_system/event_pool_test build/; fi
 	@if [ -f cmake-build-debug/src/core5g/app/ping_pong/ping_pong_demo ]; then cp cmake-build-debug/src/core5g/app/ping_pong/ping_pong_demo build/; fi
+	@if [ -f cmake-build-debug/src/core5g/app/amf/amf_demo ]; then cp cmake-build-debug/src/core5g/app/amf/amf_demo build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Debug).${NC}\n"
 
