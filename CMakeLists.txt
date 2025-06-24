@@ -39,7 +39,8 @@ target_link_libraries(nr-gnb asn-rrc)
 target_link_libraries(nr-gnb asn-ngap)
 target_link_libraries(nr-gnb common-lib)
 target_link_libraries(nr-gnb gnb)
-target_link_libraries(nr-gnb core5g)
+target_link_libraries(nr-gnb nflambda)
+target_link_libraries(nr-gnb 5gcore_lib)
 
 #################### UE EXECUTABLE ####################
 
@@ -63,8 +64,8 @@ target_compile_options(nr-cli PRIVATE -Wall -Wextra -pedantic)
 
 target_link_libraries(nr-cli common-lib)
 
-################### 5G Core EXECUTABLE ##################
-# Runtime executable is built in src/core5g/runtime subdirectory
+################### NFLambda Runtime ##################
+# Runtime executable is built in src/nflambda/runtime subdirectory
 
 ################### TEST EXECUTABLES ##################
 # Test executables are built in their respective module directories
