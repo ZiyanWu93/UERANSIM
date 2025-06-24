@@ -26,8 +26,9 @@
 #include <ue/nas/enc.hpp>
 #include <unistd.h>
 #include <algorithm>  // For std::min
-#include "core5g/core5g.h"
-#include "core5g/event_system/event.h"
+#include "nflambda/nflambda.h"
+#include "nflambda/event_system/event.h"
+#include "amf.h"
 
 namespace nr::gnb
 {

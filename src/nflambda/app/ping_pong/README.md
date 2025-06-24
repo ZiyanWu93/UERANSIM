@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Ping-Pong demo is a minimal example application that demonstrates how to use the Core5G Runtime Framework. It implements a simple message exchange between two actors (Ping and Pong) to showcase the event-driven architecture.
+The Ping-Pong demo is a minimal example application that demonstrates how to use the NFLambda Runtime Framework. It implements a simple message exchange between two actors (Ping and Pong) to showcase the event-driven architecture.
 
 ## Purpose
 
@@ -53,7 +53,7 @@ This demo illustrates:
 
 ## Building
 
-The demo is built automatically with the Core5G project:
+The demo is built automatically with the NFLambda project:
 ```bash
 make build
 ```
@@ -72,7 +72,7 @@ The executable `ping_pong_demo` will be copied to the `build/` directory.
 =================================
    Ping-Pong Demo Application    
 =================================
-Demonstrating the Core5G Runtime Framework
+Demonstrating the NFLambda Runtime Framework
 
 1. Initializing actors...
 2. Registering handler registrars...
@@ -166,5 +166,5 @@ After understanding this demo:
 
 - [Runtime Module](../../runtime/) - Framework documentation
 - [Event System](../../event_system/) - Event handling details
-- [Core5G Overview](../../README.md) - System architecture
+- [NFLambda Overview](../../README.md) - System architecture
 - [AMF Demo](../amf/) - Protocol implementation example

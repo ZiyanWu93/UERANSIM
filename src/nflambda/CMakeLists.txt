@@ -7,24 +7,23 @@ add_subdirectory(memory)
 add_subdirectory(runtime)
 add_subdirectory(app)
 
-# Core5G library containing common components
-add_library(core5g STATIC
-    core5g.h
+# NFLambda library - Event-driven runtime framework
+add_library(nflambda STATIC
+    nflambda.c
+    nflambda.h
     event_utils.h
-    amf.c
-    amf.h
 )
 
-target_include_directories(core5g PUBLIC
+target_include_directories(nflambda PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(core5g
+target_link_libraries(nflambda
     event_system
     mailbox
     memory
 )
 
-target_compile_options(core5g PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter)
+target_compile_options(nflambda PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter)
 
 # Main runtime executable is built in the runtime subdirectory

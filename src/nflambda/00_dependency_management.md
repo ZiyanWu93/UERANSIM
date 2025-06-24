@@ -1,4 +1,4 @@
-# Core5G Dependency Management
+# NFLambda Dependency Management
 
 ## Module Dependencies
 

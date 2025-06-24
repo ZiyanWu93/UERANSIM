@@ -86,7 +86,7 @@ Pool parameters set at creation:
 
 ## Examples
 
-Used by Core5G components:
+Used by NFLambda components:
 - [Event Pool](../event_system/event_pool.c) - EventNf allocation
 - [Mailbox](../mailbox/mailbox.c) - Integrated memory
 - [Tests](memory_test.c) - Unit tests

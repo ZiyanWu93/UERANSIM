@@ -74,7 +74,7 @@ EVENT_HANDLER(my_handler) {
 
 ## Memory Management
 
-- Uses Core5G Memory System's pool allocator
+- Uses NFLambda Memory System's pool allocator
 - Fixed pool size (configurable via `EVENT_POOL_SIZE`)
 - Zero-copy throughout the system
 - O(1) allocation/deallocation

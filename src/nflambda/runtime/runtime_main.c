@@ -11,7 +11,7 @@
 
 int main(int argc, char* argv[])
 {
-    printf("Core5G Runtime - Standalone Mode\n");
+    printf("NFLambda Runtime - Standalone Mode\n");
     printf("Press Ctrl+C to exit\n\n");
     
     // Setup signal handler

@@ -2,11 +2,11 @@
 
 ## Problem Statement
 
-- Maintain a document in the core5g folder to track the dependencies of the files and modules, ensure that changing of one file/module does not break the others
+- Maintain a document in the nflambda folder to track the dependencies of the files and modules, ensure that changing of one file/module does not break the others
 
 ## Step
 
-1. Create a ducment called 00_dependency_management.md in the core5g folder
+1. Create a document called 00_dependency_management.md in the nflambda folder
 Repeat if necessary
 2. List all the files and modules in the file at the first section 
    Definitions:

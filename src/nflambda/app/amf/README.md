@@ -75,4 +75,4 @@ Events processed: 10
 
 - [Runtime Framework](../../runtime/) - Event processing
 - [Ping-Pong Demo](../ping_pong/) - Basic actor example
-- [Integration Guide](../../docs/integration.md) - Building with Core5G
+- [Integration Guide](../../docs/integration.md) - Building with NFLambda

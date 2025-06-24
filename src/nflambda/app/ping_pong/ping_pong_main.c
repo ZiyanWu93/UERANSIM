@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     printf("=================================\n");
     printf("   Ping-Pong Demo Application    \n");
     printf("=================================\n");
-    printf("Demonstrating the Core5G Runtime Framework\n\n");
+    printf("Demonstrating the NFLambda Runtime Framework\n\n");
     
     // Step 1: Initialize actors
     printf("1. Initializing actors...\n");

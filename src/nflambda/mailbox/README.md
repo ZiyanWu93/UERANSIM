@@ -90,7 +90,7 @@ Default settings:
 
 ## Examples
 
-Used throughout Core5G:
+Used throughout NFLambda:
 - [Runtime](../runtime/runtime.c) - Main event queue
 - [Tests](mailbox_test.c) - Unit tests
 

@@ -30,7 +30,7 @@ cmake --build cmake-build-debug --target all
 # - nr-gnb: gNodeB (5G base station) simulator
 # - nr-ue: User Equipment (5G device) simulator  
 # - nr-cli: Command-line interface tool
-# - runtime: Core5G runtime executable
+# - runtime: NFLambda runtime executable
 # - libdevbnd.so: Network binding library
 # - nr-binder: Network binding tool
 ```
@@ -58,9 +58,9 @@ Configuration files are in YAML format and located in `config/` directory with p
 - `src/ue/`: UE implementation with NAS, RRC layers
 - `src/lib/`: Common libraries (app, crypt, nas, rrc, sctp)
 - `src/utils/`: Utility functions and common data structures
-- `src/core5g/`: New actor-based 5G core implementation (in development)
+- `src/nflambda/`: NFLambda - event-driven runtime framework (with 5G core as an application)
 
-### Core5G Architecture (New Development)
+### NFLambda Architecture (Event-Driven Runtime Framework)
 The project is developing a new high-performance 5G core based on:
 - Actor framework with mailbox-based message passing
 - Event-driven architecture for cache-aware processing
@@ -84,7 +84,7 @@ The project is developing a new high-performance 5G core based on:
 
 ### Adding New Features
 1. Check existing implementations in relevant directories
-2. Follow the actor model for core5g components
+2. Follow the actor model for nflambda components
 3. Use memory pools for frequent allocations
 4. Implement proper error handling with result types
 5. Add logging using existing log infrastructure
@@ -110,7 +110,7 @@ make build
 ## Important Notes
 
 - The project uses pthread for threading - ensure thread safety
-- Memory management is critical - use provided memory pools in core5g
+- Memory management is critical - use provided memory pools in nflambda
 - Configuration files use YAML format with specific schemas
 - UDP is used for simulating radio interface
 - SCTP is used for NGAP communication with 5G Core
@@ -124,7 +124,7 @@ make build
 3. Create wrapper classes following existing patterns
 4. Add encoding/decoding logic
 
-### Implementing a new actor (core5g)
+### Implementing a new actor (nflambda)
 1. Create actor class inheriting from base actor
 2. Define message types in actor's namespace
 3. Implement message handlers

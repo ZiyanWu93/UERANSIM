@@ -1,6 +1,6 @@
 # Runtime Module
 
-Event-driven execution framework that orchestrates Core5G components.
+Event-driven execution framework that orchestrates NFLambda components.
 
 ## Overview
 

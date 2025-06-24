@@ -15,17 +15,17 @@ build-release: FORCE
 	cp cmake-build-release/nr-gnb build/
 	cp cmake-build-release/nr-ue build/
 	cp cmake-build-release/nr-cli build/
-	cp cmake-build-release/src/core5g/runtime/runtime build/
+	cp cmake-build-release/src/nflambda/runtime/runtime build/
 	cp cmake-build-release/libdevbnd.so build/
 	cp tools/nr-binder build/
 	
 	# Copy test executables if they exist
-	@if [ -f cmake-build-release/src/core5g/memory/memory_test ]; then cp cmake-build-release/src/core5g/memory/memory_test build/; fi
-	@if [ -f cmake-build-release/src/core5g/mailbox/mailbox_test ]; then cp cmake-build-release/src/core5g/mailbox/mailbox_test build/; fi
-	@if [ -f cmake-build-release/src/core5g/event_system/event_system_test ]; then cp cmake-build-release/src/core5g/event_system/event_system_test build/; fi
-	@if [ -f cmake-build-release/src/core5g/event_system/event_pool_test ]; then cp cmake-build-release/src/core5g/event_system/event_pool_test build/; fi
-	@if [ -f cmake-build-release/src/core5g/app/ping_pong/ping_pong_demo ]; then cp cmake-build-release/src/core5g/app/ping_pong/ping_pong_demo build/; fi
-	@if [ -f cmake-build-release/src/core5g/app/amf/amf_demo ]; then cp cmake-build-release/src/core5g/app/amf/amf_demo build/; fi
+	@if [ -f cmake-build-release/src/nflambda/memory/memory_test ]; then cp cmake-build-release/src/nflambda/memory/memory_test build/; fi
+	@if [ -f cmake-build-release/src/nflambda/mailbox/mailbox_test ]; then cp cmake-build-release/src/nflambda/mailbox/mailbox_test build/; fi
+	@if [ -f cmake-build-release/src/nflambda/event_system/event_system_test ]; then cp cmake-build-release/src/nflambda/event_system/event_system_test build/; fi
+	@if [ -f cmake-build-release/src/nflambda/event_system/event_pool_test ]; then cp cmake-build-release/src/nflambda/event_system/event_pool_test build/; fi
+	@if [ -f cmake-build-release/src/nflambda/app/ping_pong/ping_pong_demo ]; then cp cmake-build-release/src/nflambda/app/ping_pong/ping_pong_demo build/; fi
+	@if [ -f cmake-build-release/src/nflambda/app/amf/amf_demo ]; then cp cmake-build-release/src/nflambda/app/amf/amf_demo build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Release).${NC}\n"
 
@@ -40,17 +40,17 @@ build-debug: FORCE
 	cp cmake-build-debug/nr-gnb build/
 	cp cmake-build-debug/nr-ue build/
 	cp cmake-build-debug/nr-cli build/
-	cp cmake-build-debug/src/core5g/runtime/runtime build/
+	cp cmake-build-debug/src/nflambda/runtime/runtime build/
 	cp cmake-build-debug/libdevbnd.so build/
 	cp tools/nr-binder build/
 	
 	# Copy test executables if they exist
-	@if [ -f cmake-build-debug/src/core5g/memory/memory_test ]; then cp cmake-build-debug/src/core5g/memory/memory_test build/; fi
-	@if [ -f cmake-build-debug/src/core5g/mailbox/mailbox_test ]; then cp cmake-build-debug/src/core5g/mailbox/mailbox_test build/; fi
-	@if [ -f cmake-build-debug/src/core5g/event_system/event_system_test ]; then cp cmake-build-debug/src/core5g/event_system/event_system_test build/; fi
-	@if [ -f cmake-build-debug/src/core5g/event_system/event_pool_test ]; then cp cmake-build-debug/src/core5g/event_system/event_pool_test build/; fi
-	@if [ -f cmake-build-debug/src/core5g/app/ping_pong/ping_pong_demo ]; then cp cmake-build-debug/src/core5g/app/ping_pong/ping_pong_demo build/; fi
-	@if [ -f cmake-build-debug/src/core5g/app/amf/amf_demo ]; then cp cmake-build-debug/src/core5g/app/amf/amf_demo build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/memory/memory_test ]; then cp cmake-build-debug/src/nflambda/memory/memory_test build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/mailbox/mailbox_test ]; then cp cmake-build-debug/src/nflambda/mailbox/mailbox_test build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/event_system/event_system_test ]; then cp cmake-build-debug/src/nflambda/event_system/event_system_test build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/event_system/event_pool_test ]; then cp cmake-build-debug/src/nflambda/event_system/event_pool_test build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/app/ping_pong/ping_pong_demo ]; then cp cmake-build-debug/src/nflambda/app/ping_pong/ping_pong_demo build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/app/amf/amf_demo ]; then cp cmake-build-debug/src/nflambda/app/amf/amf_demo build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Debug).${NC}\n"
 

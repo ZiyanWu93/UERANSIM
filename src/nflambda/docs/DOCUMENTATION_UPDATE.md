@@ -1,4 +1,4 @@
-# Core5G Documentation Update Summary
+# NFLambda Documentation Update Summary
 
 ## Changes Made
 
@@ -44,7 +44,7 @@
 ## Document Structure
 
 ```
-core5g/
+nflambda/
 ├── README.md                    # Main entry (concise overview)
 ├── docs/                        # Detailed documentation
 │   ├── architecture.md         # System design

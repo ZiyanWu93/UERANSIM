@@ -23,7 +23,7 @@ add_subdirectory(src/asn/asn1c)
 add_subdirectory(src/asn/rrc)
 add_subdirectory(src/asn/ngap)
 add_subdirectory(src/lib)
-add_subdirectory(src/core5g)
+add_subdirectory(src/nflambda)
 add_subdirectory(src/gnb)
 add_subdirectory(src/ue)
 

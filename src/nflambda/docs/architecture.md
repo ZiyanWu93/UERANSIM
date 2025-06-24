@@ -1,8 +1,8 @@
-# Core5G Architecture
+# NFLambda Architecture
 
 ## Design Philosophy
 
-Core5G follows an **event-driven, actor-based architecture** where:
+NFLambda follows an **event-driven, actor-based architecture** where:
 - Network functions are implemented as actors
 - All communication happens through events
 - Single-threaded execution eliminates concurrency issues
@@ -11,7 +11,7 @@ Core5G follows an **event-driven, actor-based architecture** where:
 ## System Components
 
 ### Runtime Framework
-The heart of Core5G - manages event processing and actor lifecycle:
+The heart of NFLambda - manages event processing and actor lifecycle:
 - Polls event sources for new work
 - Dispatches events to registered handlers
 - Manages graceful shutdown via exit conditions
@@ -61,7 +61,7 @@ Events carry NAS messages or control signals:
 
 ## Integration Points
 
-Core5G integrates with UERANSIM by:
+NFLambda integrates with UERANSIM by:
 - Replacing HTTP-based 5G core
 - Processing NAS messages directly
 - Maintaining 3GPP compliance

@@ -1,6 +1,6 @@
-# Core5G Integration Guide
+# NFLambda Integration Guide
 
-## Building Applications with Core5G
+## Building Applications with NFLambda
 
 ### Project Structure
 ```

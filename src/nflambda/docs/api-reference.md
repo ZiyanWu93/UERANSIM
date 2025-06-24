@@ -1,4 +1,4 @@
-# Core5G API Reference
+# NFLambda API Reference
 
 ## Runtime API
 
