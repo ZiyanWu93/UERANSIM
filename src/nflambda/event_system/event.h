@@ -26,4 +26,7 @@ typedef void (*event_handler_t)();
 #define EVENT_NAS_REGISTRATION_COMPLETE   103
 #define EVENT_NAS_PDU_SESSION_REQUEST     104
 
+// IPC Event Type Definitions
+#define EVENT_IPC_MESSAGE_RECEIVED        200
+
 #endif //EVENT_H

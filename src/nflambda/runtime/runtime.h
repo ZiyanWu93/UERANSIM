@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /* Maximum number of events that can be registered in the routing table */
-#define MAX_EVENTS 200
+#define MAX_EVENTS 10000
 
 /* Maximum number of event sources that can be registered */
 #define MAX_EVENT_SOURCES 32

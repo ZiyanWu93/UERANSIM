@@ -4,6 +4,10 @@ add_library(event_system STATIC
     event.h
     event_pool.c
     event_pool.h
+    ipc_event_source.c
+    ipc_event_source.h
+    ipc_client.c
+    ipc_client.h
 )
 
 target_include_directories(event_system PUBLIC
