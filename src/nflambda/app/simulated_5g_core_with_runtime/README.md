@@ -1,4 +1,4 @@
-# AMF Demo Application
+# Simulated 5G Core with Runtime Application
 
 Actor-based 5G AMF implementation demonstrating complete registration and PDU session flows.
 
@@ -40,7 +40,7 @@ Events defined in `amf_common.h`:
 make build
 
 # Run
-./build/amf_demo
+./build/simulated_5g_core_with_runtime_demo
 ```
 
 ## Output

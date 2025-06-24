@@ -40,7 +40,7 @@ target_link_libraries(nr-gnb asn-ngap)
 target_link_libraries(nr-gnb common-lib)
 target_link_libraries(nr-gnb gnb)
 target_link_libraries(nr-gnb nflambda)
-target_link_libraries(nr-gnb 5gcore_lib)
+target_link_libraries(nr-gnb 5gcore_without_runtime_lib)
 
 #################### UE EXECUTABLE ####################
 

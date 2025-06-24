@@ -25,7 +25,9 @@ build-release: FORCE
 	@if [ -f cmake-build-release/src/nflambda/event_system/event_system_test ]; then cp cmake-build-release/src/nflambda/event_system/event_system_test build/; fi
 	@if [ -f cmake-build-release/src/nflambda/event_system/event_pool_test ]; then cp cmake-build-release/src/nflambda/event_system/event_pool_test build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/ping_pong/ping_pong_demo ]; then cp cmake-build-release/src/nflambda/app/ping_pong/ping_pong_demo build/; fi
-	@if [ -f cmake-build-release/src/nflambda/app/amf/amf_demo ]; then cp cmake-build-release/src/nflambda/app/amf/amf_demo build/; fi
+	@if [ -f cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo ]; then cp cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo build/; fi
+	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
+	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Release).${NC}\n"
 
@@ -50,7 +52,9 @@ build-debug: FORCE
 	@if [ -f cmake-build-debug/src/nflambda/event_system/event_system_test ]; then cp cmake-build-debug/src/nflambda/event_system/event_system_test build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/event_system/event_pool_test ]; then cp cmake-build-debug/src/nflambda/event_system/event_pool_test build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/ping_pong/ping_pong_demo ]; then cp cmake-build-debug/src/nflambda/app/ping_pong/ping_pong_demo build/; fi
-	@if [ -f cmake-build-debug/src/nflambda/app/amf/amf_demo ]; then cp cmake-build-debug/src/nflambda/app/amf/amf_demo build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo ]; then cp cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Debug).${NC}\n"
 
