@@ -28,6 +28,8 @@ build-release: FORCE
 	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test ]; then cp cmake-build-release/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test build/; fi
+	@if [ -f cmake-build-release/nflambda_5gcore ]; then cp cmake-build-release/nflambda_5gcore build/; fi
+	@if [ -f cmake-build-release/nflambda_5gcore_test_client ]; then cp cmake-build-release/nflambda_5gcore_test_client build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Release).${NC}\n"
 
@@ -55,6 +57,8 @@ build-debug: FORCE
 	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test ]; then cp cmake-build-debug/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test build/; fi
+	@if [ -f cmake-build-debug/nflambda_5gcore ]; then cp cmake-build-debug/nflambda_5gcore build/; fi
+	@if [ -f cmake-build-debug/nflambda_5gcore_test_client ]; then cp cmake-build-debug/nflambda_5gcore_test_client build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Debug).${NC}\n"
 

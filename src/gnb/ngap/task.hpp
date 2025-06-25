@@ -112,6 +112,7 @@ class NgapTask : public NtsTask
     void receiveDownlinkNasTransport(int amfId, ASN_NGAP_DownlinkNASTransport *msg);
     void deliverDownlinkNas(int ueId, OctetString &&nasPdu);
     void deliverDownlinkNasRefactored();
+    void deliverDownlinkNasViaIpc();
     void sendNasNonDeliveryIndication(int ueId, const OctetString &nasPdu, NgapCause cause);
     void receiveRerouteNasRequest(int amfId, ASN_NGAP_RerouteNASRequest *msg);
 

@@ -29,6 +29,8 @@
 #include "nflambda/nflambda.h"
 #include "nflambda/event_system/event.h"
 #include "amf.h"
+#include "nflambda/event_system/ipc_client.h"
+#include "nflambda/app/nflambda_5gcore/nas_ipc_protocol.h"
 
 namespace nr::gnb
 {
@@ -173,7 +175,7 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
     }
     m_logger->debug("UplinkNAS PDU content: %s", hexString.c_str());
     
-    deliverDownlinkNasRefactored();
+    deliverDownlinkNasViaIpc();
 }
 
 // void NgapTask::deliverDownlinkNas(int ueId, OctetString &&nasPdu)
@@ -295,6 +297,168 @@ void NgapTask::deliverDownlinkNasRefactored()
 
 int guard = 5;
 
+// New IPC-based implementation of deliverDownlinkNas
+void NgapTask::deliverDownlinkNasViaIpc()
+{
+    constexpr int hardcoded_ueId = 1;
+    static int ipc_fd = -1;
+    static uint32_t transaction_id = 1000;
+    
+    m_logger->debug("deliverDownlinkNasViaIpc for UE[%d] times: %d", hardcoded_ueId, times);
+    
+    // Initialize IPC connection if needed
+    if (ipc_fd < 0) {
+        const char* socket_path = "/tmp/nflambda_5gcore.sock";
+        ipc_fd = ipc_client_connect(socket_path);
+        if (ipc_fd < 0) {
+            m_logger->err("Failed to connect to NFLambda 5G Core at %s", socket_path);
+            return;
+        }
+        m_logger->info("Connected to NFLambda 5G Core via IPC");
+    }
+    
+    // Map times counter to NAS IPC event type
+    uint16_t event_type = 0;
+    const char* event_name = nullptr;
+    switch (times) {
+        case 1:
+            event_type = NAS_IPC_EVT_REG_REQUEST;
+            event_name = "Registration Request";
+            break;
+        case 2:
+            event_type = NAS_IPC_EVT_AUTH_RESPONSE;
+            event_name = "Authentication Response";
+            break;
+        case 3:
+            event_type = NAS_IPC_EVT_SEC_MODE_COMP;
+            event_name = "Security Mode Complete";
+            break;
+        case 4:
+            event_type = NAS_IPC_EVT_REG_COMPLETE;
+            event_name = "Registration Complete";
+            break;
+        case 5:
+            event_type = NAS_IPC_EVT_PDU_SESSION;
+            event_name = "PDU Session Request";
+            break;
+        default:
+            m_logger->err("Invalid times value: %d", times);
+            exit(1);
+    }
+    
+    // Get the appropriate uplink NAS PDU
+    const OctetString* selectedNasPdu = nullptr;
+    switch (times) {
+        case 1:
+            selectedNasPdu = &m_initialUplinkNasPdu;
+            break;
+        case 2:
+            selectedNasPdu = &m_authRespUplinkNasPdu;
+            break;
+        case 3:
+            selectedNasPdu = &m_secModeUplinkNasPdu;
+            break;
+        case 4:
+            selectedNasPdu = &m_regCmpUplinkNasPdu;
+            break;
+        case 5:
+            selectedNasPdu = &m_pduReqUplinkNasPdu;
+            break;
+    }
+    
+    if (selectedNasPdu == nullptr || selectedNasPdu->length() == 0) {
+        m_logger->err("No valid uplink NAS PDU available for %s", event_name);
+        return;
+    }
+    
+    // Log the uplink NAS PDU being sent
+    std::string uplink_hex;
+    char hex[3];
+    for (int i = 0; i < selectedNasPdu->length(); i++) {
+        snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(selectedNasPdu->data()[i]));
+        uplink_hex += hex;
+    }
+    m_logger->debug("Sending %s via IPC, NAS PDU: %s", event_name, uplink_hex.c_str());
+    
+    // Pack the IPC message
+    IpcMessage request;
+    int result = nas_ipc_pack_message(&request, NAS_IPC_MSG_UPLINK, event_type,
+                                      transaction_id, selectedNasPdu->data(), 
+                                      selectedNasPdu->length());
+    
+    if (result != NAS_IPC_OK) {
+        m_logger->err("Failed to pack NAS IPC message: %s", nas_ipc_error_to_string(result));
+        return;
+    }
+    
+    // Send and receive response
+    char response[2048];
+    size_t response_len = sizeof(response);
+    
+    result = ipc_client_send_recv(ipc_fd, request.data, request.length,
+                                  response, &response_len);
+    
+    if (result < 0) {
+        m_logger->err("IPC communication failed for %s", event_name);
+        // Try to reconnect on next call
+        close(ipc_fd);
+        ipc_fd = -1;
+        return;
+    }
+    
+    m_logger->debug("Received IPC response (%zu bytes)", response_len);
+    
+    // Unpack response
+    IpcMessage resp_msg;
+    resp_msg.length = response_len;
+    memcpy(resp_msg.data, response, response_len);
+    
+    uint8_t resp_msg_type;
+    uint16_t resp_event_type;
+    uint32_t resp_trans_id;
+    const uint8_t* resp_nas_pdu;
+    uint16_t resp_nas_len;
+    
+    result = nas_ipc_unpack_message(&resp_msg, &resp_msg_type, &resp_event_type,
+                                    &resp_trans_id, &resp_nas_pdu, &resp_nas_len);
+    
+    if (result != NAS_IPC_OK) {
+        m_logger->err("Failed to unpack IPC response: %s", nas_ipc_error_to_string(result));
+        return;
+    }
+    
+    if (resp_msg_type == NAS_IPC_MSG_ERROR) {
+        m_logger->err("Received error response from NFLambda 5G Core");
+        return;
+    }
+    
+    // Convert binary NAS PDU to OctetString
+    OctetString pdu;
+    for (int i = 0; i < resp_nas_len; i++) {
+        pdu.appendOctet(resp_nas_pdu[i]);
+    }
+    
+    // Log the received NAS PDU
+    std::string downlink_hex;
+    for (int i = 0; i < resp_nas_len; i++) {
+        snprintf(hex, sizeof(hex), "%02x", resp_nas_pdu[i]);
+        downlink_hex += hex;
+    }
+    m_logger->info("Received %s response via IPC, NAS PDU: %s", event_name, downlink_hex.c_str());
+    
+    // Increment transaction ID for next message
+    transaction_id++;
+    
+    // Increment times counter
+    times++;
+    
+    // Push message to RRC task
+    auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
+    w->ueId = hardcoded_ueId;
+    w->pdu = std::move(pdu);
+    m_base->rrcTask->push(std::move(w));
+}
+
 void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
 {
     auto *ue = findUeContext(ueId);
@@ -349,7 +513,7 @@ void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
     if (times <= guard)
     {
         usleep(500000);
-        deliverDownlinkNasRefactored();
+        deliverDownlinkNasViaIpc();
     }
 }
 
