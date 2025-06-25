@@ -32,7 +32,7 @@ static void startup_event_source(void)
         // Wait 1 second before starting
         if (time(NULL) - start_time >= 1) {
             printf("\n=== Starting ping-pong sequence ===\n\n");
-            trigger_event(EVENT_START, "start");
+            trigger_event(EVENT_START, "start", 5);
             started = true;
         }
     }
@@ -54,7 +54,7 @@ static void console_event_source(void)
             char buffer[10];
             if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
                 printf("\n=== User requested stop ===\n");
-                trigger_event(EVENT_STOP, "user_request");
+                trigger_event(EVENT_STOP, "user_request", 12);
                 checked = true;
             }
         }

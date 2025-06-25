@@ -248,11 +248,10 @@ void NgapTask::deliverDownlinkNasRefactored()
     if (selectedNasPdu != nullptr && selectedNasPdu->length() > 0) {
         // Get PDU length and determine how much we can copy safely
         const int pduLength = selectedNasPdu->length();
-        const int maxLen = MAX_NAS_HEX_LEN - 1;
+        const int maxLen = MAX_EVENT_PAYLOAD_SIZE - 1;
         const int copySize = (pduLength < maxLen) ? pduLength : maxLen;
         
         memcpy(EVENT_PAYLOAD, selectedNasPdu->data(), static_cast<size_t>(copySize));
-        EVENT_PAYLOAD[copySize] = '\0'; // Ensure null termination for legacy string functions
         
         // Set the actual binary length in the event struct
         event_nf_ptr->input_payload_length = copySize;
@@ -260,13 +259,13 @@ void NgapTask::deliverDownlinkNasRefactored()
         m_logger->debug("Copied uplink NAS PDU to event input payload, size: %d bytes", copySize);
     } else {
         m_logger->warn("No valid uplink NAS PDU available to copy, event will receive empty input");
-        EVENT_PAYLOAD[0] = '\0'; // Empty string
+        EVENT_PAYLOAD[0] = 0; // Empty
         event_nf_ptr->input_payload_length = 0; // Set length to zero for empty input
     }
     
     // Call the event handler
     entry.generator();
-    const char *hexPduC = EVENT_PAYLOAD;
+    const char *hexPduC = (const char*)EVENT_PAYLOAD;
     std::string hexPdu(hexPduC); // create std::string view for FromHex helper
     m_logger->info("%s Ziyan", entry.description);
 

@@ -15,9 +15,10 @@ void amf_register_handlers(void);
 /**
  * Utility function to print NAS PDU for debugging
  * @param label Description of the PDU
- * @param pdu Hex string representation of the PDU
+ * @param pdu Binary PDU data
+ * @param len Length of PDU in bytes
  */
-void print_nas_pdu(const char* label, const char* pdu);
+void print_nas_pdu(const char* label, const uint8_t* pdu, int len);
 
 /* NAS event handlers */
 EVENT_HANDLER(handle_registration_request);

@@ -137,7 +137,7 @@ register_event_handler(EVENT_IPC_MESSAGE_RECEIVED, handle_ipc_message);
 Messages are processed through the standard NFLambda event system using the actor model:
 ```c
 EVENT_HANDLER(handle_ipc_message) {
-    const char* message = EVENT_PAYLOAD;
+    const char* message = (const char*)EVENT_PAYLOAD;
     // Following actor model - trigger response event instead of direct I/O
     trigger_event(EVENT_IPC_SEND_RESPONSE, message);
 }
@@ -146,8 +146,19 @@ EVENT_HANDLER(handle_ipc_message) {
 The runtime handles the actual IPC response through a dedicated handler:
 ```c
 EVENT_HANDLER(handle_ipc_send_response) {
-    const char* message = EVENT_PAYLOAD;
+    const char* message = (const char*)EVENT_PAYLOAD;
     ipc_send_response(message, strlen(message));
+}
+```
+
+### Binary IPC Support
+NFLambda IPC also supports binary payloads for protocol messages:
+```c
+EVENT_HANDLER(handle_binary_ipc_message) {
+    const uint8_t* data = EVENT_PAYLOAD;
+    size_t len = EVENT_PAYLOAD_SIZE;
+    // Process binary protocol data
+    trigger_event_binary(EVENT_IPC_SEND_BINARY_RESPONSE, data, len);
 }
 ```
 
@@ -187,18 +198,36 @@ You can extend this demo to:
 - Support multiple concurrent clients
 - Integrate with other NFLambda applications
 
+## Integration Patterns
+
+### With Other NFLambda Apps
+The IPC echo pattern can be extended for real applications:
+
+```c
+// Integration with 5G Core
+EVENT_HANDLER(handle_nas_ipc_request) {
+    // Unpack NAS protocol message
+    nas_message_t* nas = unpack_nas_message(EVENT_PAYLOAD);
+    
+    // Process with AMF handlers
+    trigger_event(EVENT_PROCESS_NAS_MESSAGE, nas);
+}
+```
+
 ## Learning Path
 
-After understanding this demo:
-1. Study the [IPC System Documentation](../../event_system/IPC.md)
-2. Review the [IPC API Reference](../../docs/api-reference.md#ipc-apis)
-3. Examine other NFLambda applications for integration patterns
-4. Build your own IPC-enabled applications
+Recommended progression after this demo:
+1. **[IPC System Documentation](../../event_system/IPC.md)** - Technical IPC details
+2. **[Binary Event System](../../event_system/)** - Advanced payload handling
+3. **[NFLambda 5G Core](../nflambda_5gcore/)** - Production IPC usage
+4. **[API Reference](../../docs/api-reference.md#ipc-apis)** - Complete IPC API
+5. Build your own IPC-enabled applications
 
 ## See Also
 
 - **[IPC System](../../event_system/IPC.md)** - Technical details and API reference
 - **[Event System](../../event_system/)** - Event handling framework
-- **[NFLambda Overview](../../README.md)** - System architecture  
-- **[API Reference](../../docs/api-reference.md)** - Complete API documentation
-- **[Ping-Pong Demo](../ping_pong/)** - Basic actor communication example
+- **[NFLambda 5G Core](../nflambda_5gcore/)** - Production IPC application
+- **[Binary Event System](../../event_system/)** - Advanced payload handling
+- **[NFLambda Overview](../../README.md)** - System architecture concepts
+- **[Ping-Pong Demo](../ping_pong/)** - Basic actor communication patterns

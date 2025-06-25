@@ -13,8 +13,8 @@ static inline void print_event_input_payload(const char* handler_name) {
     printf("Event Handler (%s) received input NAS PDU:", handler_name);
     // Use input_payload_length instead of relying on null termination
     int display_length = event_nf_ptr->input_payload_length;
-    if (display_length > MAX_NAS_HEX_LEN) {
-        display_length = MAX_NAS_HEX_LEN;
+    if (display_length > MAX_EVENT_PAYLOAD_SIZE) {
+        display_length = MAX_EVENT_PAYLOAD_SIZE;
     }
     
     for (int i = 0; i < display_length; i++) {

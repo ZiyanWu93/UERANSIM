@@ -79,9 +79,10 @@ void listen_to_events(void);
  * Trigger a new event by adding it to the mailbox
  * 
  * @param event_id The ID of the event to trigger (must be < MAX_EVENTS)
- * @param payload The hex-encoded NAS PDU payload for the event
+ * @param payload Binary payload data for the event
+ * @param length Length of the binary payload in bytes
  */
-void trigger_event(int event_id, const char* payload);
+void trigger_event(int event_id, const void* payload, int length);
 
 /**
  * Process all pending events in the mailbox

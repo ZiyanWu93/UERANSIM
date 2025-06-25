@@ -38,7 +38,7 @@ EventNf* allocate_event(void)
     
     // Clear the event structure
     event->event_id = -1;
-    memset(event->input_payload, 0, MAX_NAS_HEX_LEN);
+    memset(event->input_payload, 0, MAX_EVENT_PAYLOAD_SIZE);
     event->input_payload_length = 0;
     
     allocated_count++;

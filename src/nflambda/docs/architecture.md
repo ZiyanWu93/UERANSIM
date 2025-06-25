@@ -47,10 +47,16 @@ Example actors:
 
 ## Event Types
 
-Events carry NAS messages or control signals:
+Events carry binary payloads up to 2048 bytes:
 - **Uplink**: Registration, Authentication Response, PDU Session Request
 - **Downlink**: Authentication Request, Security Command, Registration Accept
 - **Control**: Start, Stop, Timer events
+
+### Binary Event System
+- Events use `uint8_t` arrays for binary data support
+- Length tracking with `input_payload_length` field
+- Zero-copy IPC message passing
+- Support for both text and binary protocols
 
 ## Performance Characteristics
 

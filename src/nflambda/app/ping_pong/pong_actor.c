@@ -12,15 +12,27 @@
 // Event handler for EVENT_PING_REQUEST
 EVENT_HANDLER(handle_ping_request)
 {
-    char* payload = EVENT_PAYLOAD;
-    printf("PONG: Received ping: \"%s\"\n", payload);
+    const uint8_t* payload = (const uint8_t*)EVENT_PAYLOAD;
+    int len = event_nf_ptr->input_payload_length;
+    
+    // Create null-terminated string from binary payload
+    char msg[256];
+    if (len < sizeof(msg)) {
+        memcpy(msg, payload, len);
+        msg[len] = '\0';
+    } else {
+        memcpy(msg, payload, sizeof(msg) - 1);
+        msg[sizeof(msg) - 1] = '\0';
+    }
+    
+    printf("PONG: Received ping: \"%s\"\n", msg);
     
     // Create pong response
     char response[100];
-    snprintf(response, sizeof(response), "pong_for_%s", payload);
+    snprintf(response, sizeof(response), "pong_for_%s", msg);
     
     printf("PONG: Sending response: \"%s\"\n", response);
-    trigger_event(EVENT_PONG_RESPONSE, response);
+    trigger_event(EVENT_PONG_RESPONSE, response, strlen(response));
 }
 
 // Event handler for EVENT_STOP

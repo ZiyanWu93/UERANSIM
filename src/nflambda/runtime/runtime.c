@@ -76,7 +76,7 @@ void listen_to_events()
 }
 
 
-void trigger_event(int event_id, const char* payload)
+void trigger_event(int event_id, const void* payload, int length)
 {
     if (event_id < 0 || event_id >= MAX_EVENTS) {
         runtime_stats.handler_errors++;
@@ -95,9 +95,15 @@ void trigger_event(int event_id, const char* payload)
     // Create event data
     EventNf event_data;
     event_data.event_id = event_id;
-    strncpy(event_data.input_payload, payload, MAX_NAS_HEX_LEN - 1);
-    event_data.input_payload[MAX_NAS_HEX_LEN - 1] = '\0';
-    event_data.input_payload_length = strlen(payload);
+    
+    // Copy binary payload with bounds checking
+    if (length > MAX_EVENT_PAYLOAD_SIZE) {
+        length = MAX_EVENT_PAYLOAD_SIZE;
+    }
+    if (payload && length > 0) {
+        memcpy(event_data.input_payload, payload, length);
+    }
+    event_data.input_payload_length = length;
     
     // Put event in mailbox
     if (mailbox_put(&event_mailbox, &event_data)) {

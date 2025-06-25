@@ -5,7 +5,7 @@
 ### Core Functions
 ```c
 void runtime(void)                    // Main event loop
-void trigger_event(int event_id, const char* payload)
+void trigger_event(int event_id, const void* payload, int length)
 ```
 
 ### Registration Functions
@@ -27,7 +27,8 @@ RuntimeStats* get_runtime_stats(void)
 ```c
 EVENT_HANDLER(handler_name) {
     // Access event via EVENT_ID and EVENT_PAYLOAD macros
-    char* payload = EVENT_PAYLOAD;
+    const uint8_t* payload = (const uint8_t*)EVENT_PAYLOAD;
+    int length = event_nf_ptr->input_payload_length;
     int id = EVENT_ID;
 }
 ```
@@ -38,8 +39,8 @@ EVENT_HANDLER(handler_name) {
 ```c
 typedef struct EventNf {
     int event_id;
-    char input_payload[MAX_NAS_HEX_LEN];
-    int input_payload_length;
+    uint8_t input_payload[MAX_EVENT_PAYLOAD_SIZE];  // Binary payload
+    int input_payload_length;                        // Actual payload size
 } EventNf;
 ```
 
@@ -121,7 +122,8 @@ void ipc_client_close(int fd)
 
 ### IPC Events
 ```c
-#define EVENT_IPC_MESSAGE_RECEIVED  200
+#define EVENT_IPC_MESSAGE_RECEIVED  200   // Binary IPC message received
+#define EVENT_IPC_SEND_RESPONSE     201   // Send binary response via IPC
 ```
 
 For detailed IPC documentation, see [IPC System Guide](../event_system/IPC.md).
@@ -132,8 +134,14 @@ For detailed IPC documentation, see [IPC System Guide](../event_system/IPC.md).
 ```c
 // Define handlers
 EVENT_HANDLER(handle_my_event) {
-    process_event(EVENT_PAYLOAD);
-    trigger_event(RESPONSE_EVENT, response_data);
+    const uint8_t* data = (const uint8_t*)EVENT_PAYLOAD;
+    int len = event_nf_ptr->input_payload_length;
+    
+    // Process binary data
+    uint8_t response[256];
+    int resp_len = process_data(data, len, response);
+    
+    trigger_event(RESPONSE_EVENT, response, resp_len);
 }
 
 // Register handlers
@@ -151,7 +159,9 @@ void my_actor_init(void) {
 ```c
 void my_event_source(void) {
     if (has_data()) {
-        trigger_event(event_type, data);
+        uint8_t buffer[1024];
+        int len = read_data(buffer, sizeof(buffer));
+        trigger_event(event_type, buffer, len);
     }
 }
 
@@ -172,15 +182,25 @@ register_exit_condition("my_exit", my_exit_condition);
 ```c
 // IPC event handler
 EVENT_HANDLER(handle_ipc_message) {
-    const char* message = EVENT_PAYLOAD;
-    // Process message
-    ipc_send_response(message, strlen(message));
+    const uint8_t* msg_data = (const uint8_t*)EVENT_PAYLOAD;
+    int msg_len = event_nf_ptr->input_payload_length;
+    
+    // Process binary IPC message
+    IpcMessage* ipc_msg = (IpcMessage*)msg_data;
+    
+    // Generate response
+    IpcMessage response;
+    int resp_len = prepare_response(ipc_msg, &response);
+    
+    // Trigger response event
+    trigger_event(EVENT_IPC_SEND_RESPONSE, &response, resp_len);
 }
 
 // Initialize IPC
 ipc_event_source_init(NULL);
 register_event_source("ipc", ipc_event_source_poll);
 register_event_handler(EVENT_IPC_MESSAGE_RECEIVED, handle_ipc_message);
+ipc_register_handlers();  // Register IPC response handler
 ```
 
 See [IPC Echo Demo](../app/ipc_echo/) for complete example.

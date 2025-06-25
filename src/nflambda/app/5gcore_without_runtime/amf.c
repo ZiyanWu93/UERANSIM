@@ -38,7 +38,7 @@ EVENT_HANDLER(generate_auth_req)
     {
         const char *part = parts[i];
         size_t len = strlen(part);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -95,7 +95,7 @@ EVENT_HANDLER(generate_security_cmd)
     {
         const char *part = parts[i];
         size_t len = strlen(part);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -144,7 +144,7 @@ EVENT_HANDLER(generate_registration_accept)
     for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
         size_t len = strlen(parts[i]);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -197,7 +197,7 @@ EVENT_HANDLER(generate_configuration_update)
     for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
         size_t len = strlen(parts[i]);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -253,7 +253,7 @@ EVENT_HANDLER(generate_pdu_session_establishment)
     for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
         size_t len = strlen(parts[i]);
-        if (off + len >= MAX_NAS_HEX_LEN)
+        if (off + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;

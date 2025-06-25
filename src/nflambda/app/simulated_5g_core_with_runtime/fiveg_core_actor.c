@@ -49,7 +49,7 @@ EVENT_HANDLER(handle_registration_request)
     {
         const char *part = parts[i];
         size_t len = strlen(part);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -63,7 +63,7 @@ EVENT_HANDLER(handle_registration_request)
     ue_state = UE_STATE_REGISTERING;
     
     // Trigger authentication request event
-    trigger_event(EVENT_AUTH_REQUEST, EVENT_PAYLOAD);
+    trigger_event(EVENT_AUTH_REQUEST, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for Authentication Response
@@ -93,7 +93,7 @@ EVENT_HANDLER(handle_auth_response)
     {
         const char *part = parts[i];
         size_t len = strlen(part);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -108,7 +108,7 @@ EVENT_HANDLER(handle_auth_response)
     sequence_number++;
     
     // Trigger security mode command event
-    trigger_event(EVENT_SECURITY_MODE_COMMAND, EVENT_PAYLOAD);
+    trigger_event(EVENT_SECURITY_MODE_COMMAND, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for Security Mode Complete
@@ -137,7 +137,7 @@ EVENT_HANDLER(handle_security_mode_complete)
     for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
         size_t len = strlen(parts[i]);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -152,7 +152,7 @@ EVENT_HANDLER(handle_security_mode_complete)
     sequence_number++;
     
     // Trigger registration accept event
-    trigger_event(EVENT_REGISTRATION_ACCEPT, EVENT_PAYLOAD);
+    trigger_event(EVENT_REGISTRATION_ACCEPT, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for Registration Complete
@@ -180,7 +180,7 @@ EVENT_HANDLER(handle_registration_complete)
     for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
         size_t len = strlen(parts[i]);
-        if (offset + len >= MAX_NAS_HEX_LEN)
+        if (offset + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -195,7 +195,7 @@ EVENT_HANDLER(handle_registration_complete)
     sequence_number++;
     
     // Trigger configuration update event
-    trigger_event(EVENT_CONFIGURATION_UPDATE, EVENT_PAYLOAD);
+    trigger_event(EVENT_CONFIGURATION_UPDATE, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for PDU Session Establishment Request
@@ -233,7 +233,7 @@ EVENT_HANDLER(handle_pdu_session_request)
     for (size_t i = 0; i < sizeof(parts) / sizeof(parts[0]); ++i)
     {
         size_t len = strlen(parts[i]);
-        if (off + len >= MAX_NAS_HEX_LEN)
+        if (off + len >= MAX_EVENT_PAYLOAD_SIZE)
         {
             EVENT_PAYLOAD[0] = '\0';
             return;
@@ -248,7 +248,7 @@ EVENT_HANDLER(handle_pdu_session_request)
     sequence_number++;
     
     // Trigger PDU session accept event
-    trigger_event(EVENT_PDU_SESSION_ACCEPT, EVENT_PAYLOAD);
+    trigger_event(EVENT_PDU_SESSION_ACCEPT, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
     
     // Complete the flow - stop after PDU session
     printf("[5G Core] Registration and PDU session flow completed\n");

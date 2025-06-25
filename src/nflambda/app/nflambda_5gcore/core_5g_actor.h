@@ -35,7 +35,6 @@ void core_5g_stop(void);
 
 /* Event handler declarations */
 EVENT_HANDLER(handle_ipc_nas_message);
-EVENT_HANDLER(handle_ipc_send_nas_response);
 
 #ifdef __cplusplus
 }

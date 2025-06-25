@@ -12,6 +12,7 @@ This demo illustrates:
 - Event source implementation
 - Exit condition configuration
 - The complete application lifecycle
+- Basic event-driven communication patterns
 
 ## Architecture
 
@@ -154,19 +155,49 @@ You can modify this demo to experiment:
 - Create more complex event flows
 - Add custom statistics tracking
 
+## Key Programming Concepts
+
+### Event Payload Handling
+NFLambda supports both string and binary event payloads:
+
+```c
+// String payload (traditional)
+EVENT_HANDLER(handle_string_event) {
+    const char* message = (const char*)EVENT_PAYLOAD;
+    printf("Received: %s\n", message);
+}
+
+// Binary payload (advanced)
+EVENT_HANDLER(handle_binary_event) {
+    const uint8_t* data = EVENT_PAYLOAD;
+    size_t len = EVENT_PAYLOAD_SIZE;
+    // Process binary data
+}
+```
+
+### Event Triggering
+```c
+// Trigger string event
+trigger_event(EVENT_TYPE, "message");
+
+// Trigger binary event
+trigger_event_binary(EVENT_TYPE, data, length);
+```
+
 ## Learning Path
 
-After understanding this demo:
-1. Study the [Runtime Framework](../../runtime/) documentation
-2. Examine the [IPC Echo Demo](../ipc_echo/) for external communication
-3. Review how [AMF actor](../amf/) implements protocol handling
-4. Create your own actors
-5. Build more complex applications
+Recommended progression after this demo:
+1. **[Event System](../../event_system/)** - Understand event handling framework
+2. **[Runtime Framework](../../runtime/)** - Learn runtime architecture
+3. **[IPC Echo Demo](../ipc_echo/)** - External communication patterns
+4. **[Simulated 5G Core](../simulated_5g_core_with_runtime/)** - Protocol implementation
+5. **[NFLambda 5G Core](../nflambda_5gcore/)** - Production-ready applications
 
 ## See Also
 
-- **[Runtime Module](../../runtime/)** - Framework documentation
-- **[Event System](../../event_system/)** - Event handling details
-- **[IPC Echo Demo](../ipc_echo/)** - External communication example
-- **[NFLambda Overview](../../README.md)** - System architecture
-- **[AMF Demo](../amf/)** - Protocol implementation example
+- **[Event System](../../event_system/)** - Event handling framework details
+- **[Runtime Module](../../runtime/)** - NFLambda runtime documentation
+- **[IPC Echo Demo](../ipc_echo/)** - External communication patterns
+- **[Simulated 5G Core](../simulated_5g_core_with_runtime/)** - Protocol implementation
+- **[NFLambda Overview](../../README.md)** - System architecture and concepts
+- **[Memory Management](../../memory/)** - Memory pools and allocation

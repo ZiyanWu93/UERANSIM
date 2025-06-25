@@ -15,14 +15,33 @@
 // Handler for IPC messages
 EVENT_HANDLER(handle_ipc_message)
 {
-    const char* message = EVENT_PAYLOAD;
-    int message_len = strlen(message);
+    const uint8_t* msg_data = (const uint8_t*)EVENT_PAYLOAD;
+    int msg_len = event_nf_ptr->input_payload_length;
     
-    printf("IPC Echo: Received message: '%s' (%d bytes)\n", message, message_len);
+    printf("IPC Echo: Received message (%d bytes)\n", msg_len);
+    
+    // For text messages sent by ipc_client_demo, extract and print the actual message
+    if (msg_len >= sizeof(uint32_t)) {
+        // Skip the IPC message length header (first 4 bytes)
+        uint32_t payload_len;
+        memcpy(&payload_len, msg_data, sizeof(payload_len));
+        
+        if (payload_len > 0 && payload_len <= msg_len - sizeof(uint32_t)) {
+            // Create null-terminated string for display
+            char display_msg[256];
+            int copy_len = payload_len < sizeof(display_msg) - 1 ? payload_len : sizeof(display_msg) - 1;
+            memcpy(display_msg, msg_data + sizeof(uint32_t), copy_len);
+            display_msg[copy_len] = '\0';
+            
+            printf("IPC Echo: Message content: '%s'\n", display_msg);
+        }
+    }
     
     // Trigger response event instead of directly sending
     printf("IPC Echo: Triggering response event\n");
-    trigger_event(EVENT_IPC_SEND_RESPONSE, message);
+    
+    // For echo, we need to echo back the full IPC message including length header
+    trigger_event(EVENT_IPC_SEND_RESPONSE, msg_data, msg_len);
 }
 
 // Register IPC event handlers

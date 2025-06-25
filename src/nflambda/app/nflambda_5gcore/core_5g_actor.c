@@ -21,16 +21,19 @@ void core_5g_init(void)
 /* Main IPC message handler */
 EVENT_HANDLER(handle_ipc_nas_message)
 {
-    const char* raw_message = EVENT_PAYLOAD;
-    printf("[Core 5G] Received IPC message\n");
+    const uint8_t* raw_message = (const uint8_t*)EVENT_PAYLOAD;
+    int message_length = event_nf_ptr->input_payload_length;
+    printf("[Core 5G] Received IPC message (%d bytes)\n", message_length);
     
-    /* The EVENT_PAYLOAD contains the full IPC message including length field */
-    /* For now, we'll assume the message is properly formatted */
-    /* In a real implementation, the IPC event source would pass binary data */
+    /* Validate minimum message size */
+    if (message_length < sizeof(uint32_t)) {
+        fprintf(stderr, "[Core 5G] IPC message too small\n");
+        return;
+    }
+    
+    /* Copy the IPC message */
     IpcMessage ipc_msg;
-    
-    /* Copy the entire message - the first 4 bytes are the length */
-    memcpy(&ipc_msg, raw_message, sizeof(ipc_msg));
+    memcpy(&ipc_msg, raw_message, message_length);
     
     /* Validate the length */
     if (ipc_msg.length > IPC_MAX_PAYLOAD_SIZE) {
@@ -54,10 +57,8 @@ EVENT_HANDLER(handle_ipc_nas_message)
         /* Trigger error response */
         IpcMessage error_msg;
         nas_ipc_create_error_response(&error_msg, result, transaction_id);
-        char error_payload[IPC_MAX_PAYLOAD_SIZE + 1];
-        memcpy(error_payload, error_msg.data, error_msg.length);
-        error_payload[error_msg.length] = '\0';
-        trigger_event(EVENT_IPC_SEND_RESPONSE, error_payload);
+        /* Send full IPC message including length header */
+        trigger_event(EVENT_IPC_SEND_RESPONSE, &error_msg, sizeof(error_msg.length) + error_msg.length);
         return;
     }
     
@@ -75,40 +76,31 @@ EVENT_HANDLER(handle_ipc_nas_message)
     /* Store transaction ID for response correlation */
     ue_state_set_transaction_id(transaction_id);
     
-    /* Convert NAS PDU to hex string for event payload */
-    char nas_hex[MAX_NAS_HEX_LEN];
-    size_t hex_offset = 0;
-    for (uint16_t i = 0; i < nas_len && hex_offset < MAX_NAS_HEX_LEN - 2; i++) {
-        sprintf(nas_hex + hex_offset, "%02x", nas_pdu[i]);
-        hex_offset += 2;
-    }
-    nas_hex[hex_offset] = '\0';
-    
     /* Trigger appropriate NAS event based on event type */
     switch (event_type) {
         case NAS_IPC_EVT_REG_REQUEST:
             printf("[Core 5G] Triggering registration request event\n");
-            trigger_event(EVENT_NAS_REGISTRATION_REQUEST, nas_hex);
+            trigger_event(EVENT_NAS_REGISTRATION_REQUEST, nas_pdu, nas_len);
             break;
             
         case NAS_IPC_EVT_AUTH_RESPONSE:
             printf("[Core 5G] Triggering auth response event\n");
-            trigger_event(EVENT_NAS_AUTH_RESPONSE, nas_hex);
+            trigger_event(EVENT_NAS_AUTH_RESPONSE, nas_pdu, nas_len);
             break;
             
         case NAS_IPC_EVT_SEC_MODE_COMP:
             printf("[Core 5G] Triggering security mode complete event\n");
-            trigger_event(EVENT_NAS_SECURITY_MODE_COMPLETE, nas_hex);
+            trigger_event(EVENT_NAS_SECURITY_MODE_COMPLETE, nas_pdu, nas_len);
             break;
             
         case NAS_IPC_EVT_REG_COMPLETE:
             printf("[Core 5G] Triggering registration complete event\n");
-            trigger_event(EVENT_NAS_REGISTRATION_COMPLETE, nas_hex);
+            trigger_event(EVENT_NAS_REGISTRATION_COMPLETE, nas_pdu, nas_len);
             break;
             
         case NAS_IPC_EVT_PDU_SESSION:
             printf("[Core 5G] Triggering PDU session request event\n");
-            trigger_event(EVENT_NAS_PDU_SESSION_REQUEST, nas_hex);
+            trigger_event(EVENT_NAS_PDU_SESSION_REQUEST, nas_pdu, nas_len);
             break;
             
         default:
@@ -117,16 +109,6 @@ EVENT_HANDLER(handle_ipc_nas_message)
     }
 }
 
-/* Handler for sending NAS responses via IPC */
-EVENT_HANDLER(handle_ipc_send_nas_response)
-{
-    const char* message = EVENT_PAYLOAD;
-    printf("[Core 5G] Sending NAS response via IPC\n");
-    
-    /* The payload should already be a packed IPC message */
-    /* Trigger the IPC send response event */
-    trigger_event(EVENT_IPC_SEND_RESPONSE, message);
-}
 
 /* Register all Core 5G event handlers */
 void core_5g_register_handlers(void)
@@ -135,10 +117,6 @@ void core_5g_register_handlers(void)
     
     /* Register IPC handlers */
     register_event_handler(EVENT_IPC_MESSAGE_RECEIVED, handle_ipc_nas_message);
-    
-    /* Register internal IPC response handler */
-    /* This is an internal event used by AMF handlers to send responses */
-    register_event_handler(EVENT_IPC_SEND_RESPONSE + 100, handle_ipc_send_nas_response);
     
     /* Register AMF NAS handlers */
     amf_register_handlers();

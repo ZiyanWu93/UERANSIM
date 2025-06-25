@@ -195,18 +195,8 @@ void ipc_event_source_poll(void)
             return;
         }
         
-        /* Trigger event with message data */
-        /* Copy message data to event payload */
-        char payload[MAX_NAS_HEX_LEN];
-        if (msg.length < MAX_NAS_HEX_LEN) {
-            memcpy(payload, msg.data, msg.length);
-            payload[msg.length] = '\0';
-        } else {
-            memcpy(payload, msg.data, MAX_NAS_HEX_LEN - 1);
-            payload[MAX_NAS_HEX_LEN - 1] = '\0';
-        }
-        
-        trigger_event(EVENT_IPC_MESSAGE_RECEIVED, payload);
+        /* Trigger event with full IPC message (including length header) */
+        trigger_event(EVENT_IPC_MESSAGE_RECEIVED, &msg, sizeof(msg.length) + msg.length);
     }
 }
 
@@ -281,14 +271,31 @@ void ipc_event_source_cleanup(void)
 /* Handler for IPC response events */
 EVENT_HANDLER(handle_ipc_send_response)
 {
-    const char* message = EVENT_PAYLOAD;
-    int message_len = strlen(message);
+    /* Event payload contains binary IPC message data */
+    const uint8_t* message_data = (const uint8_t*)EVENT_PAYLOAD;
+    int message_length = event_nf_ptr->input_payload_length;
+    
+    /* Validate minimum size for IPC message header */
+    if (message_length < sizeof(uint32_t)) {
+        fprintf(stderr, "IPC: Response message too small\n");
+        return;
+    }
+    
+    /* Extract message length from first 4 bytes */
+    uint32_t payload_length;
+    memcpy(&payload_length, message_data, sizeof(payload_length));
+    
+    /* Validate total message size */
+    if (message_length != sizeof(payload_length) + payload_length) {
+        fprintf(stderr, "IPC: Invalid response message size\n");
+        return;
+    }
     
     /* Send the response through IPC */
-    if (ipc_send_response(message, message_len) < 0) {
+    if (ipc_send_response(message_data + sizeof(payload_length), payload_length) < 0) {
         fprintf(stderr, "IPC: Failed to send response\n");
     } else {
-        printf("IPC: Response sent (%d bytes)\n", message_len);
+        printf("IPC: Response sent (%u bytes)\n", payload_length);
     }
 }
 

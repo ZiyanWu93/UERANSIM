@@ -46,21 +46,53 @@ UERANSIM (gNB/UE)          NFLambda 5G Core Runtime
 
 **Completion Date**: 2025-06-24
 
-### Milestone 2: Core 5G Actor Implementation (1 week)
+### Milestone 2: Core 5G Actor Implementation (1 week) ✅ COMPLETED
 
 **Goal**: Create the NFLambda 5G Core application with IPC support
 
 **Tasks**:
-- [ ] Create `core_5g_actor.c` with IPC event handling
-- [ ] Port AMF handlers from `src/nflambda/app/5gcore/amf.c`
-- [ ] Implement NAS message unpacking and event triggering
-- [ ] Add UE context management for multiple UEs
-- [ ] Create main.c for NFLambda app initialization
-- [ ] Write CMakeLists.txt for building
+- [x] Create `core_5g_actor.c` with IPC event handling
+- [x] Port AMF handlers from `src/nflambda/app/5gcore/amf.c`
+- [x] Implement NAS message unpacking and event triggering
+- [x] Single UE state management (simplified from multi-UE)
+- [x] Create main.c for NFLambda app initialization
+- [x] Write CMakeLists.txt for building
+- [x] Create test client for verification
+- [x] Fix binary data handling in event system
 
 **Deliverables**:
-- Working NFLambda 5G Core application
-- UE state management system
+- ✅ Working NFLambda 5G Core application (`nflambda_5gcore`)
+- ✅ Single UE state management system
+- ✅ Event-driven IPC response handling
+- ✅ Test client (`nflambda_5gcore_test_client`)
+- ✅ Binary event payload support throughout the system
+
+**Key Design Decisions**:
+- Simplified to single UE support (no multi-UE complexity)
+- Event-driven IPC responses following actor model
+- Direct use of EVENT_IPC_SEND_RESPONSE for responses
+- Binary event payloads (uint8_t arrays) instead of strings
+- Proper length tracking with input_payload_length field
+
+**Technical Improvements**:
+- Enhanced event system to support binary payloads up to 2048 bytes
+- Updated trigger_event() to accept binary data with length
+- Modified IPC event source to pass full binary messages
+- Removed hex encoding workarounds in favor of native binary handling
+
+**Completion Date**: 2025-06-25
+
+**How to Run**:
+```bash
+# Build
+make build
+
+# Start server
+./build/nflambda_5gcore
+
+# Test (in another terminal)
+./build/nflambda_5gcore_test_client
+```
 
 ### Milestone 3: UERANSIM IPC Integration (1 week)
 

@@ -45,7 +45,7 @@ void ueransim_startup_event_source(void)
             printf("[UERANSIM] Sending NAS PDU: %s\n", reg_request);
             ue_state = UE_STATE_REGISTERING;
             
-            trigger_event(EVENT_REGISTRATION_REQUEST, reg_request);
+            trigger_event(EVENT_REGISTRATION_REQUEST, reg_request, strlen(reg_request));
             started = true;
         }
     }
@@ -67,7 +67,7 @@ EVENT_HANDLER(handle_auth_request)
     ue_state = UE_STATE_AUTHENTICATED;
     
     // Trigger authentication response event
-    trigger_event(EVENT_AUTH_RESPONSE, EVENT_PAYLOAD);
+    trigger_event(EVENT_AUTH_RESPONSE, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for Security Mode Command
@@ -86,7 +86,7 @@ EVENT_HANDLER(handle_security_mode_command)
     ue_state = UE_STATE_SECURITY_ESTABLISHED;
     
     // Trigger security mode complete event
-    trigger_event(EVENT_SECURITY_MODE_COMPLETE, EVENT_PAYLOAD);
+    trigger_event(EVENT_SECURITY_MODE_COMPLETE, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for Registration Accept
@@ -105,7 +105,7 @@ EVENT_HANDLER(handle_registration_accept)
     ue_state = UE_STATE_REGISTERED;
     
     // Trigger registration complete event
-    trigger_event(EVENT_REGISTRATION_COMPLETE, EVENT_PAYLOAD);
+    trigger_event(EVENT_REGISTRATION_COMPLETE, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for Configuration Update Command
@@ -123,7 +123,7 @@ EVENT_HANDLER(handle_configuration_update)
     printf("[UERANSIM] Sending PDU Session Establishment Request: %s\n", EVENT_PAYLOAD);
     
     // Trigger PDU session request event
-    trigger_event(EVENT_PDU_SESSION_REQUEST, EVENT_PAYLOAD);
+    trigger_event(EVENT_PDU_SESSION_REQUEST, EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
 }
 
 // Handler for PDU Session Establishment Accept
