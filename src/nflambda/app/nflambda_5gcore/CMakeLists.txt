@@ -38,3 +38,44 @@ set_target_properties(nas_ipc_protocol_test PROPERTIES
 # Enable testing
 enable_testing()
 add_test(NAME nas_ipc_protocol_test COMMAND nas_ipc_protocol_test)
+
+# NFLambda 5G Core executable
+add_executable(nflambda_5gcore
+    main.c
+    core_5g_actor.c
+    amf_handlers.c
+    ue_state.c
+)
+
+# Link with NFLambda libraries
+target_link_libraries(nflambda_5gcore
+    runtime_lib
+    event_system
+    mailbox
+    memory
+    nas_ipc_protocol
+    pthread
+)
+
+# Set executable properties
+set_target_properties(nflambda_5gcore PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+# Test client executable
+add_executable(nflambda_5gcore_test_client
+    test_client.c
+)
+
+target_link_libraries(nflambda_5gcore_test_client
+    nas_ipc_protocol
+    event_system
+)
+
+set_target_properties(nflambda_5gcore_test_client PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
