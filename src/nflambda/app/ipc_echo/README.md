@@ -134,13 +134,24 @@ register_event_handler(EVENT_IPC_MESSAGE_RECEIVED, handle_ipc_message);
 ```
 
 ### 2. Event-Driven IPC Handling
-Messages are processed through the standard NFLambda event system:
+Messages are processed through the standard NFLambda event system using the actor model:
 ```c
 EVENT_HANDLER(handle_ipc_message) {
+    const char* message = EVENT_PAYLOAD;
+    // Following actor model - trigger response event instead of direct I/O
+    trigger_event(EVENT_IPC_SEND_RESPONSE, message);
+}
+```
+
+The runtime handles the actual IPC response through a dedicated handler:
+```c
+EVENT_HANDLER(handle_ipc_send_response) {
     const char* message = EVENT_PAYLOAD;
     ipc_send_response(message, strlen(message));
 }
 ```
+
+This design maintains the event-driven actor model where actors never perform I/O directly.
 
 ### 3. External Client Integration
 External applications use the IPC client library for simple communication:

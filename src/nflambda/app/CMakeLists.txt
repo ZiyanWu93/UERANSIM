@@ -11,3 +11,6 @@ add_subdirectory(5gcore_without_runtime)
 
 # Add IPC echo demo
 add_subdirectory(ipc_echo)
+
+# Add NFLambda 5G Core application
+add_subdirectory(nflambda_5gcore)

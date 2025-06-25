@@ -7,7 +7,6 @@ build: build-release
 build-release: FORCE
 	rm -fr logs # Old version log files
 	mkdir -p build
-	rm -fr build/*
 	
 	cmake -DCMAKE_BUILD_TYPE=Release -G "CodeBlocks - Unix Makefiles" . -B cmake-build-release
 	cmake --build cmake-build-release --target all
@@ -28,13 +27,13 @@ build-release: FORCE
 	@if [ -f cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo ]; then cp cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
+	@if [ -f cmake-build-release/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test ]; then cp cmake-build-release/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Release).${NC}\n"
 
 build-debug: FORCE
 	rm -fr logs # Old version log files
 	mkdir -p build
-	rm -fr build/*
 	
 	cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" . -B cmake-build-debug
 	cmake --build cmake-build-debug --target all
@@ -55,6 +54,7 @@ build-debug: FORCE
 	@if [ -f cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo ]; then cp cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test ]; then cp cmake-build-debug/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test build/; fi
 
 	@printf "${GREEN}UERANSIM successfully built (Debug).${NC}\n"
 

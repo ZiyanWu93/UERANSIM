@@ -277,3 +277,23 @@ void ipc_event_source_cleanup(void)
     ipc_state.initialized = false;
     printf("IPC event source cleaned up\n");
 }
+
+/* Handler for IPC response events */
+EVENT_HANDLER(handle_ipc_send_response)
+{
+    const char* message = EVENT_PAYLOAD;
+    int message_len = strlen(message);
+    
+    /* Send the response through IPC */
+    if (ipc_send_response(message, message_len) < 0) {
+        fprintf(stderr, "IPC: Failed to send response\n");
+    } else {
+        printf("IPC: Response sent (%d bytes)\n", message_len);
+    }
+}
+
+/* Register IPC internal event handlers */
+void ipc_register_handlers(void)
+{
+    register_event_handler(EVENT_IPC_SEND_RESPONSE, handle_ipc_send_response);
+}

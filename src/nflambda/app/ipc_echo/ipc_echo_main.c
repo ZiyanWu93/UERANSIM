@@ -20,12 +20,9 @@ EVENT_HANDLER(handle_ipc_message)
     
     printf("IPC Echo: Received message: '%s' (%d bytes)\n", message, message_len);
     
-    // Echo the message back
-    if (ipc_send_response(message, message_len) < 0) {
-        fprintf(stderr, "IPC Echo: Failed to send response\n");
-    } else {
-        printf("IPC Echo: Sent response\n");
-    }
+    // Trigger response event instead of directly sending
+    printf("IPC Echo: Triggering response event\n");
+    trigger_event(EVENT_IPC_SEND_RESPONSE, message);
 }
 
 // Register IPC event handlers
@@ -33,6 +30,9 @@ static void register_ipc_handlers(void)
 {
     printf("Registering IPC event handlers...\n");
     register_event_handler(EVENT_IPC_MESSAGE_RECEIVED, handle_ipc_message);
+    
+    // Also register IPC internal handlers for response handling
+    ipc_register_handlers();
 }
 
 int main(int argc, char* argv[])

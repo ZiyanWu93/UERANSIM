@@ -28,5 +28,6 @@ typedef void (*event_handler_t)();
 
 // IPC Event Type Definitions
 #define EVENT_IPC_MESSAGE_RECEIVED        200
+#define EVENT_IPC_SEND_RESPONSE           201
 
 #endif //EVENT_H

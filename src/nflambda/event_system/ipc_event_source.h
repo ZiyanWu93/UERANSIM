@@ -59,6 +59,12 @@ bool ipc_is_client_connected(void);
  */
 void ipc_event_source_cleanup(void);
 
+/**
+ * Register IPC internal event handlers
+ * Should be called during handler registration phase
+ */
+void ipc_register_handlers(void);
+
 #ifdef __cplusplus
 }
 #endif

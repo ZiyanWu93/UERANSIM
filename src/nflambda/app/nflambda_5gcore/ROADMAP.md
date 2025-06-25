@@ -27,19 +27,24 @@ UERANSIM (gNB/UE)          NFLambda 5G Core Runtime
 
 ## Milestones
 
-### Milestone 1: NAS Message Protocol (3 days)
+### Milestone 1: NAS Message Protocol (3 days) ✅ COMPLETED
 
 **Goal**: Define how NAS messages are transported over IPC
 
 **Tasks**:
-- [ ] Define NAS message encoding in IpcMessage.data[2044]
-- [ ] Create protocol specification document
-- [ ] Design UE identification and correlation scheme
-- [ ] Define message type enumeration
+- [x] Define NAS message encoding in IpcMessage.data[2044]
+- [x] Create protocol specification document
+- [x] Design correlation scheme (using Transaction ID, no UE ID yet)
+- [x] Define message type enumeration
 
 **Deliverables**:
-- Protocol specification in this ROADMAP
-- Header file with message format definitions
+- ✅ Protocol specification in PROTOCOL.md
+- ✅ Header file with message format definitions (nas_ipc_protocol.h)
+- ✅ Implementation of packing/unpacking functions (nas_ipc_protocol.c)
+- ✅ Comprehensive unit tests (nas_ipc_protocol_test.c)
+- ✅ CMakeLists.txt for building
+
+**Completion Date**: 2025-06-24
 
 ### Milestone 2: Core 5G Actor Implementation (1 week)
 
@@ -114,30 +119,53 @@ Using the existing IpcMessage structure (2KB total), we pack NAS data as follows
 
 ```
 IpcMessage.data[2044] layout:
-┌────────────┬────────────┬─────────────┬──────────────┐
-│ msg_type   │   ue_id    │  nas_len    │   nas_pdu    │
-│ (1 byte)   │ (4 bytes)  │  (2 bytes)  │  (N bytes)   │
-└────────────┴────────────┴─────────────┴──────────────┘
-     0             1             5             7
+┌────────────┬───────────┬─────────────┬────────────┬────────────┬───────────┬──────────────┐
+│ msg_type   │  version  │  nas_len    │  trans_id  │ event_type │ reserved  │   nas_pdu    │
+│ (1 byte)   │ (1 byte)  │  (2 bytes)  │ (4 bytes)  │ (2 bytes)  │ (2 bytes) │  (N bytes)   │
+└────────────┴───────────┴─────────────┴────────────┴────────────┴───────────┴──────────────┘
+     0            1            2             4            8           10           12
 
-msg_type: 0x01 = NAS_UPLINK, 0x02 = NAS_DOWNLINK
-ue_id: RAN-UE-NGAP-ID for correlation
-nas_len: Length of NAS PDU
-nas_pdu: Actual NAS message (up to 2037 bytes)
+msg_type: 0x01 = NAS_UPLINK, 0x02 = NAS_DOWNLINK, 0xFF = ERROR
+version: 0x01 = Protocol version 1
+nas_len: Length of NAS PDU (network byte order)
+trans_id: Transaction ID for correlation (network byte order)
+event_type: Maps to EVENT_NAS_* constants (network byte order)
+reserved: Set to 0 for future use
+nas_pdu: Actual NAS message (up to 2032 bytes)
 ```
 
-### Helper Functions
+**Note**: UE identification is not included in Milestone 1 - using hard-coded values
+
+### Helper Functions (Implemented in nas_ipc_protocol.h/c)
 
 ```c
-// Pack NAS message into IpcMessage (no extra memory)
-void pack_nas_message(IpcMessage* msg, uint8_t type, 
-                     uint32_t ue_id, const uint8_t* nas_pdu, 
-                     uint16_t nas_len);
+// Pack NAS message into IpcMessage
+int nas_ipc_pack_message(
+    IpcMessage* ipc_msg,
+    uint8_t msg_type,
+    uint16_t event_type,
+    uint32_t transaction_id,
+    const uint8_t* nas_pdu,
+    uint16_t nas_len
+);
 
 // Unpack NAS message from IpcMessage
-void unpack_nas_message(const IpcMessage* msg, uint8_t* type,
-                       uint32_t* ue_id, uint8_t** nas_pdu, 
-                       uint16_t* nas_len);
+int nas_ipc_unpack_message(
+    const IpcMessage* ipc_msg,
+    uint8_t* msg_type,
+    uint16_t* event_type,
+    uint32_t* transaction_id,
+    const uint8_t** nas_pdu,
+    uint16_t* nas_len
+);
+
+// Additional helper functions implemented:
+int nas_ipc_validate_message(const IpcMessage* ipc_msg);
+int nas_ipc_create_error_response(IpcMessage* ipc_msg, uint8_t error_code, uint32_t transaction_id);
+uint16_t nas_ipc_times_to_event_type(int times);
+const char* nas_ipc_msg_type_to_string(uint8_t msg_type);
+const char* nas_ipc_event_type_to_string(uint16_t event_type);
+const char* nas_ipc_error_to_string(uint8_t error_code);
 ```
 
 ### Event Flow Mapping

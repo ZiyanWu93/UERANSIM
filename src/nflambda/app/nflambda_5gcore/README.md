@@ -1,64 +1,99 @@
 # NFLambda 5G Core
 
-NFLambda-based 5G Core implementation that integrates with UERANSIM via IPC.
+Event-driven 5G Core Network Function implementation using NFLambda runtime, designed to integrate with UERANSIM via IPC.
 
 ## Overview
 
-This application provides an event-driven 5G Core (currently AMF functionality) that communicates with UERANSIM through IPC instead of direct function calls. It leverages the NFLambda runtime for high-performance, predictable NAS message processing.
+This directory contains the NFLambda-based 5G Core implementation that replaces direct function calls between UERANSIM and AMF with event-driven IPC communication. The goal is to demonstrate how 5G network functions can be built using the NFLambda framework.
 
-## Status
+## Current Status
 
-🚧 **Under Development** - See [ROADMAP.md](ROADMAP.md) for implementation plan and progress.
+### ✅ Milestone 1: NAS Message Protocol (COMPLETED)
 
-## Architecture
+The NAS IPC protocol has been fully implemented and tested:
 
-```
-UERANSIM ←──IPC──→ NFLambda 5G Core
-                         │
-                   Event-driven AMF
-                   - Registration
-                   - Authentication  
-                   - Security Mode
-                   - PDU Sessions
-```
+- **Protocol Specification**: See [PROTOCOL.md](PROTOCOL.md)
+- **Implementation**: `nas_ipc_protocol.h/c`
+- **Unit Tests**: `nas_ipc_protocol_test.c` (13/13 tests passing)
+- **Documentation**: Complete protocol documentation with examples
 
-## Features (Planned)
+### 🚧 Upcoming Milestones
 
-- Event-driven NAS message processing
-- IPC-based communication with UERANSIM
-- Support for multiple concurrent UEs
-- Full AMF functionality from existing codebase
-- High performance with predictable latency
+- **Milestone 2**: Core 5G Actor Implementation
+- **Milestone 3**: UERANSIM IPC Integration  
+- **Milestone 4**: End-to-End Testing
+- **Milestone 5**: Documentation & Examples
+
+See [ROADMAP.md](ROADMAP.md) for detailed planning.
 
 ## Building
+
+The project is built as part of the UERANSIM build system:
 
 ```bash
 # From UERANSIM root directory
 make build
+
+# Run unit tests
+./build/nas_ipc_protocol_test
 ```
 
-## Running
+## Protocol Overview
+
+The NAS IPC protocol enables communication between UERANSIM and NFLambda 5G Core:
+
+- **Message Types**: UPLINK (0x01), DOWNLINK (0x02), ERROR (0xFF)
+- **Max PDU Size**: 2032 bytes
+- **Transport**: Unix domain socket via IPC
+- **Correlation**: Transaction ID for request/response matching
+
+Example message flow:
+```
+UERANSIM                    NFLambda 5G Core
+    |                              |
+    |--[Registration Request]----->|
+    |<--[Auth Request]-------------|
+    |--[Auth Response]------------>|
+    |<--[Security Mode Command]----|
+    |--[Security Mode Complete]--->|
+    |<--[Registration Accept]------|
+    |--[Registration Complete]---->|
+```
+
+## Files
+
+- `nas_ipc_protocol.h` - Protocol definitions and API
+- `nas_ipc_protocol.c` - Protocol implementation
+- `nas_ipc_protocol_test.c` - Unit tests
+- `PROTOCOL.md` - Detailed protocol specification
+- `ROADMAP.md` - Development roadmap
+- `CMakeLists.txt` - Build configuration
+
+## Testing
+
+Run the unit tests to verify protocol implementation:
 
 ```bash
-# Start NFLambda 5G Core
-./build/nflambda_5gcore
-
-# In another terminal, run UERANSIM with IPC mode
-./build/nr-gnb -c config/free5gc-gnb.yaml --use-ipc
+./nas_ipc_protocol_test
 ```
 
-## Configuration
+Expected output:
+```
+=== NAS IPC Protocol Unit Tests ===
 
-(To be implemented - will support configuration of IPC paths, logging, etc.)
+Running pack_uplink_message... PASSED
+Running unpack_message... PASSED
+...
+ALL TESTS PASSED!
+```
 
-## Documentation
+## Next Steps
 
-- [ROADMAP.md](ROADMAP.md) - Implementation plan and progress
-- [Integration Guide](#) - How to integrate with UERANSIM (coming soon)
-- [API Documentation](#) - IPC protocol specification (coming soon)
+1. Implement the Core 5G Actor (Milestone 2)
+2. Port AMF handlers from existing code
+3. Integrate IPC event source
+4. Modify UERANSIM to use IPC client
 
-## See Also
+## Contributing
 
-- [NFLambda Overview](../../README.md)
-- [IPC System](../../event_system/IPC.md)
-- [Runtime Framework](../../runtime/)
+Follow the existing code style and ensure all tests pass before submitting changes. See the main UERANSIM contributing guidelines.
