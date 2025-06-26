@@ -38,14 +38,14 @@ NFLambda implements an event-driven, single-threaded architecture optimized for:
 
 | Component | Purpose | Details |
 |-----------|---------|---------|
-| **Runtime** | Event loop and dispatch | [runtime/](runtime/) |
-| **Event System** | Event infrastructure | [event_system/](event_system/) |
-| **Mailbox** | Inter-actor communication | [mailbox/](mailbox/) |
-| **Memory** | Pool-based allocation | [memory/](memory/) |
+| **Runtime** | Event loop and dispatch | [runtime/README.md](runtime/README.md) |
+| **Event System** | Event infrastructure | [event_system/README.md](event_system/README.md) |
+| **Mailbox** | Inter-actor communication | [mailbox/README.md](mailbox/README.md) |
+| **Memory** | Pool-based allocation | [memory/README.md](memory/README.md) |
 
 ### Example Applications
 
-NFLambda includes five example applications demonstrating different architectural patterns and use cases. See **[Application Overview](app/)** for:
+NFLambda includes five example applications demonstrating different architectural patterns and use cases. See **[Application Overview](app/README.md)** for:
 - Detailed descriptions of each application
 - Recommended learning path from basic to advanced
 - Common patterns and code examples
@@ -54,7 +54,7 @@ NFLambda includes five example applications demonstrating different architectura
 ## Documentation
 
 ### Getting Started
-- **[Application Overview](app/)** - Example applications and learning paths
+- **[Application Overview](app/README.md)** - Example applications and learning paths
 - **[Quick Start](#quick-start)** - Build and run NFLambda applications
 
 ### Technical Documentation
@@ -64,10 +64,10 @@ NFLambda includes five example applications demonstrating different architectura
 - **[Examples](docs/examples.md)** - Code examples and patterns
 
 ### Component Documentation
-- **[Runtime](runtime/)** - Event loop and dispatch system
-- **[Event System](event_system/)** - Event definitions and handlers
-- **[Memory](memory/)** - Pool-based memory management
-- **[Mailbox](mailbox/)** - Inter-actor message queues
+- **[Runtime](runtime/README.md)** - Event loop and dispatch system
+- **[Event System](event_system/README.md)** - Event definitions and handlers
+- **[Memory](memory/README.md)** - Pool-based memory management
+- **[Mailbox](mailbox/README.md)** - Inter-actor message queues
 
 ## Directory Structure
 
@@ -90,37 +90,7 @@ nflambda/
 
 ## Building Applications
 
-NFLambda applications follow the actor pattern with support for both binary and string payloads:
-
-```c
-// Define event handler for string data
-EVENT_HANDLER(my_string_handler) {
-    const char* message = (const char*)EVENT_PAYLOAD;
-    printf("Received: %s\n", message);
-    trigger_event(RESPONSE_EVENT, "response");
-}
-
-// Define event handler for binary data
-EVENT_HANDLER(my_binary_handler) {
-    const uint8_t* data = EVENT_PAYLOAD;
-    size_t len = EVENT_PAYLOAD_SIZE;
-    // Process binary data
-    trigger_event_binary(RESPONSE_EVENT, data, len);
-}
-
-// Register handlers
-void my_actor_register_handlers(void) {
-    register_event_handler(MY_STRING_EVENT, my_string_handler);
-    register_event_handler(MY_BINARY_EVENT, my_binary_handler);
-}
-
-// Initialize and run
-int main() {
-    register_handler_registrar(my_actor_register_handlers);
-    runtime();
-    return 0;
-}
-```
+See the **[Application Overview](app/README.md)** for detailed examples and patterns for building NFLambda applications.
 
 ## Use Cases
 
@@ -136,7 +106,7 @@ NFLambda is ideal for:
 ## Getting Started
 
 1. **Build the framework**: Follow the [Quick Start](#quick-start) instructions
-2. **Explore applications**: Read the **[Application Overview](app/)** for a guided learning path
+2. **Explore applications**: Read the **[Application Overview](app/README.md)** for a guided learning path
 3. **Understand concepts**: Review the [Architecture Guide](docs/architecture.md)
 4. **Build your own**: Use the patterns from example applications
 

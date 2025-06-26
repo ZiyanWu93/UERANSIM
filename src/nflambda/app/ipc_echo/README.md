@@ -121,56 +121,13 @@ Goodbye!
 ## Key Concepts Demonstrated
 
 ### 1. IPC Event Source Integration
-Shows how to add IPC functionality to any NFLambda application:
-```c
-// Initialize IPC
-ipc_event_source_init(NULL);
-
-// Register with runtime
-register_event_source("ipc", ipc_event_source_poll);
-
-// Register event handlers
-register_event_handler(EVENT_IPC_MESSAGE_RECEIVED, handle_ipc_message);
-```
+The demo shows how to add IPC functionality to any NFLambda application. See `ipc_echo_main.c` for the complete implementation.
 
 ### 2. Event-Driven IPC Handling
-Messages are processed through the standard NFLambda event system using the actor model:
-```c
-EVENT_HANDLER(handle_ipc_message) {
-    const char* message = (const char*)EVENT_PAYLOAD;
-    // Following actor model - trigger response event instead of direct I/O
-    trigger_event(EVENT_IPC_SEND_RESPONSE, message);
-}
-```
-
-The runtime handles the actual IPC response through a dedicated handler:
-```c
-EVENT_HANDLER(handle_ipc_send_response) {
-    const char* message = (const char*)EVENT_PAYLOAD;
-    ipc_send_response(message, strlen(message));
-}
-```
-
-### Binary IPC Support
-NFLambda IPC also supports binary payloads for protocol messages:
-```c
-EVENT_HANDLER(handle_binary_ipc_message) {
-    const uint8_t* data = EVENT_PAYLOAD;
-    size_t len = EVENT_PAYLOAD_SIZE;
-    // Process binary protocol data
-    trigger_event_binary(EVENT_IPC_SEND_BINARY_RESPONSE, data, len);
-}
-```
-
-This design maintains the event-driven actor model where actors never perform I/O directly.
+Messages are processed through the standard NFLambda event system using the actor model. The IPC system handles responses internally.
 
 ### 3. External Client Integration
-External applications use the IPC client library for simple communication:
-```c
-int fd = ipc_client_connect(NULL);
-ipc_client_send_recv(fd, data, len, response, &response_len);
-ipc_client_close(fd);
-```
+External applications use the IPC client library for simple communication. See `ipc_client_demo.c` for example usage.
 
 ### 4. Non-blocking Server Design
 The IPC event source uses non-blocking I/O integrated with NFLambda's event loop, ensuring high performance and responsiveness.
@@ -201,33 +158,18 @@ You can extend this demo to:
 ## Integration Patterns
 
 ### With Other NFLambda Apps
-The IPC echo pattern can be extended for real applications:
-
-```c
-// Integration with 5G Core
-EVENT_HANDLER(handle_nas_ipc_request) {
-    // Unpack NAS protocol message
-    nas_message_t* nas = unpack_nas_message(EVENT_PAYLOAD);
-    
-    // Process with AMF handlers
-    trigger_event(EVENT_PROCESS_NAS_MESSAGE, nas);
-}
-```
+The IPC echo pattern can be extended for real applications. See the [NFLambda 5G Core](../nflambda_5gcore/) application for a production example of IPC integration with protocol handling.
 
 ## Learning Path
 
 Recommended progression after this demo:
-1. **[IPC System Documentation](../../event_system/IPC.md)** - Technical IPC details
-2. **[Binary Event System](../../event_system/)** - Advanced payload handling
-3. **[NFLambda 5G Core](../nflambda_5gcore/)** - Production IPC usage
-4. **[API Reference](../../docs/api-reference.md#ipc-apis)** - Complete IPC API
-5. Build your own IPC-enabled applications
+1. Study the source code in this directory for implementation details
+2. **[NFLambda 5G Core](../nflambda_5gcore/)** - Production IPC usage
+3. Build your own IPC-enabled applications
 
 ## See Also
 
-- **[IPC System](../../event_system/IPC.md)** - Technical details and API reference
 - **[Event System](../../event_system/)** - Event handling framework
 - **[NFLambda 5G Core](../nflambda_5gcore/)** - Production IPC application
-- **[Binary Event System](../../event_system/)** - Advanced payload handling
 - **[NFLambda Overview](../../README.md)** - System architecture concepts
 - **[Ping-Pong Demo](../ping_pong/)** - Basic actor communication patterns
