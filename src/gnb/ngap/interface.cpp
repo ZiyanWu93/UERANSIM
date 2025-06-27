@@ -195,39 +195,6 @@ void NgapTask::receiveNgSetupResponse_base_case()
     if (amf == nullptr)
         return;
     {
-        // modify from AssignDefaultAmfConfigs
-        {
-            amf->amfName = "open5gs-amf0";
-
-            amf->relativeCapacity = 255;
-            utils::ClearAndDelete(amf->servedGuamiList);
-            auto servedGuami = new ServedGuami();
-            servedGuami->guami.amfRegionId = 2;
-            servedGuami->guami.amfSetId = 1;
-            servedGuami->guami.amfPointer = 0;
-            servedGuami->guami.plmn = {};
-            {
-                Plmn &target = servedGuami->guami.plmn;
-                target.isLongMnc = false;
-                target.mcc = 999;
-                target.mnc = 0;
-            }
-            amf->servedGuamiList.push_back(servedGuami);
-
-            utils::ClearAndDelete(amf->plmnSupportList);
-            {
-                auto plmnSupport = new PlmnSupport();
-                Plmn &target = plmnSupport->plmn;
-                target.isLongMnc = false;
-                target.mcc = 999;
-                target.mnc = 0;
-                SingleSlice s{};
-                s.sst = (uint8_t)1; // Or 0x01 in hex notation
-                s.sd = std::nullopt;
-                plmnSupport->sliceSupportList.slices.push_back(s);
-                amf->plmnSupportList.push_back(plmnSupport);
-            }
-        }
         amf->amfName = "open5gs-amf0";
 
         amf->relativeCapacity = 255;
