@@ -12,6 +12,7 @@ build-release: FORCE
 	cmake --build cmake-build-release --target all
 	
 	cp cmake-build-release/nr-gnb build/
+	cp cmake-build-release/nr-gnb-nflambda build/
 	cp cmake-build-release/nr-ue build/
 	cp cmake-build-release/nr-cli build/
 	cp cmake-build-release/src/nflambda/runtime/runtime build/
@@ -41,6 +42,7 @@ build-debug: FORCE
 	cmake --build cmake-build-debug --target all
 	
 	cp cmake-build-debug/nr-gnb build/
+	cp cmake-build-debug/nr-gnb-nflambda build/
 	cp cmake-build-debug/nr-ue build/
 	cp cmake-build-debug/nr-cli build/
 	cp cmake-build-debug/src/nflambda/runtime/runtime build/

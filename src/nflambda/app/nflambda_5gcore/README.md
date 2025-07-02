@@ -334,7 +334,7 @@ deliverDownlinkNasViaIpc()  amf_handlers
 
 2. **Start UERANSIM** (in separate terminals):
    ```bash
-   ./build/nr-gnb -c config/free5gc-gnb.yaml
+   ./build/nr-gnb-nflambda -c config/free5gc-gnb.yaml
    ./build/nr-ue -c config/free5gc-ue.yaml
    ```
 

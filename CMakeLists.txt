@@ -42,6 +42,21 @@ target_link_libraries(nr-gnb gnb)
 target_link_libraries(nr-gnb nflambda)
 target_link_libraries(nr-gnb 5gcore_without_runtime_lib)
 
+#################### GNB-NFLAMBDA EXECUTABLE ####################
+
+add_executable(nr-gnb-nflambda src/gnb.cpp)
+
+target_link_libraries(nr-gnb-nflambda pthread)
+
+target_compile_options(nr-gnb-nflambda PRIVATE -Wall -Wextra -pedantic -DUSE_NFLAMBDA)
+
+target_link_libraries(nr-gnb-nflambda asn-rrc)
+target_link_libraries(nr-gnb-nflambda asn-ngap)
+target_link_libraries(nr-gnb-nflambda common-lib)
+target_link_libraries(nr-gnb-nflambda gnb)
+target_link_libraries(nr-gnb-nflambda nflambda)
+target_link_libraries(nr-gnb-nflambda 5gcore_without_runtime_lib)
+
 #################### UE EXECUTABLE ####################
 
 add_executable(nr-ue src/ue.cpp)
