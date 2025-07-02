@@ -119,7 +119,10 @@ void SctpTask::onStart()
 
 void SctpTask::onLoop()
 {
+#ifdef USE_NFLAMBDA
+    // NFLambda: Bypass SCTP processing completely
     return;
+#endif
     auto msg = take();
     if (!msg)
         return;
@@ -194,6 +197,11 @@ void SctpTask::receiveSctpConnectionSetupRequest(int clientId, const std::string
                                                  const std::string &remoteAddress, uint16_t remotePort,
                                                  sctp::PayloadProtocolId ppid, NtsTask *associatedTask)
 {
+#ifdef USE_NFLAMBDA
+    // NFLambda: Skip SCTP connection setup
+    m_logger->info("NFLambda mode: Skipping SCTP connection setup");
+    return;
+#endif
     m_logger->info("Trying to establish SCTP connection... (%s:%d)", remoteAddress.c_str(), remotePort);
 
     auto *client = new sctp::SctpClient(ppid, localAddress);

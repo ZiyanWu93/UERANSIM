@@ -45,11 +45,14 @@ void NgapTask::onStart()
 int init = 0;
 void NgapTask::onLoop()
 {
+#ifdef USE_NFLAMBDA
+    // NFLambda: Automatically trigger simulated AMF connection on startup
     if (init == 0)
     {
         receiveNgSetupResponse_base_case();
         init = 1;
     }
+#endif
 
     auto msg = take();
     if (!msg)

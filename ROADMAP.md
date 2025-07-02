@@ -28,7 +28,28 @@ This phase focuses on creating the build infrastructure to produce two distinct 
 
 ### TODO:
 - [X] Analyze specific code changes of the nflambda version compared to the original version and output the change to a file called 'nflambda_ngap_changes.md' in the root directory: [nflambda_ngap_changes.md](nflambda_ngap_changes.md)
-- [] decouple the changes, enable conditional compilation of the feature between the original and nflambda version.
+- [X] decouple the changes, enable conditional compilation of the feature between the original and nflambda version.
+
+### Conditional Compilation Implementation Notes:
+
+Successfully implemented conditional compilation using the `USE_NFLAMBDA` macro to separate SCTP-based (original) and IPC-based (NFLambda) implementations.
+
+#### Key Changes:
+1. **Build System**: Created two separate gnb libraries in `src/gnb/CMakeLists.txt`:
+   - `gnb` library: Original version without USE_NFLAMBDA
+   - `gnb-nflambda` library: NFLambda version with -DUSE_NFLAMBDA flag
+
+2. **Source Code Modifications**:
+   - `src/gnb/sctp/task.cpp`: Added `#ifdef USE_NFLAMBDA` to bypass SCTP processing in `onLoop()` and `receiveSctpConnectionSetupRequest()`
+   - `src/gnb/ngap/interface.cpp`: Conditional compilation in `sendNgSetupRequest()` to switch between real NGAP and simulated response
+   - `src/gnb/ngap/task.cpp`: Added `#ifdef USE_NFLAMBDA` to trigger automatic AMF connection on startup
+   - `src/gnb/ngap/transport.cpp`: Conditional bypass of NGAP response processing
+
+3. **Important Discovery**: The initial attempt failed because CMake was building a single shared library for both executables. The `-DUSE_NFLAMBDA` flag on the executable target doesn't affect the library compilation. The solution was to build two separate libraries with different compilation flags.
+
+#### Result:
+- `./build/nr-gnb`: Uses real SCTP connections and standard NGAP procedures
+- `./build/nr-gnb-nflambda`: Bypasses SCTP and uses simulated AMF connection for NFLambda integration
 
 
 **Expected Results:** 

@@ -305,8 +305,13 @@ void NgapTask::handleSctpMessage(int amfId, uint16_t stream, const UniqueBuffer 
         switch (value.present)
         {
         case ASN_NGAP_SuccessfulOutcome__value_PR_NGSetupResponse:
-            // receiveNgSetupResponse_base_case();
+#ifdef USE_NFLAMBDA
+            // NFLambda: Bypass real NGAP response processing
             m_logger->info("Bypass 5G Core Response");
+#else
+            // Original: Process real NGAP Setup Response
+            receiveNgSetupResponse(amf->ctxId, &value.choice.NGSetupResponse);
+#endif
             break;
         default:
             m_logger->err("Unhandled NGAP successful-outcome received (%d)", value.present);

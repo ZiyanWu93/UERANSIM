@@ -174,10 +174,13 @@ void NgapTask::sendNgSetupRequest(int amfId)
     auto *pdu = asn::ngap::NewMessagePdu<ASN_NGAP_NGSetupRequest>(
         {ieGlobalGnbId, ieRanNodeName, ieSupportedTaList, iePagingDrx});
 
-    // sendNgapNonUe(amfId, pdu);
-
-    // directly trigger
+#ifdef USE_NFLAMBDA
+    // NFLambda: Skip SCTP send and directly trigger simulated response
     receiveNgSetupResponse_base_case();
+#else
+    // Original: Send NGAP message via SCTP
+    sendNgapNonUe(amfId, pdu);
+#endif
 }
 
 

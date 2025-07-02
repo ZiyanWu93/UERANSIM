@@ -48,12 +48,12 @@ add_executable(nr-gnb-nflambda src/gnb.cpp)
 
 target_link_libraries(nr-gnb-nflambda pthread)
 
-target_compile_options(nr-gnb-nflambda PRIVATE -Wall -Wextra -pedantic -DUSE_NFLAMBDA)
+target_compile_options(nr-gnb-nflambda PRIVATE -Wall -Wextra -pedantic)
 
 target_link_libraries(nr-gnb-nflambda asn-rrc)
 target_link_libraries(nr-gnb-nflambda asn-ngap)
 target_link_libraries(nr-gnb-nflambda common-lib)
-target_link_libraries(nr-gnb-nflambda gnb)
+target_link_libraries(nr-gnb-nflambda gnb-nflambda)
 target_link_libraries(nr-gnb-nflambda nflambda)
 target_link_libraries(nr-gnb-nflambda 5gcore_without_runtime_lib)
 
