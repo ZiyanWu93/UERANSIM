@@ -26,6 +26,15 @@ NgapAmfContext *NgapTask::selectAmf(int ueId, int32_t &requestedSliceType)
     return nullptr;
 }
 
+// Original selectAmf function without slice consideration
+NgapAmfContext *NgapTask::selectAmf(int ueId)
+{
+    // todo:
+    for (auto &amf : m_amfCtx)
+        return amf.second; // return the first one
+    return nullptr;
+}
+
 NgapAmfContext *NgapTask::selectNewAmfForReAllocation(int ueId, int initiatedAmfId, int amfSetId)
 {
     // TODO an arbitrary AMF is selected for now

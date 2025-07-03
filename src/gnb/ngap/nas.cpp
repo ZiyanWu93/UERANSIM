@@ -26,30 +26,19 @@
 #include <ue/nas/enc.hpp>
 #include <unistd.h>
 #include <algorithm>  // For std::min
+
+#ifdef USE_NFLAMBDA
 #include "nflambda/nflambda.h"
 #include "nflambda/event_system/event.h"
 #include "amf.h"
 #include "nflambda/event_system/ipc_client.h"
 #include "nflambda/app/nflambda_5gcore/nas_ipc_protocol.h"
+#endif
 
 namespace nr::gnb
 {
 
-// Utility function to copy OctetString data - avoids copy assignment issues
-static void copyOctetString(OctetString& dest, const OctetString& src)
-{
-    // Create a new empty OctetString instead of using clear()
-    dest = OctetString();
-    
-    // Copy all bytes from source to destination
-    const int srcLength = src.length();
-    if (srcLength > 0)
-    {
-        for (int i = 0; i < srcLength; i++)
-            dest.appendOctet(src.data()[i]);
-    }
-}
-
+// Function to extract slice info and modify PDU (used by both SCTP and NFLambda versions)
 int32_t extractSliceInfoAndModifyPdu(OctetString &nasPdu)
 {
     nas::RegistrationRequest *regRequest = nullptr;
@@ -87,14 +76,34 @@ int32_t extractSliceInfoAndModifyPdu(OctetString &nasPdu)
     return requestedSliceType;
 }
 
+#ifdef USE_NFLAMBDA
+// Utility function to copy OctetString data - avoids copy assignment issues
+static void copyOctetString(OctetString& dest, const OctetString& src)
+{
+    // Create a new empty OctetString instead of using clear()
+    dest = OctetString();
+    
+    // Copy all bytes from source to destination
+    const int srcLength = src.length();
+    if (srcLength > 0)
+    {
+        for (int i = 0; i < srcLength; i++)
+            dest.appendOctet(src.data()[i]);
+    }
+}
+#endif // USE_NFLAMBDA
+
 void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t rrcEstablishmentCause,
                                          const std::optional<GutiMobileIdentity> &sTmsi)
 {
+    // Original behavior: Always extract slice info and modify PDU
     int32_t requestedSliceType = extractSliceInfoAndModifyPdu(nasPdu);
     
+#ifdef USE_NFLAMBDA
     // Save the initial NAS PDU (registration request)
     copyOctetString(m_initialUplinkNasPdu, nasPdu);
     m_logger->debug("Stored initial uplink NAS PDU (registration request), size: %zu bytes", m_initialUplinkNasPdu.length());
+#endif
 
     m_logger->debug("Initial NAS message received from UE[%d]", ueId);
 
@@ -104,7 +113,7 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
         return;
     }
 
-    createUeContext(ueId, requestedSliceType);
+    createUeContext(ueId);
 
     auto *ueCtx = findUeContext(ueId);
     if (ueCtx == nullptr)
@@ -161,9 +170,11 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
     }
 
     auto *pdu = asn::ngap::NewMessagePdu<ASN_NGAP_InitialUEMessage>(ies);
-    // sendNgapUeAssociated(ueId, pdu);
-    // sleep for 0.3 seconds.
-    usleep(300000);
+
+#ifdef USE_NFLAMBDA
+    // NFLambda: Use IPC instead of NGAP
+    usleep(300000); // 0.3 second delay
+    
     // print the Nas PDU content in hexadecimal format for debugging
     std::string hexString;
     char hex[3];
@@ -176,21 +187,33 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
     m_logger->debug("UplinkNAS PDU content: %s", hexString.c_str());
     
     deliverDownlinkNasViaIpc();
+#else
+    // Original: Send via NGAP/SCTP
+    // Debug: print the NAS PDU content being sent
+    std::string hexString;
+    char hex[3];
+    const int pduLength = nasPdu.length();
+    for (int i = 0; i < pduLength; i++)
+    {
+        snprintf(hex, sizeof(hex), "%02x", static_cast<unsigned char>(nasPdu.data()[i]));
+        hexString += hex;
+    }
+    m_logger->debug("SCTP: Sending Initial NAS PDU content: %s", hexString.c_str());
+    
+    sendNgapUeAssociated(ueId, pdu);
+#endif
 }
 
-// void NgapTask::deliverDownlinkNas(int ueId, OctetString &&nasPdu)
-// {
-//     auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
-//     w->ueId = ueId;
-//     w->pdu = std::move(nasPdu);
-//     m_base->rrcTask->push(std::move(w));
-// }
-
-int times = 1;
 void NgapTask::deliverDownlinkNas(int ueId, OctetString &&nasPdu)
 {
-    return;
+    auto w = std::make_unique<NmGnbNgapToRrc>(NmGnbNgapToRrc::NAS_DELIVERY);
+    w->ueId = ueId;
+    w->pdu = std::move(nasPdu);
+    m_base->rrcTask->push(std::move(w));
 }
+
+#ifdef USE_NFLAMBDA
+int times = 1;
 
 
 void NgapTask::deliverDownlinkNasRefactored()
@@ -458,6 +481,7 @@ void NgapTask::deliverDownlinkNasViaIpc()
     w->pdu = std::move(pdu);
     m_base->rrcTask->push(std::move(w));
 }
+#endif // USE_NFLAMBDA
 
 void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
 {
@@ -472,7 +496,9 @@ void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
     asn::SetOctetString(ieNasPdu->value.choice.NAS_PDU, nasPdu);
 
     auto *pdu = asn::ngap::NewMessagePdu<ASN_NGAP_UplinkNASTransport>({ieNasPdu});
-    // sendNgapUeAssociated(ueId, pdu);
+
+#ifdef USE_NFLAMBDA
+    // NFLambda: Store PDUs and use IPC
     
     // Format NAS PDU as hex string for logging
     std::string hexString;
@@ -515,6 +541,10 @@ void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
         usleep(500000);
         deliverDownlinkNasViaIpc();
     }
+#else
+    // Original: Send via NGAP/SCTP
+    sendNgapUeAssociated(ueId, pdu);
+#endif
 }
 
 void NgapTask::sendNasNonDeliveryIndication(int ueId, const OctetString &nasPdu, NgapCause cause)
@@ -550,6 +580,8 @@ void NgapTask::sendNasNonDeliveryIndication(int ueId, const OctetString &nasPdu,
 
 void NgapTask::receiveDownlinkNasTransport(int amfId, ASN_NGAP_DownlinkNASTransport *msg)
 {
+#ifdef USE_NFLAMBDA
+    // NFLambda: Use hardcoded values
     NgapIdPair pair = NgapIdPair(1, 1);
     int hardcoded_amfId = 2;
 
@@ -567,6 +599,16 @@ void NgapTask::receiveDownlinkNasTransport(int amfId, ASN_NGAP_DownlinkNASTransp
     }
     if (ieNasPdu)
         deliverDownlinkNas(ue->ctxId, asn::GetOctetString(ieNasPdu->NAS_PDU));
+#else
+    // Original: Use actual NGAP IDs
+    auto *ue = findUeByNgapIdPair(amfId, ngap_utils::FindNgapIdPair(msg));
+    if (ue == nullptr)
+        return;
+
+    auto *ieNasPdu = asn::ngap::GetProtocolIe(msg, ASN_NGAP_ProtocolIE_ID_id_NAS_PDU);
+    if (ieNasPdu)
+        deliverDownlinkNas(ue->ctxId, asn::GetOctetString(ieNasPdu->NAS_PDU));
+#endif
 }
 
 void NgapTask::receiveRerouteNasRequest(int amfId, ASN_NGAP_RerouteNASRequest *msg)

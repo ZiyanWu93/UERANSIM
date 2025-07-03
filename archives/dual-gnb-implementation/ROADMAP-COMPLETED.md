@@ -56,12 +56,41 @@ Successfully implemented conditional compilation using the `USE_NFLAMBDA` macro 
 - `nr-gnb-nflambda` maintains current IPC-based behavior
 - `nr-gnb` successfully establishes NGAP associations with Open5GS/free5gc
 
-## Phase 3: Restore Registration and PDU Session Establishment
+## Phase 3: Restore Registration and PDU Session Establishment ✓
 
 **Objective:** Enable complete UE registration and PDU session establishment for the SCTP version while maintaining NFLambda compatibility.
 
 **Approach:** Continue analyzing original code to restore NAS message routing and session management for SCTP communication. Implement abstraction layers where necessary to support both communication methods.
 
-**Expected Results:**
-- `nr-gnb-nflambda` continues to function with NFLambda 5G Core
-- `nr-gnb` supports full UE registration and PDU session establishment with Open5GS/free5gc
+### Completed Implementation:
+
+Successfully restored full NAS message handling for the SCTP version through conditional compilation:
+
+#### Key Changes:
+1. **NAS Message Handling** (`src/gnb/ngap/nas.cpp`):
+   - Moved `extractSliceInfoAndModifyPdu()` outside of `#ifdef USE_NFLAMBDA` block (original behavior)
+   - Added conditional compilation for NAS PDU storage (NFLambda only)
+   - Restored original `deliverDownlinkNas()` implementation
+   - Wrapped IPC-specific functions in `#ifdef USE_NFLAMBDA`
+
+2. **UE Context Management** (`src/gnb/ngap/management.cpp`):
+   - Restored original `createUeContext(int ueId)` implementation
+   - Maintained slice-aware version for backward compatibility
+   - Fixed AMF selection logic for SCTP version
+
+3. **Function Declarations** (`src/gnb/ngap/task.hpp`):
+   - Conditionally declared NFLambda-specific state variables
+   - Conditionally declared IPC-related methods
+
+4. **Bug Fixes**:
+   - Fixed commented out `handleAssociationSetup` call that was preventing NG Setup
+   - Ensured `extractSliceInfoAndModifyPdu()` is called for both versions (matching original behavior)
+
+**Results Achieved:**
+- ✓ `nr-gnb-nflambda` continues to function with NFLambda 5G Core via IPC
+- ✓ `nr-gnb` successfully completes:
+  - NGAP association establishment with Open5GS/free5gc
+  - Full UE registration (Initial Registration → Authentication → Security Mode → Registration Accept)
+  - PDU session establishment (requires UPF to be running)
+
+**Note:** PDU session establishment requires the UPF (User Plane Function) to be running and properly configured in the 5G Core.

@@ -49,6 +49,28 @@ void NgapTask::createUeContext(int ueId, int32_t &requestedSliceType)
         ctx->associatedAmfId = amf->ctxId;
 }
 
+void NgapTask::createUeContext(int ueId)
+{
+    auto *ctx = new NgapUeContext(ueId);
+    ctx->amfUeNgapId = -1;
+    ctx->ranUeNgapId = ++m_ueNgapIdCounter;
+
+    m_ueCtx[ctx->ctxId] = ctx;
+
+    // Original AMF selection - just pick the first available AMF
+    NgapAmfContext *amf = nullptr;
+    for (auto &amfPair : m_amfCtx)
+    {
+        amf = amfPair.second;
+        break; // return the first one
+    }
+    
+    if (amf == nullptr)
+        m_logger->err("AMF selection for UE[%d] failed. Could not find a suitable AMF.", ueId);
+    else
+        ctx->associatedAmfId = amf->ctxId;
+}
+
 NgapUeContext *NgapTask::findUeContext(int ctxId)
 {
     NgapUeContext *ctx = nullptr;

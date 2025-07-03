@@ -57,11 +57,14 @@ class NgapTask : public NtsTask
     bool m_isInitialized;
 
     // NAS PDU storage for uplink requests
+#ifdef USE_NFLAMBDA
+    // NFLambda: Store uplink NAS PDUs for IPC correlation
     OctetString m_initialUplinkNasPdu;    // For initial registration request
     OctetString m_authRespUplinkNasPdu;  // For authentication response
     OctetString m_secModeUplinkNasPdu;   // For security mode complete
     OctetString m_regCmpUplinkNasPdu;    // For registration complete
     OctetString m_pduReqUplinkNasPdu;    // For PDU session establishment request
+#endif
 
     friend class GnbCmdHandler;
 
@@ -79,6 +82,7 @@ class NgapTask : public NtsTask
     void createAmfContext(const GnbAmfConfig &config);
     NgapAmfContext *findAmfContext(int ctxId);
     void createUeContext(int ueId, int32_t &requestedSliceType);
+    void createUeContext(int ueId); // Original signature
     NgapUeContext *findUeContext(int ctxId);
     NgapUeContext *findUeByRanId(int64_t ranUeNgapId);
     NgapUeContext *findUeByAmfId(int64_t amfUeNgapId);
@@ -111,8 +115,10 @@ class NgapTask : public NtsTask
     void handleUplinkNasTransport(int ueId, const OctetString &nasPdu);
     void receiveDownlinkNasTransport(int amfId, ASN_NGAP_DownlinkNASTransport *msg);
     void deliverDownlinkNas(int ueId, OctetString &&nasPdu);
+#ifdef USE_NFLAMBDA
     void deliverDownlinkNasRefactored();
     void deliverDownlinkNasViaIpc();
+#endif
     void sendNasNonDeliveryIndication(int ueId, const OctetString &nasPdu, NgapCause cause);
     void receiveRerouteNasRequest(int amfId, ASN_NGAP_RerouteNASRequest *msg);
 
@@ -129,6 +135,7 @@ class NgapTask : public NtsTask
 
     /* NAS Node Selection */
     NgapAmfContext *selectAmf(int ueId, int32_t &requestedSliceType);
+    NgapAmfContext *selectAmf(int ueId); // Original signature
     NgapAmfContext *selectNewAmfForReAllocation(int ueId, int initiatedAmfId, int amfSetId);
 
     /* Radio resource control */

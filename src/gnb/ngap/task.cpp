@@ -84,8 +84,7 @@ void NgapTask::onLoop()
         switch (w.present)
         {
         case NmGnbSctp::ASSOCIATION_SETUP:
-            // handleAssociationSetup(w.clientId, w.associationId, w.inStreams, w.outStreams);
-            // receiveNgSetupResponse_base_case();
+            handleAssociationSetup(w.clientId, w.associationId, w.inStreams, w.outStreams);
             break;
         case NmGnbSctp::RECEIVE_MESSAGE:
             handleSctpMessage(w.clientId, w.stream, w.buffer);
