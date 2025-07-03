@@ -1,0 +1,14 @@
+PHASE_4 Messages
+==================================================
+
+Registration complete:
+  Frame: 3313
+  NAS PDU: 7e02469d6a8b017e0043
+  Length: 10 bytes
+  Note: Extracted from bundled message
+
+Configuration update command:
+  Frame: 3314
+  NAS PDU: 7e02de0d22e3027e0054430f90004f00700065006e003500470053450990004e006500780074460a475260903035530a490101
+  Length: 51 bytes
+

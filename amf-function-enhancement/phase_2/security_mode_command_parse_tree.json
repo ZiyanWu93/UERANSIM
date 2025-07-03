@@ -1,0 +1,81 @@
+{
+  "per.octet_string_length": "21",
+  "ngap.NAS_PDU": "7e:03:13:bf:99:5a:00:7e:00:5d:02:00:04:80:f0:80:f0:e1:36:01:02",
+  "ngap.NAS_PDU_tree": {
+    "nas-5gs": {
+      "Security protected NAS 5GS message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "3",
+        "nas_5gs.msg_auth_code": "0x13bf995a",
+        "nas_5gs.seq_no": "0"
+      },
+      "Plain NAS 5GS Message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "0",
+        "nas_5gs.mm.message_type": "0x5d",
+        "NAS security algorithms": {
+          "nas_5gs.mm.nas_sec_algo_enc": "0",
+          "nas_5gs.mm.nas_sec_algo_ip": "2"
+        },
+        "NAS key set identifier - ngKSI": {
+          "nas_5gs.mm.tsc": "0",
+          "nas_5gs.mm.nas_key_set_id": "0"
+        },
+        "UE security capability - Replayed UE security capabilities": {
+          "gsm_a.len": "4",
+          "nas_5gs.mm.5g_ea0": "1",
+          "nas_5gs.mm.128_5g_ea1": "0",
+          "nas_5gs.mm.128_5g_ea2": "0",
+          "nas_5gs.mm.128_5g_ea3": "0",
+          "nas_5gs.mm.5g_ea4": "0",
+          "nas_5gs.mm.5g_ea5": "0",
+          "nas_5gs.mm.5g_ea6": "0",
+          "nas_5gs.mm.5g_ea7": "0",
+          "nas_5gs.mm.ia0": "1",
+          "nas_5gs.mm.5g_128_ia1": "1",
+          "nas_5gs.mm.5g_128_ia2": "1",
+          "nas_5gs.mm.5g_128_ia3": "1",
+          "nas_5gs.mm.5g_128_ia4": "0",
+          "nas_5gs.mm.5g_ia5": "0",
+          "nas_5gs.mm.5g_ia6": "0",
+          "nas_5gs.mm.5g_ia7": "0",
+          "nas_5gs.mm.eea0": "1",
+          "nas_5gs.mm.128eea1": "0",
+          "nas_5gs.mm.128eea2": "0",
+          "nas_5gs.mm.eea3": "0",
+          "nas_5gs.mm.eea4": "0",
+          "nas_5gs.mm.eea5": "0",
+          "nas_5gs.mm.eea6": "0",
+          "nas_5gs.mm.eea7": "0",
+          "nas_5gs.mm.eia0": "1",
+          "nas_5gs.mm.128eia1": "1",
+          "nas_5gs.mm.128eia2": "1",
+          "nas_5gs.mm.eia3": "1",
+          "nas_5gs.mm.eia4": "0",
+          "nas_5gs.mm.eia5": "0",
+          "nas_5gs.mm.eia6": "0",
+          "nas_5gs.mm.eia7": "0"
+        },
+        "IMEISV request": {
+          "gsm_a.common.elem_id": "0x0e",
+          "nas_eps.spare_bits": "0x00",
+          "nas_eps.emm.imeisv_req": "1"
+        },
+        "Additional 5G security information": {
+          "nas_5gs.mm.elem_id": "0x36",
+          "gsm_a.len": "1",
+          "nas_5gs.spare_b7": "0",
+          "nas_5gs.spare_b6": "0",
+          "nas_5gs.spare_b5": "0",
+          "nas_5gs.spare_b4": "0",
+          "nas_5gs.spare_b3": "0",
+          "nas_5gs.spare_b2": "0",
+          "nas_5gs.mm.rinmr": "1",
+          "nas_5gs.mm.hdp": "0"
+        }
+      }
+    }
+  }
+}

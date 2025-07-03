@@ -1,0 +1,13 @@
+{
+  "pdu_session_establishment_request": {
+    "frame_number": "3313",
+    "message_name": "PDU session establishment request",
+    "nas_pdu": "7e02ba0292cd027e00670100152e0101c1ffff91a12801007b000780000a00000d00120181220101250908696e7465726e6574",
+    "note": "Extracted from bundled message"
+  },
+  "pdu_session_establishment_accept": {
+    "frame_number": "3423",
+    "message_name": "PDU session establishment accept",
+    "nas_pdu": "7e02fbd62d81037e00680100472e0101c211000901000631310101ff010603f42403f4242905010a2d00022201017900060120410101097b000f80000d0408080808000d0408080404250908696e7465726e65741201"
+  }
+}

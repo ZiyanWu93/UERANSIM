@@ -1,0 +1,90 @@
+{
+  "per.octet_string_length": "46",
+  "ngap.NAS_PDU": "7e:02:72:39:67:4c:01:7e:00:42:01:01:77:00:0b:f2:99:f9:07:02:00:40:c0:00:07:27:54:07:40:99:f9:07:00:00:01:15:02:01:01:21:02:01:00:5e:01:92",
+  "ngap.NAS_PDU_tree": {
+    "nas-5gs": {
+      "Security protected NAS 5GS message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "2",
+        "nas_5gs.msg_auth_code": "0x7239674c",
+        "nas_5gs.seq_no": "1"
+      },
+      "Plain NAS 5GS Message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "0",
+        "nas_5gs.mm.message_type": "0x42",
+        "5GS registration result": {
+          "gsm_a.len": "1",
+          "nas_5gs.mm.reg_res.emergency_reg": "0",
+          "nas_5gs.mm.reg_res.nssaa_perf": "0",
+          "nas_5gs.mm.reg_res.sms_all": "0",
+          "nas_5gs.mm.reg_res.res": "1"
+        },
+        "5GS mobile identity - 5G-GUTI": {
+          "nas_5gs.mm.elem_id": "0x77",
+          "gsm_a.len": "11",
+          "nas_5gs.spare_b7": "1",
+          "nas_5gs.spare_b6": "1",
+          "nas_5gs.spare_b5": "1",
+          "nas_5gs.spare_b4": "1",
+          "nas_5gs.spare_b3": "0",
+          "nas_5gs.mm.type_id": "2",
+          "e212.guami.mcc": "999",
+          "e212.guami.mnc": "70",
+          "nas_5gs.amf_region_id": "2",
+          "nas_5gs.amf_set_id": "1",
+          "nas_5gs.amf_pointer": "0",
+          "nas_5gs.5g_tmsi": "3221227303",
+          "3gpp.tmsi": "3221227303"
+        },
+        "5GS tracking area identity list": {
+          "nas_5gs.mm.elem_id": "0x54",
+          "gsm_a.len": "7",
+          "Partial tracking area list  1": {
+            "nas_5gs.mm.tal_t_li": "2",
+            "nas_5gs.mm.tal_num_e": "0",
+            "e212.5gstai.mcc": "999",
+            "e212.5gstai.mnc": "70",
+            "nas_5gs.tac": "1"
+          }
+        },
+        "NSSAI - Allowed NSSAI": {
+          "nas_5gs.mm.elem_id": "0x15",
+          "gsm_a.len": "2",
+          "S-NSSAI 1": {
+            "nas_5gs.mm.length": "1",
+            "nas_5gs.mm.sst": "1"
+          }
+        },
+        "5GS network feature support": {
+          "nas_5gs.mm.elem_id": "0x21",
+          "gsm_a.len": "2",
+          "nas_5gs.nw_feat_sup.mpsi": "0",
+          "nas_5gs.nw_feat_sup.iwk_n26": "0",
+          "nas_5gs.nw_feat_sup.emf": "0",
+          "nas_5gs.nw_feat_sup.emc": "0",
+          "nas_5gs.nw_feat_sup.vops_n3gpp": "0",
+          "nas_5gs.nw_feat_sup.vops_3gpp": "1",
+          "nas_5gs.nw_feat_sup.5g_ciot_up": "0",
+          "nas_5gs.nw_feat_sup.5g_iphc_cp_ciot": "0",
+          "nas_5gs.nw_feat_sup.n3_data": "0",
+          "nas_5gs.nw_feat_sup.5g_cp_ciot": "0",
+          "nas_5gs.nw_feat_sup.restrict_ec": "0",
+          "nas_5gs.nw_feat_sup.mcsi": "0",
+          "nas_5gs.nw_feat_sup.emcn3": "0"
+        },
+        "GPRS Timer 3 - T3512 value": {
+          "gsm_a.gm.elem_id": "0x5e",
+          "gsm_a.len": "1",
+          "gsm_a.gm.gmm.gprs_timer3": "0x1c",
+          "gsm_a.gm.gmm.gprs_timer3_tree": {
+            "gsm_a.gm.gmm.gprs_timer3_unit": "4",
+            "gsm_a.gm.gmm.gprs_timer3_value": "18"
+          }
+        }
+      }
+    }
+  }
+}

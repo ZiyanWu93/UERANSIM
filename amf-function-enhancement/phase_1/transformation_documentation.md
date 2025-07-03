@@ -1,0 +1,178 @@
+# Phase 1: Registration Request → Authentication Request Transformation
+
+## Overview
+This document details how open5gs AMF transforms a Registration Request message into an Authentication Request message.
+
+## Input Message: Registration Request
+- **Message Type**: 0x41 (Registration Request)
+- **Security**: Plain/unprotected NAS message
+- **Key Fields**:
+  - SUCI (MCC=999, MNC=70, MSIN=0000000001)
+  - Registration type: Initial registration
+  - NAS key set identifier: 7
+  - UE security capabilities
+
+## Output Message: Authentication Request
+- **Message Type**: 0x56 (Authentication Request)
+- **Security**: Plain/unprotected NAS message
+- **Key Fields**:
+  - NAS key set identifier: 0
+  - ABBA: 00:00
+  - RAND: 16 bytes
+  - AUTN: 16 bytes
+
+## Network Functions Involved
+
+### 1. AMF (Access and Mobility Management Function)
+- Receives and validates the registration request
+- Extracts SUCI from mobile identity
+- Initiates authentication with AUSF
+- Builds and sends authentication request
+
+### 2. AUSF (Authentication Server Function)
+- Receives authentication request from AMF
+- Forwards to UDM for vector generation
+- Returns authentication vectors to AMF
+
+### 3. UDM (Unified Data Management)
+- Decrypts SUCI to SUPI (if encrypted)
+- Retrieves subscriber authentication data
+- Generates authentication vectors using Milenage
+
+## Detailed Function Call Flow
+
+### Step 1: Registration Request Reception
+**File**: `src/amf/gmm-handler.c`
+**Function**: `gmm_handle_registration_request()` (lines 37-352)
+
+```c
+// Extract mobile identity
+switch (mobile_identity->h.type) {
+case OGS_NAS_5GS_MOBILE_IDENTITY_SUCI:
+    // Extract SUCI at line 146
+    amf_ue_set_suci(amf_ue, mobile_identity);
+    // Convert SUCI to string format
+    ogs_nas_5gs_suci_from_mobile_identity(mobile_identity);
+```
+
+**Actions**:
+- Validates cleartext IEs per TS33.501
+- Extracts SUPI format, protection scheme, and home PLMN
+- Stores SUCI in UE context
+
+### Step 2: Authentication Initiation
+**File**: `src/amf/gmm-sm.c`
+**Function**: State machine triggers authentication
+
+```c
+// Discover AUSF and send authentication request
+amf_ue_sbi_discover_and_send(
+    OGS_SBI_SERVICE_TYPE_NAUSF_AUTH,
+    amf_nausf_auth_build_authenticate
+);
+```
+
+### Step 3: Build AUSF Request
+**File**: `src/amf/nausf-build.c`
+**Function**: `amf_nausf_auth_build_authenticate()` (lines 22-91)
+
+```c
+AuthenticationInfo = ogs_sbi_build_authentication_info(
+    amf_ue, authentication_info_request);
+// Contains:
+// - supiOrSuci: The SUCI from registration request
+// - servingNetworkName: "5G:mnc070.mcc999.3gppnetwork.org"
+```
+
+**Key Calculations**:
+- Serving network name built from PLMN ID
+- SUCI passed as-is to AUSF
+
+### Step 4: AUSF Response Processing
+**File**: `src/amf/nausf-handler.c`
+**Function**: `amf_nausf_auth_handle_authenticate()` (lines 23-160)
+
+```c
+// Extract authentication vectors
+_5g_aka = response->authentication_vector->hxres_star_av->_5g_aka;
+// Store in UE context:
+amf_ue->rand = _5g_aka->rand;      // 16 bytes random
+amf_ue->hxres_star = _5g_aka->hxres_star;  // Expected response
+amf_ue->autn = _5g_aka->autn;      // 16 bytes AUTN
+```
+
+**AUTN Structure** (16 bytes):
+- SQN ⊕ AK (6 bytes): Sequence number XOR anonymity key
+- AMF field (2 bytes): Authentication management field
+- MAC (8 bytes): Message authentication code
+
+### Step 5: Build Authentication Request
+**File**: `src/amf/gmm-build.c`
+**Function**: `gmm_build_authentication_request()` (lines 354-385)
+
+```c
+// Set message type
+message.gmm.h.message_type = OGS_NAS_5GS_AUTHENTICATION_REQUEST;
+
+// Set ngKSI (new key set identifier = 0)
+authentication_request->ngksi.tsc = amf_ue->nas.tsc;
+authentication_request->ngksi.ksi = amf_ue->nas.ksi;
+
+// Set ABBA (2 bytes, typically 0x0000)
+authentication_request->abba.length = amf_ue->abba_len;
+memcpy(authentication_request->abba.value, amf_ue->abba, amf_ue->abba_len);
+
+// Copy RAND (16 bytes)
+authentication_request->authentication_parameter_rand.rand = amf_ue->rand;
+
+// Copy AUTN (16 bytes)
+authentication_request->authentication_parameter_autn.autn = amf_ue->autn;
+```
+
+### Step 6: Send Authentication Request
+**File**: `src/amf/nas-path.c`
+**Function**: `nas_5gs_send_authentication_request()`
+
+```c
+// Get RAN UE context
+ran_ue = ran_ue_cycle(amf_ue->ran_ue);
+// Send via NGAP
+ngap_send_to_ran_ue(ran_ue, ngapbuf);
+// Start T3560 timer
+amf_ue->t3560.pkbuf = nas_5gs_security_encode(amf_ue, &message);
+ogs_timer_start(amf_ue->t3560.timer);
+```
+
+## Field Transformations Summary
+
+| Field | Registration Request | Authentication Request | Transformation Logic |
+|-------|---------------------|----------------------|---------------------|
+| Message Type | 0x41 | 0x56 | Changed to authentication request |
+| NAS KSI | 7 | 0 | Reset for new security context |
+| SUCI | Present | Not included | Used to fetch auth vectors |
+| RAND | Not present | 16 bytes | Generated by UDM/AUSF |
+| AUTN | Not present | 16 bytes | Generated by UDM/AUSF |
+| ABBA | Not present | 2 bytes (0x0000) | Anti-bidding down parameter |
+
+## Key Algorithms Used
+
+### 1. SUCI Processing
+- If protection scheme > 0: UDM decrypts using home network private key
+- If null scheme: SUCI = SUPI (no decryption needed)
+
+### 2. Authentication Vector Generation (in UDM)
+- Uses Milenage algorithm with:
+  - K (subscriber key)
+  - RAND (random challenge)
+  - SQN (sequence number)
+- Produces: AUTN, XRES*, CK', IK'
+
+### 3. HXRES* Calculation
+- HXRES* = SHA-256(RAND || XRES*)
+- Used for enhanced privacy in 5G
+
+## Security Considerations
+1. Both messages are unprotected (no security context established yet)
+2. SUCI provides identity privacy (encrypted SUPI)
+3. AUTN enables mutual authentication
+4. RAND ensures freshness of authentication

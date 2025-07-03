@@ -1,0 +1,12 @@
+{
+  "authentication_response": {
+    "frame_number": "3121",
+    "message_name": "Authentication response",
+    "nas_pdu": "7e00572d10ef2770c69e7382aa38e8134f602234e1"
+  },
+  "security_mode_command": {
+    "frame_number": "3156",
+    "message_name": "Security mode command",
+    "nas_pdu": "7e0313bf995a007e005d02000480f080f0e1360102"
+  }
+}

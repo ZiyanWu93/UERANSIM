@@ -1,0 +1,13 @@
+{
+  "registration_complete": {
+    "frame_number": "3313",
+    "message_name": "Registration complete",
+    "nas_pdu": "7e02469d6a8b017e0043",
+    "note": "Extracted from bundled message"
+  },
+  "configuration_update_command": {
+    "frame_number": "3314",
+    "message_name": "Configuration update command",
+    "nas_pdu": "7e02de0d22e3027e0054430f90004f00700065006e003500470053450990004e006500780074460a475260903035530a490101"
+  }
+}

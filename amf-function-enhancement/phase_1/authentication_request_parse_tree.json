@@ -1,0 +1,36 @@
+{
+  "per.octet_string_length": "42",
+  "ngap.NAS_PDU": "7e:00:56:00:02:00:00:21:5c:a0:df:8c:9b:b8:db:cf:3c:2a:7d:d4:48:da:13:69:20:10:40:62:96:99:30:82:80:00:30:b7:62:45:5c:89:0b:19",
+  "ngap.NAS_PDU_tree": {
+    "nas-5gs": {
+      "Plain NAS 5GS Message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "0",
+        "nas_5gs.mm.message_type": "0x56",
+        "NAS key set identifier - ngKSI": {
+          "nas_5gs.mm.tsc": "0",
+          "nas_5gs.mm.nas_key_set_id": "0"
+        },
+        "ABBA": {
+          "gsm_a.len": "2",
+          "nas_5gs.mm.abba_contents": "00:00"
+        },
+        "Authentication Parameter RAND - 5G authentication challenge": {
+          "gsm_a.dtap.elem_id": "0x21",
+          "gsm_a.dtap.rand": "5c:a0:df:8c:9b:b8:db:cf:3c:2a:7d:d4:48:da:13:69"
+        },
+        "Authentication Parameter AUTN (UMTS and EPS authentication challenge) - 5G authentication challenge": {
+          "gsm_a.dtap.elem_id": "0x20",
+          "gsm_a.len": "16",
+          "gsm_a.dtap.autn": "40:62:96:99:30:82:80:00:30:b7:62:45:5c:89:0b:19",
+          "gsm_a.dtap.autn_tree": {
+            "gsm_a.dtap.autn.sqn_xor_ak": "40:62:96:99:30:82",
+            "gsm_a.dtap.autn.amf": "80:00",
+            "gsm_a.dtap.autn.mac": "30:b7:62:45:5c:89:0b:19"
+          }
+        }
+      }
+    }
+  }
+}

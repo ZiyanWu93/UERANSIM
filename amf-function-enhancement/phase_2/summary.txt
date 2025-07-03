@@ -1,0 +1,13 @@
+PHASE_2 Messages
+==================================================
+
+Authentication response:
+  Frame: 3121
+  NAS PDU: 7e00572d10ef2770c69e7382aa38e8134f602234e1
+  Length: 21 bytes
+
+Security mode command:
+  Frame: 3156
+  NAS PDU: 7e0313bf995a007e005d02000480f080f0e1360102
+  Length: 21 bytes
+

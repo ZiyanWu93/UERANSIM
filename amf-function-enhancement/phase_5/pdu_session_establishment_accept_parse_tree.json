@@ -1,0 +1,110 @@
+{
+  "nas-5gs": {
+    "Security protected NAS 5GS message": {
+      "nas_5gs.epd": "126",
+      "nas_5gs.spare_half_octet": "0",
+      "nas_5gs.security_header_type": "2",
+      "nas_5gs.msg_auth_code": "0xfbd62d81",
+      "nas_5gs.seq_no": "3"
+    },
+    "Plain NAS 5GS Message": {
+      "nas_5gs.epd": "126",
+      "nas_5gs.spare_half_octet": "0",
+      "nas_5gs.security_header_type": "0",
+      "nas_5gs.mm.message_type": "0x68",
+      "Payload container type": {
+        "nas_5gs.mm.pld_cont_type": "1"
+      },
+      "Payload container": {
+        "gsm_a.len": "71",
+        "Plain NAS 5GS Message": {
+          "nas_5gs.epd": "46",
+          "nas_5gs.pdu_session_id": "1",
+          "nas_5gs.proc_trans_id": "1",
+          "nas_5gs.sm.message_type": "0xc2",
+          "nas_5gs.sm.sel_sc_mode": "1",
+          "PDU session type - Selected PDU session type": {
+            "nas_5gs.sm.pdu_session_type": "1"
+          },
+          "QoS rules - Authorized QoS rules": {
+            "gsm_a.len": "9",
+            "QoS rule 1": {
+              "nas_5gs.sm.qos_rule_id": "1",
+              "nas_5gs.sm.length": "6",
+              "nas_5gs.sm.rop": "1",
+              "nas_5gs.sm.dqr": "1",
+              "nas_5gs.sm.nof_pkt_filters": "1",
+              "Packet filter 1": {
+                "nas_5gs.sm.pkt_flt_dir": "3",
+                "nas_5gs.sm.pkt_flt_id": "1",
+                "nas_5gs.sm.pf_len": "1",
+                "Packet filter component 1": {
+                  "nas_5gs.sm.pf_type": "1"
+                }
+              },
+              "nas_5gs.sm.qos_rule_precedence": "255",
+              "nas_5gs.spare_b7": "0",
+              "nas_5gs.spare_b6": "0",
+              "nas_5gs.sm.qfi": "1"
+            }
+          },
+          "Session-AMBR": {
+            "gsm_a.len": "6",
+            "nas_5gs.sm.unit_for_session_ambr_dl": "3",
+            "nas_5gs.sm.session_ambr_dl": "62500",
+            "nas_5gs.sm.unit_for_session_ambr_ul": "3",
+            "nas_5gs.sm.session_ambr_ul": "62500"
+          },
+          "PDU address": {
+            "nas_5gs.sm.elem_id": "0x29",
+            "gsm_a.len": "5",
+            "nas_5gs.sm.si6lla": "0",
+            "nas_5gs.sm.pdu_ses_type": "1",
+            "nas_5gs.sm.pdu_addr_inf_ipv4": "10.45.0.2"
+          },
+          "S-NSSAI": {
+            "nas_5gs.common.elem_id": "0x22",
+            "gsm_a.len": "1",
+            "nas_5gs.mm.sst": "1"
+          },
+          "QoS flow descriptions - Authorized": {
+            "nas_5gs.sm.elem_id": "0x79",
+            "gsm_a.len": "6",
+            "QoS flow description 1 - 5QI": {
+              "nas_5gs.sm.qfi": "1",
+              "nas_5gs.sm.hf_nas_5gs_sm_qos_des_flow_opt_code": "1",
+              "nas_5gs.sm.e": "1",
+              "nas_5gs.sm.nof_params": "1",
+              "Parameter 1": {
+                "nas_5gs.sm.param_id": "1",
+                "nas_5gs.sm.param_len": "1",
+                "nas_5gs.sm.5qi": "9"
+              }
+            }
+          },
+          "Extended protocol configuration options": {
+            "nas_eps.esm.elem_id": "0x7b",
+            "gsm_a.len": "15",
+            "gsm_a.gm.sm.link_dir": "1",
+            "gsm_a.gm.sm.ext": "1",
+            "gsm_a.gm.configuration_protocol": "0",
+            "gsm_a.gm.sm.pco_pid": "0x000d",
+            "gsm_a.gm.sm.pco_pid_tree": {
+              "gsm_a.gm.sm.pco.length": "0x04",
+              "gsm_a.gm.sm.pco.dns.ipv4": "8.8.4.4"
+            }
+          },
+          "DNN": {
+            "nas_5gs.common.elem_id": "0x25",
+            "gsm_a.len": "9",
+            "nas_5gs.cmn.dnn": "internet"
+          }
+        }
+      },
+      "PDU session identity 2 - PDU session ID": {
+        "nas_5gs.mm.elem_id": "0x12",
+        "nas_5gs.pdu_session_id": "1"
+      }
+    }
+  }
+}

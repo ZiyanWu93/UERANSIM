@@ -1,0 +1,83 @@
+{
+  "per.octet_string_length": "51",
+  "ngap.NAS_PDU": "7e:02:ba:02:92:cd:02:7e:00:67:01:00:15:2e:01:01:c1:ff:ff:91:a1:28:01:00:7b:00:07:80:00:0a:00:00:0d:00:12:01:81:22:01:01:25:09:08:69:6e:74:65:72:6e:65:74",
+  "ngap.NAS_PDU_tree": {
+    "nas-5gs": {
+      "Security protected NAS 5GS message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "2",
+        "nas_5gs.msg_auth_code": "0xba0292cd",
+        "nas_5gs.seq_no": "2"
+      },
+      "Plain NAS 5GS Message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "0",
+        "nas_5gs.mm.message_type": "0x67",
+        "Payload container type": {
+          "nas_5gs.mm.pld_cont_type": "1"
+        },
+        "Payload container": {
+          "gsm_a.len": "21",
+          "Plain NAS 5GS Message": {
+            "nas_5gs.epd": "46",
+            "nas_5gs.pdu_session_id": "1",
+            "nas_5gs.proc_trans_id": "1",
+            "nas_5gs.sm.message_type": "0xc1",
+            "Integrity protection maximum data rate": {
+              "nas_5gs.sm.int_prot_max_data_rate_ul": "255",
+              "nas_5gs.sm.int_prot_max_data_rate_dl": "255"
+            },
+            "PDU session type": {
+              "gsm_a.common.elem_id": "0x09",
+              "nas_5gs.sm.pdu_session_type": "1"
+            },
+            "SSC mode": {
+              "gsm_a.common.elem_id": "0x0a",
+              "nas_5gs.sm.sc_mode": "1"
+            },
+            "5GSM capability": {
+              "nas_5gs.sm.elem_id": "0x28",
+              "gsm_a.len": "1",
+              "nas_5gs.sm.tpmic": "0",
+              "nas_5gs.sm.atsss_st": "0",
+              "nas_5gs.sm.ept_s1": "0",
+              "nas_5gs.sm.mh6_pdu": "0",
+              "nas_5gs.sm.rqos": "0"
+            },
+            "Extended protocol configuration options": {
+              "nas_eps.esm.elem_id": "0x7b",
+              "gsm_a.len": "7",
+              "gsm_a.gm.sm.link_dir": "0",
+              "gsm_a.gm.sm.ext": "1",
+              "gsm_a.gm.configuration_protocol": "0",
+              "gsm_a.gm.sm.pco_pid": "0x000d",
+              "gsm_a.gm.sm.pco_pid_tree": {
+                "gsm_a.gm.sm.pco.length": "0x00"
+              }
+            }
+          }
+        },
+        "PDU session identity 2 - PDU session ID": {
+          "nas_5gs.mm.elem_id": "0x12",
+          "nas_5gs.pdu_session_id": "1"
+        },
+        "Request type": {
+          "gsm_a.common.elem_id": "0x08",
+          "nas_5gs.mm.req_type": "1"
+        },
+        "S-NSSAI": {
+          "nas_5gs.common.elem_id": "0x22",
+          "gsm_a.len": "1",
+          "nas_5gs.mm.sst": "1"
+        },
+        "DNN": {
+          "nas_5gs.common.elem_id": "0x25",
+          "gsm_a.len": "9",
+          "nas_5gs.cmn.dnn": "internet"
+        }
+      }
+    }
+  }
+}

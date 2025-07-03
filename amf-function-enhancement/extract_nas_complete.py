@@ -374,10 +374,6 @@ def main():
     print("=" * 50)
     print()
     
-    # Step 0: Clean existing folders
-    clean_existing_folders()
-    print()
-    
     # Step 1: Extract messages from JSON
     print("Step 1: Extracting NAS messages and parse trees from nas.json...")
     extracted = extract_nas_messages_with_trees('nas.json')

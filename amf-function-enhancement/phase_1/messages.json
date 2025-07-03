@@ -1,0 +1,12 @@
+{
+  "registration_request": {
+    "frame_number": "3064",
+    "message_name": "Registration request",
+    "nas_pdu": "7e004179000d0199f9070000000000000000102e0480f080f0"
+  },
+  "authentication_request": {
+    "frame_number": "3118",
+    "message_name": "Authentication request",
+    "nas_pdu": "7e005600020000215ca0df8c9bb8dbcf3c2a7dd448da13692010406296993082800030b762455c890b19"
+  }
+}

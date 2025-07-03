@@ -1,0 +1,71 @@
+{
+  "per.octet_string_length": "25",
+  "ngap.NAS_PDU": "7e:00:41:79:00:0d:01:99:f9:07:00:00:00:00:00:00:00:00:10:2e:04:80:f0:80:f0",
+  "ngap.NAS_PDU_tree": {
+    "nas-5gs": {
+      "Plain NAS 5GS Message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "0",
+        "nas_5gs.mm.message_type": "0x41",
+        "5GS registration type": {
+          "nas_5gs.mm.for": "1",
+          "nas_5gs.mm.5gs_reg_type": "1"
+        },
+        "NAS key set identifier": {
+          "nas_5gs.mm.tsc.h1": "0",
+          "nas_5gs.mm.nas_key_set_id.h1": "7"
+        },
+        "5GS mobile identity": {
+          "gsm_a.len": "13",
+          "nas_5gs.spare_b7": "0",
+          "nas_5gs.mm.suci.supi_fmt": "0",
+          "nas_5gs.spare_b3": "0",
+          "nas_5gs.mm.type_id": "1",
+          "e212.mcc": "999",
+          "e212.mnc": "70",
+          "nas_5gs.mm.suci.routing_indicator": "0000",
+          "nas_5gs.mm.suci.scheme_id": "0",
+          "nas_5gs.mm.suci.pki": "0",
+          "nas_5gs.mm.suci.msin": "0000000001"
+        },
+        "UE security capability": {
+          "nas_5gs.mm.elem_id": "0x2e",
+          "gsm_a.len": "4",
+          "nas_5gs.mm.5g_ea0": "1",
+          "nas_5gs.mm.128_5g_ea1": "0",
+          "nas_5gs.mm.128_5g_ea2": "0",
+          "nas_5gs.mm.128_5g_ea3": "0",
+          "nas_5gs.mm.5g_ea4": "0",
+          "nas_5gs.mm.5g_ea5": "0",
+          "nas_5gs.mm.5g_ea6": "0",
+          "nas_5gs.mm.5g_ea7": "0",
+          "nas_5gs.mm.ia0": "1",
+          "nas_5gs.mm.5g_128_ia1": "1",
+          "nas_5gs.mm.5g_128_ia2": "1",
+          "nas_5gs.mm.5g_128_ia3": "1",
+          "nas_5gs.mm.5g_128_ia4": "0",
+          "nas_5gs.mm.5g_ia5": "0",
+          "nas_5gs.mm.5g_ia6": "0",
+          "nas_5gs.mm.5g_ia7": "0",
+          "nas_5gs.mm.eea0": "1",
+          "nas_5gs.mm.128eea1": "0",
+          "nas_5gs.mm.128eea2": "0",
+          "nas_5gs.mm.eea3": "0",
+          "nas_5gs.mm.eea4": "0",
+          "nas_5gs.mm.eea5": "0",
+          "nas_5gs.mm.eea6": "0",
+          "nas_5gs.mm.eea7": "0",
+          "nas_5gs.mm.eia0": "1",
+          "nas_5gs.mm.128eia1": "1",
+          "nas_5gs.mm.128eia2": "1",
+          "nas_5gs.mm.eia3": "1",
+          "nas_5gs.mm.eia4": "0",
+          "nas_5gs.mm.eia5": "0",
+          "nas_5gs.mm.eia6": "0",
+          "nas_5gs.mm.eia7": "0"
+        }
+      }
+    }
+  }
+}

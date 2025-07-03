@@ -1,0 +1,54 @@
+{
+  "per.octet_string_length": "51",
+  "ngap.NAS_PDU": "7e:02:de:0d:22:e3:02:7e:00:54:43:0f:90:00:4f:00:70:00:65:00:6e:00:35:00:47:00:53:45:09:90:00:4e:00:65:00:78:00:74:46:0a:47:52:60:90:30:35:53:0a:49:01:01",
+  "ngap.NAS_PDU_tree": {
+    "nas-5gs": {
+      "Security protected NAS 5GS message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "2",
+        "nas_5gs.msg_auth_code": "0xde0d22e3",
+        "nas_5gs.seq_no": "2"
+      },
+      "Plain NAS 5GS Message": {
+        "nas_5gs.epd": "126",
+        "nas_5gs.spare_half_octet": "0",
+        "nas_5gs.security_header_type": "0",
+        "nas_5gs.mm.message_type": "0x54",
+        "Network Name - Full name for network": {
+          "gsm_a.dtap.elem_id": "0x43",
+          "gsm_a.len": "15",
+          "gsm_a.extension": "1",
+          "gsm_a.dtap.coding_scheme": "1",
+          "gsm_a.dtap.add_ci": "0",
+          "gsm_a.dtap.number_of_spare_bits": "0",
+          "gsm_a.dtap.text_string": "Open5GS"
+        },
+        "Network Name - Short Name": {
+          "gsm_a.dtap.elem_id": "0x45",
+          "gsm_a.len": "9",
+          "gsm_a.extension": "1",
+          "gsm_a.dtap.coding_scheme": "1",
+          "gsm_a.dtap.add_ci": "0",
+          "gsm_a.dtap.number_of_spare_bits": "0",
+          "gsm_a.dtap.text_string": "Next"
+        },
+        "Time Zone - Local": {
+          "gsm_a.dtap.elem_id": "0x46",
+          "gsm_a.dtap.timezone": "0x14"
+        },
+        "Time Zone and Time - Universal Time and Local Time Zone": {
+          "gsm_a.dtap.elem_id": "0x47",
+          "gsm_a.dtap.time_zone_time": "Jun  9, 2025 08:53:35.000000000 UTC",
+          "gsm_a.dtap.timezone": "0x14"
+        },
+        "Daylight Saving Time": {
+          "gsm_a.dtap.elem_id": "0x49",
+          "gsm_a.len": "1",
+          "gsm_a.spare_bits": "0",
+          "gsm_a.dtap.dst_adjustment": "1"
+        }
+      }
+    }
+  }
+}
