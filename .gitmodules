@@ -1,0 +1,4 @@
+[submodule "open5gs"]
+	path = open5gs
+	url = git@github.umn.edu:nfv-platform-nflambda/open5gs.git
+	branch = base_case
