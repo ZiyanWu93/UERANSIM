@@ -498,104 +498,6 @@ send_dl_nas_transport()
 - Send via SCTP to gNB
 - Update session state
 
-## NFLambda Integration Points
-
-### Event-Driven Architecture
-```
-EVENT_UL_NAS_TRANSPORT → amf_nas_actor
-    ↓
-EVENT_SMF_DISCOVERY → nrf_client_actor
-    ↓
-EVENT_CREATE_SM_CONTEXT → smf_client_actor
-    ↓
-EVENT_ALLOCATE_IP → ip_pool_actor
-    ↓
-EVENT_QOS_SETUP → qos_manager_actor
-    ↓
-EVENT_BUILD_SESSION_ACCEPT → sm_builder_actor
-    ↓
-EVENT_DL_NAS_TRANSPORT → ngap_sender_actor
-```
-
-### Memory Pool Usage
-- **Session Context Pool**: PDU session state
-- **IP Address Pool**: Available IPv4/IPv6 addresses
-- **QoS Rule Pool**: Dynamic QoS rule allocation
-- **Message Pool**: NAS/NGAP message buffers
-
-### Actor Message Definitions
-```c
-typedef struct {
-    uint32_t ue_id;
-    uint8_t psi;
-    uint8_t* n1_sm_msg;
-    size_t n1_sm_len;
-    ogs_s_nssai_t s_nssai;
-    char* dnn;
-} pdu_session_request_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t psi;
-    char* smf_uri;
-    ogs_sbi_discovery_option_t* discovery_option;
-} smf_selection_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t psi;
-    uint32_t ipv4_addr;
-    uint8_t ipv6_addr[16];
-    bool ipv4_allocated;
-    bool ipv6_allocated;
-} ip_allocation_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t psi;
-    uint8_t qfi;
-    uint8_t _5qi;
-    uint32_t session_ambr_ul;
-    uint32_t session_ambr_dl;
-} qos_setup_msg_t;
-```
-
-### Error Handling
-- Invalid S-NSSAI/DNN → PDU session reject (cause 27/33)
-- SMF discovery failure → PDU session reject (cause 35)
-- IP allocation failure → PDU session reject (cause 26)
-- QoS setup failure → PDU session reject (cause 31)
-- SM context creation failure → Retry or reject
-
-### Inter-Actor Communication
-```c
-// AMF → NRF Discovery
-typedef struct {
-    msg_header_t header;
-    ogs_sbi_service_type_e service_type;
-    ogs_sbi_discovery_option_t* options;
-    uint32_t requester_nf_instance_id;
-} nrf_discovery_request_t;
-
-// AMF → SMF Context Creation
-typedef struct {
-    msg_header_t header;
-    ogs_sbi_sm_context_create_data_t* create_data;
-    uint8_t* n1_sm_msg;
-    size_t n1_sm_len;
-} smf_context_create_request_t;
-
-// SMF → AMF Context Response
-typedef struct {
-    msg_header_t header;
-    uint32_t sm_context_ref;
-    uint8_t* n1_sm_msg;
-    size_t n1_sm_len;
-    uint8_t* n2_sm_info;
-    size_t n2_sm_len;
-} smf_context_create_response_t;
-```
-
 ## Detailed Field Calculations
 
 ### IP Address Allocation Algorithm
@@ -746,64 +648,277 @@ gmm_build_dl_nas_transport() {
 }
 ```
 
-## Implementation Priority
+## Binary Message Structures
 
-### Phase 5a: Core Message Processing
-1. UL NAS transport parsing
-2. PDU session request extraction
-3. S-NSSAI/DNN validation
-4. Basic session context creation
+### PDU Session Establishment Request Message Structure
 
-### Phase 5b: SMF Integration
-1. NRF discovery client
-2. SMF selection logic
-3. SM context create/update API
-4. Response processing
+```c
+#pragma pack(1)  // Ensure no padding between fields
 
-### Phase 5c: Resource Management
-1. IP address pool implementation
-2. QoS rule/flow creation
-3. Session AMBR handling
-4. PCO processing
+// PDU Session Establishment Request structure matching the binary layout
+// Hex: 7e:02:ba:02:92:cd:02:7e:00:67:01:00:15:2e:01:01:c1:ff:ff:91:a1:28:01:00:7b:00:07:80:00:0a:00:00:0d:00:12:01:81:22:01:01:25:09:08:69:6e:74:65:72:6e:65:74
+typedef struct {
+    // Security header (6 bytes)
+    uint8_t epd;                        // 0x7E - Extended Protocol Discriminator
+    uint8_t security_header_type;       // 0x02 - Integrity protected and ciphered
+    uint8_t message_auth_code[4];       // 0xBA0292CD - Message authentication code
+    uint8_t sequence_number;            // 0x02 - Sequence number
+    
+    // Plain NAS 5GS Message header (after decryption)
+    uint8_t plain_epd;                  // 0x7E - Extended Protocol Discriminator
+    uint8_t plain_security_header;      // 0x00 - No security
+    uint8_t message_type;               // 0x67 - UL NAS Transport
+    
+    // Payload container type IE
+    uint8_t pld_cont_type_iei;          // 0x01 - Payload container type IEI
+    union {
+        uint8_t pld_cont_type;          // 0x00 - bits 7-4: spare, bits 3-0: type
+        struct {
+            uint8_t type:4;             // bits 3-0: Container type (1 = N1 SM)
+            uint8_t spare:4;            // bits 7-4: Spare
+        } bits;
+    } payload_container_type;
+    
+    // Payload container IE
+    uint8_t pld_cont_iei;               // 0x15 - Payload container IEI (NAS 5 0x01 0x05)
+    uint8_t pld_cont_length;            // 0x15 - Length (21 bytes)
+    
+    // Embedded PDU Session Establishment Request
+    struct {
+        uint8_t epd;                    // 0x2E - 5GSM EPD
+        uint8_t pdu_session_id;         // 0x01 - PDU session identity
+        uint8_t pti;                    // 0x01 - Procedure transaction identity
+        uint8_t message_type;           // 0xC1 - PDU Session Establishment Request
+        
+        // Integrity protection maximum data rate
+        uint8_t int_prot_max_data_rate[2];  // 0xFF:FF - UL and DL rates
+        
+        // PDU session type (Type 1 half octet IE)
+        union {
+            uint8_t pdu_session_type_spare; // 0x91
+            struct {
+                uint8_t pdu_session_type:3; // bits 2-0: Type (1 = IPv4)
+                uint8_t spare:1;            // bit 3: Spare
+                uint8_t spare_half:4;       // bits 7-4: Spare half octet
+            } bits;
+        } pdu_session_type;
+        
+        // SSC mode (Type 1 half octet IE)
+        union {
+            uint8_t ssc_mode_spare;         // 0xA1
+            struct {
+                uint8_t ssc_mode:3;         // bits 2-0: SSC mode (1)
+                uint8_t spare:1;            // bit 3: Spare
+                uint8_t spare_half:4;       // bits 7-4: Spare half octet
+            } bits;
+        } ssc_mode;
+        
+        // 5GSM capability IE
+        uint8_t _5gsm_cap_iei;          // 0x28 - 5GSM capability IEI
+        uint8_t _5gsm_cap_length;       // 0x01 - Length
+        union {
+            uint8_t capability;         // 0x00
+            struct {
+                uint8_t rqos:1;         // bit 0: Reflective QoS (0)
+                uint8_t mh6_pdu:1;      // bit 1: Multi-homed IPv6 PDU (0)
+                uint8_t ept_s1:1;       // bit 2: Ethernet PDU session (0)
+                uint8_t atsss_st:2;     // bits 4-3: ATSSS support (0)
+                uint8_t tpmic:1;        // bit 5: TPMI capability (0)
+                uint8_t spare:2;        // bits 7-6: Spare
+            } bits;
+        } _5gsm_capability;
+        
+        // Extended protocol configuration options IE
+        uint8_t ext_pco_iei;            // 0x7B - Extended PCO IEI
+        uint8_t ext_pco_length;         // 0x00 - Length (0 initially)
+        uint8_t ext_pco_content[7];     // 0x07:80:00:0A:00:00:0D:00 - Extension + containers
+    } pdu_session_request;
+    
+    // PDU session identity 2 IE
+    uint8_t pdu_session_id2_iei;       // 0x12 - PDU session ID IEI
+    uint8_t pdu_session_id2;           // 0x01 - PDU session identity
+    
+    // Request type IE
+    uint8_t request_type_iei;          // 0x81 - Request type IEI (NAS 5 0x08 0x01)
+    union {
+        uint8_t request_type;           // 0x01
+        struct {
+            uint8_t type:3;             // bits 2-0: Request type (1 = initial)
+            uint8_t spare:5;            // bits 7-3: Spare
+        } bits;
+    } req_type;
+    
+    // S-NSSAI IE
+    uint8_t snssai_iei;                // 0x22 - S-NSSAI IEI
+    uint8_t snssai_length;             // 0x01 - Length
+    uint8_t sst;                       // 0x01 - Slice/Service Type
+    
+    // DNN IE
+    uint8_t dnn_iei;                   // 0x25 - DNN IEI
+    uint8_t dnn_length;                // 0x09 - Length
+    uint8_t dnn[9];                    // 0x08:69:6E:74:65:72:6E:65:74 - "internet"
+} pdu_session_establishment_request_t;
 
-### Phase 5d: Message Building
-1. PDU session accept encoder
-2. QoS rule serialization
-3. DL NAS transport wrapper
-4. Security context application
+// Static assert to ensure structure size matches message
+_Static_assert(sizeof(pdu_session_establishment_request_t) == 50, "PDU Session Establishment Request structure size mismatch");
+```
 
-### Phase 5e: Integration and Testing
-1. End-to-end PDU session flow
-2. Multiple session handling
-3. Error scenarios
-4. Performance optimization
+### PDU Session Establishment Accept Message Structure
 
-## Testing Strategy
+```c
+// PDU Session Establishment Accept structure matching the binary layout
+// Hex: 7e:02:fb:d6:2d:81:03:7e:00:68:01:00:47:2e:01:01:c2:11:00:09:01:00:06:31:31:01:01:ff:01:06:03:f4:24:03:f4:24:29:05:01:0a:2d:00:02:22:01:01:79:00:06:01:20:41:01:01:09:7b:00:0f:80:00:0d:04:08:08:08:08:00:0d:04:08:08:04:04:25:09:08:69:6e:74:65:72:6e:65:74:12:01
+typedef struct {
+    // Security header (7 bytes)
+    uint8_t epd;                        // 0x7E - Extended Protocol Discriminator
+    uint8_t security_header_type;       // 0x02 - Integrity protected and ciphered
+    uint8_t message_auth_code[4];       // 0xFBD62D81 - Message authentication code
+    uint8_t sequence_number;            // 0x03 - Sequence number
+    
+    // Plain NAS 5GS Message header (after decryption)
+    uint8_t plain_epd;                  // 0x7E - Extended Protocol Discriminator
+    uint8_t plain_security_header;      // 0x00 - No security
+    uint8_t message_type;               // 0x68 - DL NAS Transport
+    
+    // Payload container type IE
+    uint8_t pld_cont_type_iei;          // 0x01 - Payload container type IEI
+    union {
+        uint8_t pld_cont_type;          // 0x00 - bits 7-4: spare, bits 3-0: type
+        struct {
+            uint8_t type:4;             // bits 3-0: Container type (1 = N1 SM)
+            uint8_t spare:4;            // bits 7-4: Spare
+        } bits;
+    } payload_container_type;
+    
+    // Payload container IE
+    uint8_t pld_cont_iei;               // 0x47 - Payload container IEI (NAS 5 0x04 0x07)
+    uint8_t pld_cont_length;            // 0x47 - Length (71 bytes)
+    
+    // Embedded PDU Session Establishment Accept
+    struct {
+        uint8_t epd;                    // 0x2E - 5GSM EPD
+        uint8_t pdu_session_id;         // 0x01 - PDU session identity
+        uint8_t pti;                    // 0x01 - Procedure transaction identity
+        uint8_t message_type;           // 0xC2 - PDU Session Establishment Accept
+        
+        // Selected PDU session type and SSC mode (Type 1 half octet)
+        union {
+            uint8_t type_and_ssc;       // 0x11
+            struct {
+                uint8_t ssc_mode:3;     // bits 2-0: Selected SSC mode (1)
+                uint8_t spare:1;        // bit 3: Spare
+                uint8_t pdu_type:3;     // bits 6-4: PDU session type (1 = IPv4)
+                uint8_t spare2:1;       // bit 7: Spare
+            } bits;
+        } selected_type_ssc;
+        
+        // QoS rules IE
+        uint8_t qos_rules_iei;          // 0x00 - QoS rules IEI (actually part of length)
+        uint8_t qos_rules_length;       // 0x09 - Length
+        struct {
+            uint8_t qos_rule_id;        // 0x01 - QoS rule identifier
+            uint16_t length;            // 0x0006 - Rule length (big-endian)
+            union {
+                uint8_t rule_oper_code; // 0x31
+                struct {
+                    uint8_t rop:3;      // bits 2-0: Rule operation (1 = create)
+                    uint8_t dqr:1;      // bit 3: Default QoS rule (1)
+                    uint8_t num_filters:4; // bits 7-4: Number of packet filters (1)
+                } bits;
+            } operation;
+            // Packet filter 1
+            union {
+                uint8_t filter_header;  // 0x31
+                struct {
+                    uint8_t filter_id:6;  // bits 5-0: Filter identifier (1)
+                    uint8_t direction:2;  // bits 7-6: Direction (3 = bidirectional)
+                } bits;
+            } pkt_filter;
+            uint8_t filter_length;      // 0x01 - Filter content length
+            uint8_t component_type;     // 0x01 - Match all packets
+            uint8_t precedence;         // 0xFF - Rule precedence (255)
+            uint8_t qfi;               // 0x01 - QoS flow identifier
+        } qos_rule;
+        
+        // Session-AMBR IE
+        uint8_t session_ambr_iei;       // 0x06 - Session-AMBR IEI (actually 0x2A)
+        uint8_t session_ambr_length;    // 0x06 - Length
+        uint8_t dl_unit;               // 0x03 - DL unit (3 = Mbps)
+        uint16_t dl_ambr;              // 0xF424 - DL AMBR (62500 in big-endian)
+        uint8_t ul_unit;               // 0x03 - UL unit (3 = Mbps)
+        uint16_t ul_ambr;              // 0xF424 - UL AMBR (62500 in big-endian)
+        
+        // PDU address IE
+        uint8_t pdu_address_iei;        // 0x29 - PDU address IEI
+        uint8_t pdu_address_length;     // 0x05 - Length
+        union {
+            uint8_t type_field;         // 0x01
+            struct {
+                uint8_t pdu_type:3;     // bits 2-0: PDU session type (1 = IPv4)
+                uint8_t spare:4;        // bits 6-3: Spare
+                uint8_t si6lla:1;       // bit 7: IPv6 link-local (0)
+            } bits;
+        } pdu_addr_type;
+        uint32_t ipv4_address;          // 0x0A2D0002 - 10.45.0.2 (big-endian)
+        
+        // S-NSSAI IE
+        uint8_t snssai_iei;            // 0x22 - S-NSSAI IEI
+        uint8_t snssai_length;         // 0x01 - Length
+        uint8_t sst;                   // 0x01 - Slice/Service Type
+        
+        // QoS flow descriptions IE
+        uint8_t qos_flow_desc_iei;     // 0x79 - QoS flow descriptions IEI
+        uint8_t qos_flow_desc_length;  // 0x00 - Length (actually 0x05)
+        uint8_t qos_flow_desc_len2;    // 0x06 - Actual length byte
+        struct {
+            union {
+                uint8_t qfi_oper;       // 0x01
+                struct {
+                    uint8_t qfi:6;      // bits 5-0: QoS flow identifier (1)
+                    uint8_t spare:2;    // bits 7-6: Spare
+                } bits;
+            } qfi;
+            union {
+                uint8_t oper_params;    // 0x20
+                struct {
+                    uint8_t op_code:3;  // bits 2-0: Operation code (1 = create)
+                    uint8_t spare:4;    // bits 6-3: Spare
+                    uint8_t e:1;        // bit 7: Parameters present (1)
+                } bits;
+            } operation;
+            uint8_t num_params;         // 0x41 - E bit + number of params
+            uint8_t param_id;           // 0x01 - Parameter ID (5QI)
+            uint8_t param_length;       // 0x01 - Parameter length
+            uint8_t _5qi;              // 0x09 - 5QI value (9)
+        } qos_flow;
+        
+        // Extended protocol configuration options IE
+        uint8_t ext_pco_iei;           // 0x7B - Extended PCO IEI
+        uint8_t ext_pco_length;        // 0x00 - Length (actually 0x0F)
+        uint8_t ext_pco_len2;          // 0x0F - Actual length byte
+        uint8_t ext_config_prot;       // 0x80 - Extension (1) + config protocol (0)
+        // DNS Server IPv4 Address container
+        uint16_t dns_container_id;     // 0x000D - Protocol ID (big-endian)
+        uint8_t dns_length;            // 0x04 - Container length
+        uint32_t dns_ipv4;             // 0x08080808 - 8.8.8.8 (big-endian)
+        // Additional DNS Server
+        uint16_t dns2_container_id;    // 0x000D - Protocol ID (big-endian)
+        uint8_t dns2_length;           // 0x04 - Container length
+        uint32_t dns2_ipv4;            // 0x08080404 - 8.8.4.4 (big-endian)
+        
+        // DNN IE
+        uint8_t dnn_iei;               // 0x25 - DNN IEI
+        uint8_t dnn_length;            // 0x09 - Length
+        uint8_t dnn[9];                // 0x08:69:6E:74:65:72:6E:65:74 - "internet"
+    } pdu_session_accept;
+    
+    // PDU session identity 2 IE
+    uint8_t pdu_session_id2_iei;      // 0x12 - PDU session ID IEI
+    uint8_t pdu_session_id2;          // 0x01 - PDU session identity
+} pdu_session_establishment_accept_t;
 
-### Unit Tests
-1. **Message Parsing**: PDU session request decoder
-2. **Validation Logic**: S-NSSAI/DNN checks
-3. **IP Allocation**: Pool management
-4. **QoS Building**: Rule/flow encoding
-5. **PCO Processing**: Container handling
+// Static assert to ensure structure size matches message
+_Static_assert(sizeof(pdu_session_establishment_accept_t) == 93, "PDU Session Establishment Accept structure size mismatch");
+```
 
-### Integration Tests
-1. **AMF-SMF Interface**: SM context operations
-2. **NRF Discovery**: SMF selection flow
-3. **Session Flow**: Complete establishment
-4. **Security**: NAS protection verification
-5. **Multi-Session**: Concurrent PDU sessions
 
-### Interoperability Tests
-1. **UERANSIM**: PDU session with simulator
-2. **Open5GS SMF**: Full core integration
-3. **Commercial UE**: Real device testing
-4. **Roaming**: Inter-PLMN sessions
-
-### Performance Tests
-1. **Session Rate**: Sessions per second
-2. **IP Pool**: Allocation efficiency
-3. **Message Size**: Encoding optimization
-4. **Latency**: End-to-end delay
-
-This roadmap provides a complete blueprint for implementing Phase 5 PDU session establishment in the NFLambda AMF/SMF while maintaining compatibility with 3GPP specifications and open5gs architecture.

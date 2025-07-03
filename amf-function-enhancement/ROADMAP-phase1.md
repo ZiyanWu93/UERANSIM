@@ -200,62 +200,6 @@ send_authentication_request()
 - Send via NGAP interface
 - Start T3560 timer for response timeout
 
-## NFLambda Integration Points
-
-### Event-Driven Architecture
-```
-EVENT_REGISTRATION_REQUEST → amf_actor
-    ↓
-EVENT_AUSF_AUTH_REQUEST → ausf_client_actor  
-    ↓
-EVENT_UDM_AUTH_VECTOR → udm_client_actor
-    ↓
-EVENT_AUTH_REQUEST_BUILD → nas_builder_actor
-    ↓  
-EVENT_NAS_SEND → ngap_sender_actor
-```
-
-### Memory Pool Usage
-- **UE Context Pool**: Store SUCI, security capabilities
-- **Message Pool**: Authentication request buffers
-- **Crypto Pool**: RAND, AUTN storage
-
-### Actor Message Definitions
-```c
-typedef struct {
-    uint32_t ue_id;
-    uint8_t* nas_pdu;
-    size_t nas_len;
-} registration_request_msg_t;
-
-typedef struct {
-    uint32_t ue_id; 
-    char* suci;
-    char* serving_network;
-} ausf_auth_request_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t rand[16];
-    uint8_t autn[16]; 
-    uint8_t hxres_star[16];
-} auth_vector_msg_t;
-```
-
-### Error Handling
-- Invalid SUCI format → Reject with cause
-- AUSF unreachable → Retry with backoff
-- Authentication vector failure → Authentication reject
-- Timer expiry → Cleanup UE context
-
-### Testing Strategy
-1. **Unit Tests**: Individual function validation
-2. **Integration Tests**: Full message flow
-3. **Interoperability**: Against open5gs core
-4. **Performance**: Message throughput metrics
-
-This implementation maintains the event-driven architecture while replacing hardcoded outputs with proper 5G authentication procedures.
-
 ## Detailed Field Calculations
 
 ### Authentication Parameter RAND
@@ -328,26 +272,196 @@ authentication_request->authentication_parameter_rand.rand = amf_ue->rand;
 authentication_request->authentication_parameter_autn.autn = amf_ue->autn;
 ```
 
-## Implementation Priority
+## Binary Message Structures
 
-### Phase 1a: Core Message Processing
-1. NAS PDU parsing and validation
-2. SUCI extraction and storage
-3. Basic authentication request building
+### Registration Request Message Structure
 
-### Phase 1b: AUSF Integration  
-1. HTTP client for AUSF communication
-2. Authentication vector request/response
-3. Error handling and retry logic
+```c
+#pragma pack(1)  // Ensure no padding between fields
 
-### Phase 1c: Cryptographic Functions
-1. Milenage algorithm implementation  
-2. AUTN generation and validation
-3. HXRES* calculation
+// Registration Request structure matching the binary layout
+// Hex: 7e:00:41:79:00:0d:01:99:f9:07:00:00:00:00:00:00:00:00:10:2e:04:80:f0:80:f0
+typedef struct {
+    // Header (3 bytes)
+    uint8_t epd;                        // 0x7E - Extended Protocol Discriminator
+    uint8_t security_header;            // 0x00 - Security header (bits 7-4: spare, bits 3-0: type)
+    uint8_t message_type;               // 0x41 - Registration Request
+    
+    // Registration type and ngKSI (1 byte)
+    union {
+        uint8_t reg_type_and_ksi;       // 0x79
+        struct {
+            uint8_t reg_type:3;         // bits 2-0: Registration type (1 = initial)
+            uint8_t for_bit:1;          // bit 3: Follow-on request (1)
+            uint8_t ksi:3;              // bits 6-4: Key set identifier (7)
+            uint8_t tsc:1;              // bit 7: Type of security context (0)
+        } bits;
+    } reg_type_ksi;
+    
+    // Mobile Identity header (2 bytes)
+    uint8_t spare_half_octet;           // 0x00 - Spare half octet
+    uint8_t mobile_id_length;           // 0x0D - Length (13 bytes)
+    
+    // Mobile Identity - SUCI (1 byte header)
+    union {
+        uint8_t suci_header;            // 0x01
+        struct {
+            uint8_t type_id:3;          // bits 2-0: Identity type (1 = SUCI)
+            uint8_t spare_b3:1;         // bit 3: Spare
+            uint8_t supi_format:3;      // bits 6-4: SUPI format (0 = IMSI)
+            uint8_t spare_b7:1;         // bit 7: Spare
+        } bits;
+    } suci_hdr;
+    
+    // PLMN (3 bytes in BCD format)
+    union {
+        uint8_t bytes[3];               // 0x99, 0xF9, 0x07
+        struct {
+            uint8_t mcc_digit2:4;       // MCC digit 2
+            uint8_t mcc_digit1:4;       // MCC digit 1
+            uint8_t mnc_digit3:4;       // MNC digit 3 (F = filler)
+            uint8_t mcc_digit3:4;       // MCC digit 3
+            uint8_t mnc_digit2:4;       // MNC digit 2
+            uint8_t mnc_digit1:4;       // MNC digit 1
+        } digits;
+    } plmn;
+    
+    // Routing indicator (2 bytes)
+    uint16_t routing_indicator;         // 0x0000
+    
+    // Protection scheme (1 byte)
+    union {
+        uint8_t prot_scheme_byte;       // 0x00
+        struct {
+            uint8_t prot_scheme_id:4;   // bits 3-0: Protection scheme (0 = null)
+            uint8_t home_net_pki:4;     // bits 7-4: Home network public key ID
+        } bits;
+    } protection;
+    
+    // MSIN in BCD format (5 bytes)
+    union {
+        uint8_t bytes[5];               // 0x00:00:00:00:10
+        struct {
+            uint8_t digit2:4;
+            uint8_t digit1:4;
+            uint8_t digit4:4;
+            uint8_t digit3:4;
+            uint8_t digit6:4;
+            uint8_t digit5:4;
+            uint8_t digit8:4;
+            uint8_t digit7:4;
+            uint8_t digit10:4;
+            uint8_t digit9:4;
+        } digits;
+    } msin;
+    
+    // UE Security Capability IE
+    uint8_t ue_sec_cap_iei;             // 0x2E - UE security capability IEI
+    uint8_t ue_sec_cap_length;          // 0x04 - Length (4 bytes)
+    
+    // Security algorithms (4 bytes)
+    struct {
+        union {
+            uint8_t byte;               // 0x80
+            struct {
+                uint8_t ea7:1;          // bit 0: 5G-EA7
+                uint8_t ea6:1;          // bit 1: 5G-EA6
+                uint8_t ea5:1;          // bit 2: 5G-EA5
+                uint8_t ea4:1;          // bit 3: 5G-EA4
+                uint8_t ea3:1;          // bit 4: 5G-EA3
+                uint8_t ea2:1;          // bit 5: 5G-EA2
+                uint8_t ea1:1;          // bit 6: 5G-EA1
+                uint8_t ea0:1;          // bit 7: 5G-EA0 (1 = supported)
+            } bits;
+        } _5g_ea;
+        
+        union {
+            uint8_t byte;               // 0xF0
+            struct {
+                uint8_t ia7:1;          // bit 0: 5G-IA7
+                uint8_t ia6:1;          // bit 1: 5G-IA6
+                uint8_t ia5:1;          // bit 2: 5G-IA5
+                uint8_t ia4:1;          // bit 3: 5G-IA4
+                uint8_t ia3:1;          // bit 4: 5G-IA3 (1)
+                uint8_t ia2:1;          // bit 5: 5G-IA2 (1)
+                uint8_t ia1:1;          // bit 6: 5G-IA1 (1)
+                uint8_t ia0:1;          // bit 7: 5G-IA0 (1)
+            } bits;
+        } _5g_ia;
+        
+        union {
+            uint8_t byte;               // 0x80
+            struct {
+                uint8_t eea7:1;         // bit 0: EEA7
+                uint8_t eea6:1;         // bit 1: EEA6
+                uint8_t eea5:1;         // bit 2: EEA5
+                uint8_t eea4:1;         // bit 3: EEA4
+                uint8_t eea3:1;         // bit 4: EEA3
+                uint8_t eea2:1;         // bit 5: EEA2
+                uint8_t eea1:1;         // bit 6: EEA1
+                uint8_t eea0:1;         // bit 7: EEA0 (1 = supported)
+            } bits;
+        } eps_ea;
+        
+        union {
+            uint8_t byte;               // 0xF0
+            struct {
+                uint8_t eia7:1;         // bit 0: EIA7
+                uint8_t eia6:1;         // bit 1: EIA6
+                uint8_t eia5:1;         // bit 2: EIA5
+                uint8_t eia4:1;         // bit 3: EIA4
+                uint8_t eia3:1;         // bit 4: EIA3 (1)
+                uint8_t eia2:1;         // bit 5: EIA2 (1)
+                uint8_t eia1:1;         // bit 6: EIA1 (1)
+                uint8_t eia0:1;         // bit 7: EIA0 (1)
+            } bits;
+        } eps_ia;
+    } ue_security_capability;
+} registration_request_t;
 
-### Phase 1d: Integration and Testing
-1. End-to-end message flow testing
-2. Performance optimization
-3. Interoperability validation
+// Static assert to ensure structure size matches message
+_Static_assert(sizeof(registration_request_t) == 25, "Registration Request structure size mismatch");
+```
 
-This roadmap provides a complete blueprint for implementing Phase 1 authentication request generation in the NFLambda AMF while maintaining compatibility with 3GPP specifications and open5gs architecture.
+### Authentication Request Message Structure
+
+```c
+// Authentication Request structure matching the binary layout
+// Hex: 7e:00:56:00:02:00:00:21:5c:a0:df:8c:9b:b8:db:cf:3c:2a:7d:d4:48:da:13:69:20:10:40:62:96:99:30:82:80:00:30:b7:62:45:5c:89:0b:19
+typedef struct {
+    // Header (3 bytes)
+    uint8_t epd;                        // 0x7E - Extended Protocol Discriminator
+    uint8_t security_header;            // 0x00 - Security header
+    uint8_t message_type;               // 0x56 - Authentication Request
+    
+    // ngKSI (1 byte)
+    union {
+        uint8_t ngksi_spare;            // 0x00
+        struct {
+            uint8_t ksi:3;              // bits 2-0: Key set identifier (0)
+            uint8_t tsc:1;              // bit 3: Type of security context (0)
+            uint8_t spare:4;            // bits 7-4: Spare half octet
+        } bits;
+    } ngksi;
+    
+    // ABBA
+    uint8_t abba_length;                // 0x02 - Length
+    uint8_t abba[2];                    // 0x00:00 - ABBA contents
+    
+    // Authentication Parameter RAND
+    uint8_t rand_iei;                   // 0x21 - RAND IEI
+    uint8_t rand[16];                   // 16 bytes of RAND value
+    
+    // Authentication Parameter AUTN
+    uint8_t autn_iei;                   // 0x20 - AUTN IEI
+    uint8_t autn_length;                // 0x10 - Length (16)
+    struct {
+        uint8_t sqn_xor_ak[6];          // SQN XOR AK (6 bytes)
+        uint8_t amf[2];                 // AMF field (2 bytes)
+        uint8_t mac[8];                 // MAC (8 bytes)
+    } autn;
+} authentication_request_t;
+
+// Static assert to ensure structure size matches message
+_Static_assert(sizeof(authentication_request_t) == 42, "Authentication Request structure size mismatch");
+```

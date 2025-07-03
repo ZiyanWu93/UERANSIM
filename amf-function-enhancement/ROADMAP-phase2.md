@@ -463,87 +463,6 @@ mac = full_mac[0..3]
 - Start T3560 timer for response
 - Increment downlink count
 
-## NFLambda Integration Points
-
-### Event-Driven Architecture
-```
-EVENT_AUTH_RESPONSE → amf_actor
-    ↓
-EVENT_RES_VERIFICATION → crypto_actor
-    ↓
-EVENT_AUSF_CONFIRM → ausf_client_actor
-    ↓
-EVENT_KEY_DERIVATION → crypto_actor
-    ↓
-EVENT_ALGO_SELECTION → security_actor
-    ↓
-EVENT_SMC_BUILD → nas_builder_actor
-    ↓
-EVENT_MAC_CALCULATION → crypto_actor
-    ↓
-EVENT_NAS_SEND → ngap_sender_actor
-```
-
-### Memory Pool Usage
-- **Security Context Pool**: Store KSEAF, KAMF, NAS keys
-- **Message Pool**: Security mode command buffers
-- **Crypto Pool**: Temporary buffers for MAC calculation
-- **Algorithm Pool**: Selected algorithm storage
-
-### Actor Message Definitions
-```c
-typedef struct {
-    uint32_t ue_id;
-    uint8_t res_star[16];
-    size_t res_len;
-} auth_response_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    char* auth_ctx_id;
-    uint8_t res_star[16];
-} ausf_confirm_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t kseaf[32];
-    char* supi;
-} kseaf_response_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t kamf[32];
-    uint8_t knas_int[16];
-    uint8_t knas_enc[16];
-} derived_keys_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t selected_enc_algo;
-    uint8_t selected_int_algo;
-} algo_selection_msg_t;
-```
-
-### Error Handling
-- RES* verification failure → Authentication reject (cause: MAC failure)
-- AUSF unreachable → Retry with exponential backoff
-- Key derivation failure → Authentication reject
-- No matching algorithms → Security mode reject
-- Timer T3560 expiry → Retransmit or release
-
-### Security State Transitions
-```
-State: UNAUTHENTICATED
-    ↓ (Authentication Request)
-State: AUTHENTICATING
-    ↓ (Authentication Response + RES* verified)
-State: AUTHENTICATED
-    ↓ (Security Mode Command sent)
-State: SECURITY_MODE_INITIATED
-    ↓ (Security Mode Complete)
-State: SECURITY_ESTABLISHED
-```
-
 ## Detailed Field Calculations
 
 ### RES* Verification and HXRES* Calculation
@@ -697,53 +616,146 @@ ogs_nas_mac_calculate(
     mac);
 ```
 
-## Implementation Priority
+## Binary Message Structures
 
-### Phase 2a: RES* Verification
-1. HXRES* calculation function
-2. RES* comparison logic
-3. Authentication failure handling
+### Authentication Response Structure
 
-### Phase 2b: AUSF Integration
-1. Confirmation request builder
-2. KSEAF extraction and storage
-3. SUPI update in UE context
+```c
+#pragma pack(1)
+typedef struct {
+    // NAS header
+    uint8_t epd;                      // 0x7E (5GS)
+    uint8_t security_header_type;     // 0x00 (plain NAS message)
+    uint8_t message_type;             // 0x57 (Authentication Response)
+    
+    // Authentication response parameter (Type 4 IE)
+    uint8_t elem_id;                  // 0x2D
+    uint8_t length;                   // 0x10 (16 bytes)
+    uint8_t res_star[16];             // RES* value
+} authentication_response_t;
 
-### Phase 2c: Key Derivation
-1. KAMF derivation from KSEAF
-2. NAS key derivation functions
-3. Key storage in security context
+// Static assert to ensure correct size
+_Static_assert(sizeof(authentication_response_t) == 21, "authentication_response_t size mismatch");
 
-### Phase 2d: Security Establishment
-1. Algorithm selection based on capabilities
-2. Security mode command construction
-3. MAC calculation and protection
-4. State transition management
+// Field offsets for direct access
+_Static_assert(offsetof(authentication_response_t, epd) == 0, "epd offset mismatch");
+_Static_assert(offsetof(authentication_response_t, security_header_type) == 1, "security_header_type offset mismatch");
+_Static_assert(offsetof(authentication_response_t, message_type) == 2, "message_type offset mismatch");
+_Static_assert(offsetof(authentication_response_t, elem_id) == 3, "elem_id offset mismatch");
+_Static_assert(offsetof(authentication_response_t, length) == 4, "length offset mismatch");
+_Static_assert(offsetof(authentication_response_t, res_star) == 5, "res_star offset mismatch");
+```
 
-### Phase 2e: Integration and Testing
-1. End-to-end authentication to security flow
-2. Key derivation verification
-3. MAC calculation validation
-4. Interoperability with UERANSIM
+### Security Mode Command Structure
 
-## Testing Strategy
+```c
+#pragma pack(1)
+typedef struct {
+    // Security header
+    uint8_t epd;                      // 0x7E (5GS)
+    uint8_t security_header_type;     // 0x03 (integrity protected with new security context)
+    uint8_t mac[4];                   // Message Authentication Code
+    uint8_t sequence_number;          // 0x00 (first protected message)
+    
+    // Plain NAS message container
+    uint8_t inner_epd;                // 0x7E (5GS)
+    uint8_t inner_security_header;    // 0x00 (plain message, includes spare half octet)
+    uint8_t message_type;             // 0x5D (Security Mode Command)
+    
+    // Selected NAS security algorithms (Type 3)
+    struct {
+        uint8_t type_of_ciphering : 4;  // 0x0 (5G-EA0)
+        uint8_t spare1 : 4;             // 0x0
+        uint8_t type_of_integrity : 4;  // 0x2 (5G-IA2)
+        uint8_t spare2 : 4;             // 0x0
+    } selected_algorithms;
+    
+    // NAS key set identifier (Type 3)
+    struct {
+        uint8_t nas_key_set_id : 3;     // 0x0
+        uint8_t tsc : 1;                // 0x0 (native security context)
+        uint8_t spare : 4;              // 0x0
+    } ngksi;
+    
+    // Replayed UE security capabilities (Type 4)
+    uint8_t ue_sec_cap_iei;            // 0x00 (no IEI for mandatory IE)
+    uint8_t ue_sec_cap_length;         // 0x00 (no length for mandatory IE)
+    uint8_t ue_sec_cap_iei_actual;     // 0x22 (actual IEI)
+    uint8_t ue_sec_cap_length_actual;  // 0x04
+    struct {
+        // 5G encryption algorithms
+        uint8_t ea7 : 1;               // 0
+        uint8_t ea6 : 1;               // 0
+        uint8_t ea5 : 1;               // 0
+        uint8_t ea4 : 1;               // 0
+        uint8_t ea3 : 1;               // 0
+        uint8_t ea2 : 1;               // 0
+        uint8_t ea1 : 1;               // 0
+        uint8_t ea0 : 1;               // 1
+        
+        // 5G integrity algorithms
+        uint8_t ia7 : 1;               // 0
+        uint8_t ia6 : 1;               // 0
+        uint8_t ia5 : 1;               // 0
+        uint8_t ia4 : 1;               // 0
+        uint8_t ia3 : 1;               // 1
+        uint8_t ia2 : 1;               // 1
+        uint8_t ia1 : 1;               // 1
+        uint8_t ia0 : 1;               // 1
+        
+        // EPS encryption algorithms
+        uint8_t eea7 : 1;              // 0
+        uint8_t eea6 : 1;              // 0
+        uint8_t eea5 : 1;              // 0
+        uint8_t eea4 : 1;              // 0
+        uint8_t eea3 : 1;              // 0
+        uint8_t eea2 : 1;              // 0
+        uint8_t eea1 : 1;              // 0
+        uint8_t eea0 : 1;              // 1
+        
+        // EPS integrity algorithms
+        uint8_t eia7 : 1;              // 0
+        uint8_t eia6 : 1;              // 0
+        uint8_t eia5 : 1;              // 0
+        uint8_t eia4 : 1;              // 0
+        uint8_t eia3 : 1;              // 1
+        uint8_t eia2 : 1;              // 1
+        uint8_t eia1 : 1;              // 1
+        uint8_t eia0 : 1;              // 1
+    } ue_security_capability;
+    
+    // IMEISV request (Type 1)
+    struct {
+        uint8_t imeisv_request : 3;     // 0x1
+        uint8_t spare : 1;              // 0x0
+        uint8_t iei : 4;                // 0xE
+    } imeisv_request;
+    
+    // Additional 5G security information (Type 4)
+    uint8_t additional_sec_info_iei;    // 0x36
+    uint8_t additional_sec_info_length; // 0x01
+    struct {
+        uint8_t spare : 6;              // 0x00
+        uint8_t hdp : 1;                // 0x0 (no horizontal derivation)
+        uint8_t rinmr : 1;              // 0x1 (retransmission requested)
+    } additional_security_info;
+    
+} security_mode_command_t;
 
-### Unit Tests
-1. **RES* Verification**: Test vectors for HXRES* calculation
-2. **Key Derivation**: Known KSEAF → KAMF → NAS keys
-3. **MAC Calculation**: Test vectors for AES-CMAC
-4. **Algorithm Selection**: Various UE capability combinations
+// Static assert to ensure correct size
+_Static_assert(sizeof(security_mode_command_t) == 21, "security_mode_command_t size mismatch");
 
-### Integration Tests
-1. **Full Flow**: Registration → Authentication → Security Mode
-2. **Error Cases**: Wrong RES*, AUSF timeout, no matching algorithms
-3. **State Management**: Verify state transitions
-4. **Timer Handling**: T3560 expiry scenarios
-
-### Performance Tests
-1. **Throughput**: Messages per second
-2. **Latency**: Authentication to security establishment time
-3. **Concurrency**: Multiple UEs simultaneously
-4. **Memory**: Pool utilization under load
-
-This roadmap provides a complete blueprint for implementing Phase 2 security establishment in the NFLambda AMF, transitioning from plain text to integrity-protected communication while maintaining full 3GPP compliance.
+// Field offsets for direct access
+_Static_assert(offsetof(security_mode_command_t, epd) == 0, "epd offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, security_header_type) == 1, "security_header_type offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, mac) == 2, "mac offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, sequence_number) == 6, "sequence_number offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, inner_epd) == 7, "inner_epd offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, message_type) == 9, "message_type offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, selected_algorithms) == 10, "selected_algorithms offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, ngksi) == 12, "ngksi offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, ue_security_capability) == 17, "ue_security_capability offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, imeisv_request) == 21, "imeisv_request offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, additional_sec_info_iei) == 22, "additional_sec_info_iei offset mismatch");
+_Static_assert(offsetof(security_mode_command_t, additional_security_info) == 24, "additional_security_info offset mismatch");
+```

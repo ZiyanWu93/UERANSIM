@@ -352,90 +352,6 @@ send_configuration_update_command()
 - Start T3555 timer if acknowledgment requested
 - Log configuration update transmission
 
-## NFLambda Integration Points
-
-### Event-Driven Architecture
-```
-EVENT_REGISTRATION_COMPLETE → amf_actor
-    ↓
-EVENT_GUTI_CONFIRMED → context_manager_actor
-    ↓
-EVENT_CONFIG_UPDATE_CHECK → policy_actor
-    ↓
-EVENT_UTF16_ENCODE → encoding_actor
-    ↓
-EVENT_TIME_CALCULATE → time_service_actor
-    ↓
-EVENT_CONFIG_UPDATE_BUILD → nas_builder_actor
-    ↓
-EVENT_NAS_SECURITY → security_actor
-    ↓
-EVENT_NAS_SEND → ngap_sender_actor
-```
-
-### Memory Pool Usage
-- **UE Context Pool**: Store confirmed GUTI
-- **Message Pool**: Configuration update buffers
-- **String Pool**: UTF-16 encoded network names
-- **Time Pool**: BCD encoded time structures
-
-### Actor Message Definitions
-```c
-typedef struct {
-    uint32_t ue_id;
-    uint8_t* nas_pdu;
-    size_t nas_len;
-} registration_complete_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    ogs_nas_5gs_guti_t current_guti;
-    ogs_nas_5gs_guti_t next_guti;
-} guti_confirm_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    bool include_network_names;
-    bool include_time_zone;
-    bool include_dst;
-    bool acknowledgment_requested;
-} config_update_params_t;
-
-typedef struct {
-    char* ascii_string;
-    uint8_t* utf16_buffer;
-    size_t utf16_length;
-} utf16_encode_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    uint8_t timezone_bcd;
-    uint8_t universal_time_bcd[7];
-    uint8_t dst_adjustment;
-} time_info_msg_t;
-```
-
-### Error Handling
-- Invalid registration complete → Log and ignore
-- GUTI confirmation failure → Trigger re-registration
-- UTF-16 encoding overflow → Truncate name
-- Timer T3555 expiry → Retry or give up
-
-### Testing Strategy
-1. **Unit Tests**: 
-   - UTF-16 encoding validation
-   - BCD time encoding accuracy
-   - Time zone calculations
-2. **Integration Tests**: 
-   - Full message flow with open5gs
-   - Security context maintenance
-3. **Interoperability**: 
-   - Commercial UE behavior
-   - Network name display verification
-4. **Performance**: 
-   - Message generation latency
-   - Memory pool efficiency
-
 ## Detailed Field Calculations
 
 ### Network Name UTF-16 Encoding
@@ -539,27 +455,129 @@ configuration_update_command->short_name_for_network =
     amf_self()->network_name.short;
 ```
 
-## Implementation Priority
+## Binary Message Structures
 
-### Phase 4a: Core Message Processing
-1. Registration complete parsing and validation
-2. GUTI confirmation logic
-3. Basic configuration update command structure
+```c
+#pragma pack(1)
 
-### Phase 4b: Encoding Functions
-1. UTF-16 encoding implementation
-2. BCD time encoding functions
-3. Time zone calculation logic
+// Registration Complete message structure (0x67)
+typedef struct {
+    // Security header (when security_header_type = 2)
+    uint8_t epd_security_type;           // 0x7E:02 - EPD (126) | Security header type (2)
+    uint32_t msg_auth_code;              // 0xBA0292CD - Message authentication code
+    uint8_t seq_no;                      // 0x02 - Sequence number
+    
+    // Plain NAS 5GS message header
+    uint8_t epd_security_type_plain;     // 0x7E:00 - EPD (126) | Security header type (0)
+    uint8_t message_type;                // 0x67 - Registration Complete
+    
+    // Payload container (PDU Session Establishment Request)
+    uint8_t payload_container_type_iei;  // 0x01 - IEI for payload container type
+    uint8_t payload_container_type : 4;  // 0x1 - N1 SM information
+    uint8_t spare : 4;                   // 0x0 - Spare half octet
+    uint8_t payload_container_iei;       // 0x00 - IEI for payload container
+    uint8_t payload_container_len;       // 0x15 - Length (21 bytes)
+    
+    // PDU Session Establishment Request embedded in payload
+    struct {
+        uint8_t epd;                     // 0x2E - Extended protocol discriminator
+        uint8_t pdu_session_id;          // 0x01 - PDU session identity
+        uint8_t pti;                     // 0x01 - Procedure transaction identity
+        uint8_t message_type;            // 0xC1 - PDU Session Establishment Request
+        
+        // Integrity protection maximum data rate
+        uint8_t max_data_rate_ul;        // 0xFF - 255 (64 kbps units)
+        uint8_t max_data_rate_dl;        // 0xFF - 255 (64 kbps units)
+        
+        // Optional IEs
+        uint8_t pdu_session_type_iei;    // 0x91 - PDU session type IEI
+        uint8_t pdu_session_type : 3;    // 0x1 - IPv4
+        uint8_t spare1 : 5;              // 0x10 - Spare bits
+        
+        uint8_t ssc_mode_iei;            // 0x28 - SSC mode IEI
+        uint8_t ssc_mode : 3;            // 0x1 - SSC mode 1
+        uint8_t spare2 : 5;              // 0x0 - Spare bits
+        
+        // 5GSM capability
+        uint8_t capability_iei;          // 0x00 - 5GSM capability IEI
+        uint8_t capability_len;          // 0x7B - Length (should be 1)
+        uint8_t capability_value;        // 0x00 - Capability flags
+        
+        // Extended protocol configuration options
+        uint8_t epco_iei;                // 0x07 - Extended PCO IEI
+        uint8_t epco_len;                // 0x80 - Length (7 bytes) with extension bit
+        uint8_t epco_ext : 1;            // 0x1 - Extension bit
+        uint8_t epco_spare : 4;          // 0x0 - Spare bits
+        uint8_t epco_config_protocol : 3; // 0x0 - Configuration protocol
+        uint16_t epco_protocol_id;       // 0x0A00 - Protocol ID (0x000A in network order)
+        uint8_t epco_protocol_len;       // 0x00 - Protocol content length
+        uint8_t epco_content[1];         // 0x0D - Protocol content
+    } pdu_session_request;
+    
+    // Additional IEs after payload container
+    uint8_t pdu_session_id_2_iei;       // 0x00 - PDU session ID 2 IEI
+    uint8_t pdu_session_id_2_len;       // 0x12 - Length (should be 1)
+    uint8_t pdu_session_id_2;           // 0x01 - PDU session identity
+    
+    uint8_t request_type_iei;           // 0x81 - Request type IEI
+    uint8_t request_type : 3;           // 0x1 - Initial request
+    uint8_t spare3 : 5;                 // 0x4 - Spare bits
+    
+    uint8_t s_nssai_iei;                // 0x01 - S-NSSAI IEI
+    uint8_t s_nssai_len;                // 0x01 - Length
+    uint8_t sst;                        // 0x25 - Slice/Service Type
+    
+    uint8_t dnn_iei;                    // 0x09 - DNN IEI
+    uint8_t dnn_len;                    // 0x08 - Length
+    uint8_t dnn_value[8];               // "internet" encoded
+} registration_complete_t;
 
-### Phase 4c: Configuration Integration
-1. YAML configuration parsing
-2. Network name storage structures
-3. Time zone policy settings
+// Configuration Update Command message structure (0x54)
+typedef struct {
+    // Security header (when security_header_type = 2)
+    uint8_t epd_security_type;           // 0x7E:02 - EPD (126) | Security header type (2)
+    uint32_t msg_auth_code;              // 0xDE0D22E3 - Message authentication code
+    uint8_t seq_no;                      // 0x02 - Sequence number
+    
+    // Plain NAS 5GS message header
+    uint8_t epd_security_type_plain;     // 0x7E:00 - EPD (126) | Security header type (0)
+    uint8_t message_type;                // 0x54 - Configuration Update Command
+    
+    // Full name for network
+    uint8_t full_name_iei;               // 0x43 - Full name IEI
+    uint8_t full_name_len;               // 0x0F - Length (15 bytes)
+    uint8_t full_name_header;            // 0x90 - Ext=1, Coding=USC2, Add_CI=0, Spare=0
+    uint16_t full_name_chars[7];         // UTF-16 "Open5GS": 00:4F:00:70:00:65:00:6E:00:35:00:47:00:53
+    
+    // Short name for network
+    uint8_t short_name_iei;              // 0x45 - Short name IEI
+    uint8_t short_name_len;              // 0x09 - Length (9 bytes)
+    uint8_t short_name_header;           // 0x90 - Ext=1, Coding=USC2, Add_CI=0, Spare=0
+    uint16_t short_name_chars[4];        // UTF-16 "Next": 00:4E:00:65:00:78:00:74
+    
+    // Time zone
+    uint8_t time_zone_iei;               // 0x46 - Time zone IEI
+    uint8_t time_zone;                   // 0x0A - Time zone value (UTC+2:30)
+    
+    // Time zone and time
+    uint8_t time_zone_time_iei;          // 0x47 - Time zone and time IEI
+    uint8_t year;                        // 0x52 - Year (2025 in BCD)
+    uint8_t month;                       // 0x60 - Month (06 in BCD)
+    uint8_t day;                         // 0x90 - Day (09 in BCD)
+    uint8_t hour;                        // 0x30 - Hour (03 in BCD, should be 08)
+    uint8_t minute;                      // 0x35 - Minute (53 in BCD)
+    uint8_t second;                      // 0x53 - Second (35 in BCD)
+    uint8_t time_zone_2;                 // 0x0A - Time zone value
+    
+    // Daylight saving time
+    uint8_t dst_iei;                     // 0x49 - DST IEI
+    uint8_t dst_len;                     // 0x01 - Length
+    uint8_t dst_value;                   // 0x01 - +1 hour adjustment
+} configuration_update_command_t;
 
-### Phase 4d: Integration and Testing
-1. End-to-end message flow testing
-2. UE display verification
-3. Time synchronization validation
-4. Interoperability testing
+// Static assertions to verify structure sizes
+static_assert(sizeof(registration_complete_t) == 51, "Registration Complete size mismatch");
+static_assert(sizeof(configuration_update_command_t) == 51, "Configuration Update Command size mismatch");
 
-This roadmap provides a complete blueprint for implementing Phase 4 configuration update command generation in the NFLambda AMF while maintaining compatibility with 3GPP specifications and open5gs architecture.
+#pragma pack()
+```

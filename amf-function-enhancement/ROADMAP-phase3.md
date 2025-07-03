@@ -555,98 +555,6 @@ ogs_timer_start(amf_ue->t3550.timer,
     amf_timer_cfg(AMF_TIMER_T3550)->duration);
 ```
 
-## NFLambda Integration Points
-
-### Event-Driven Architecture
-```
-EVENT_SECURITY_MODE_COMPLETE → amf_actor
-    ↓
-EVENT_VALIDATE_NAS_CONTAINER → nas_validator_actor
-    ↓
-EVENT_ALLOCATE_GUTI → identity_manager_actor
-    ↓
-EVENT_DETERMINE_TAI_LIST → location_manager_actor
-    ↓
-EVENT_VALIDATE_NSSAI → slice_manager_actor
-    ↓
-EVENT_BUILD_REG_ACCEPT → nas_builder_actor
-    ↓
-EVENT_APPLY_SECURITY → security_actor
-    ↓
-EVENT_NAS_SEND → ngap_sender_actor
-```
-
-### Memory Pool Usage
-- **GUTI Pool**: Pre-allocated 5G-TMSI values
-- **TAI List Pool**: Cached TAI list configurations
-- **NSSAI Pool**: Allowed/rejected slice configurations
-- **Timer Pool**: T3512, T3550 timer instances
-
-### Actor Message Definitions
-```c
-typedef struct {
-    uint32_t ue_id;
-    uint8_t* nas_pdu;
-    size_t nas_len;
-    bool integrity_verified;
-} security_mode_complete_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    char imeisv[OGS_MAX_IMEISV_BCD_LEN];
-    uint8_t imeisv_len;
-} imeisv_storage_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    ogs_nas_5gs_guti_t allocated_guti;
-    uint32_t m_tmsi;
-} guti_allocation_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    ogs_5gs_tai_t current_tai;
-    ogs_nas_5gs_tai_list_t tai_list;
-} tai_list_msg_t;
-
-typedef struct {
-    uint32_t ue_id;
-    ogs_nas_nssai_t requested_nssai;
-    ogs_nas_nssai_t allowed_nssai;
-    ogs_nas_rejected_nssai_t rejected_nssai;
-} nssai_validation_msg_t;
-```
-
-### Error Handling
-- **Missing NAS container** → Security mode reject
-- **Invalid IMEISV format** → Continue without IMEISV
-- **GUTI allocation failure** → Use emergency procedures
-- **TAI not found** → Use default TAI list
-- **All slices rejected** → Registration reject with cause
-
-### Testing Strategy
-1. **Unit Tests**:
-   - GUTI allocation uniqueness
-   - TAI list encoding/decoding
-   - NSSAI validation logic
-   - Timer value encoding
-
-2. **Integration Tests**:
-   - Full security mode complete flow
-   - Multiple UE registration scenarios
-   - TAI list boundary conditions
-   - Slice authorization scenarios
-
-3. **Interoperability**:
-   - Against UERANSIM UE simulator
-   - Against commercial UE devices
-   - With different slice configurations
-
-4. **Performance**:
-   - GUTI allocation speed
-   - Concurrent registrations
-   - Memory pool efficiency
-
 ## Detailed Field Calculations
 
 ### 5G-GUTI Structure Breakdown
@@ -713,31 +621,244 @@ Byte 0: Basic features
 Byte 1: Extended features (all 0)
 ```
 
-## Security Considerations
+## Binary Message Structures
 
-### NAS Message Container Validation
-1. **Purpose**: Prevent replay attacks
-2. **Method**: Compare with stored registration request
-3. **Failure**: Reject registration to prevent security breach
+### Security Mode Complete Message Structure
 
-### IMEISV Handling
-1. **Privacy**: Store full IMEISV but mask software version
-2. **Usage**: Equipment identity register checks
-3. **Optional**: Continue registration if not provided
+```c
+#pragma pack(1)  // Ensure no padding between fields
 
-### GUTI Privacy
-1. **Temporary Identity**: Prevents IMSI exposure
-2. **Rotation**: New GUTI on each registration
-3. **Uniqueness**: M-TMSI pool prevents collisions
+// Security Mode Complete structure matching the binary layout
+// Hex: 7e:04:22:e4:ee:19:00:7e:00:5e:77:00:09:45:73:80:61:21:85:61:51:f1:71:00:23:7e:00:41:79:00:0d:01:99:f9:07:00:00:00:00:00:00:00:00:10:10:01:00:2e:04:80:f0:80:f0:2f:02:01:01:53:01:00
+typedef struct {
+    // Security Header (7 bytes)
+    uint8_t epd;                        // 0x7E - Extended Protocol Discriminator
+    uint8_t security_header_type;       // 0x04 - Integrity protected and ciphered (bits 7-4: spare, bits 3-0: type)
+    uint32_t mac;                       // 0x22E4EE19 - Message Authentication Code (big-endian)
+    uint8_t sequence_number;            // 0x00 - Sequence number
+    
+    // Plain NAS Message Header (3 bytes)
+    uint8_t inner_epd;                  // 0x7E - Inner EPD
+    uint8_t inner_security_header;      // 0x00 - Plain NAS message
+    uint8_t message_type;               // 0x5E - Security Mode Complete
+    
+    // IMEISV Mobile Identity (Optional IE)
+    uint8_t imeisv_iei;                 // 0x77 - IMEISV IEI
+    uint8_t imeisv_spare_length;        // 0x00 - Spare half octet
+    uint8_t imeisv_length;              // 0x09 - Length (9 bytes)
+    union {
+        uint8_t imeisv_header;          // 0x45
+        struct {
+            uint8_t type_id:3;          // bits 2-0: Identity type (5 = IMEISV)
+            uint8_t odd_even:1;         // bit 3: Odd/even indication (0)
+            uint8_t spare:4;            // bits 7-4: Spare
+        } bits;
+    } imeisv_hdr;
+    
+    // IMEISV digits in BCD format (8 bytes)
+    struct {
+        uint8_t tac_digits[4];          // TAC: 43708161 (stored as 0x73:80:61:21)
+        uint8_t snr_digits[3];          // SNR: 258165 (stored as 0x85:61:51)
+        uint8_t sv_digit;               // SV: 15 (stored as 0xF1, F=filler)
+    } imeisv_bcd;
+    
+    // NAS Message Container
+    uint8_t nas_container_iei;          // 0x71 - NAS message container IEI
+    uint8_t nas_container_length;       // 0x00 - Spare half octet
+    uint8_t nas_container_len_value;    // 0x23 - Length (35 bytes)
+    
+    // Replayed Registration Request (35 bytes)
+    struct {
+        uint8_t epd;                    // 0x7E
+        uint8_t security_header;        // 0x00
+        uint8_t message_type;           // 0x41 - Registration Request
+        
+        // Registration type and ngKSI
+        union {
+            uint8_t reg_type_and_ksi;   // 0x79
+            struct {
+                uint8_t reg_type:3;     // bits 2-0: Registration type (1)
+                uint8_t for_bit:1;      // bit 3: Follow-on request (1)
+                uint8_t ksi:3;          // bits 6-4: Key set identifier (7)
+                uint8_t tsc:1;          // bit 7: Type of security context (0)
+            } bits;
+        } reg_type_ksi;
+        
+        // Mobile Identity header
+        uint8_t spare_half_octet;       // 0x00
+        uint8_t mobile_id_length;       // 0x0D - Length (13 bytes)
+        
+        // SUCI header
+        union {
+            uint8_t suci_header;        // 0x01
+            struct {
+                uint8_t type_id:3;      // bits 2-0: Identity type (1 = SUCI)
+                uint8_t spare_b3:1;     // bit 3: Spare
+                uint8_t supi_format:3;  // bits 6-4: SUPI format (0)
+                uint8_t spare_b7:1;     // bit 7: Spare
+            } bits;
+        } suci_hdr;
+        
+        // PLMN (3 bytes BCD)
+        uint8_t plmn[3];                // 0x99:F9:07
+        
+        // Routing indicator
+        uint16_t routing_indicator;     // 0x0000
+        
+        // Protection scheme
+        uint8_t protection_scheme;      // 0x00
+        
+        // MSIN (5 bytes BCD)
+        uint8_t msin[5];                // 0x00:00:00:00:10
+        
+        // 5GMM Capability
+        uint8_t gmm_cap_iei;            // 0x10
+        uint8_t gmm_cap_length;         // 0x01
+        uint8_t gmm_capability;         // 0x00
+        
+        // UE Security Capability
+        uint8_t ue_sec_cap_iei;         // 0x2E
+        uint8_t ue_sec_cap_length;      // 0x04
+        uint8_t sec_algorithms[4];      // 0x80:F0:80:F0
+        
+        // Requested NSSAI
+        uint8_t nssai_iei;              // 0x2F
+        uint8_t nssai_length;           // 0x02
+        uint8_t s_nssai_length;         // 0x01
+        uint8_t sst;                    // 0x01
+        
+        // 5GS Update Type
+        uint8_t update_type_iei;        // 0x53
+        uint8_t update_type_length;     // 0x01
+        uint8_t update_type_value;      // 0x00
+    } registration_request;
+} security_mode_complete_t;
 
-### Security Context Continuation
-1. **Sequence Numbers**: Increment prevents replay
-2. **Key Hierarchy**: Maintain KAMF → KNAS derivation
-3. **Algorithm**: Continue using negotiated 5G-IA2/5G-EA0
+// Static assert to ensure structure size matches message
+_Static_assert(sizeof(security_mode_complete_t) == 60, "Security Mode Complete structure size mismatch");
+```
 
-### Timer Security
-1. **T3512**: Ensures periodic re-authentication
-2. **T3550**: Limits registration window
-3. **Configuration**: Based on operator policy
+### Registration Accept Message Structure
 
-This implementation roadmap provides complete guidance for Phase 3 registration accept generation, maintaining security, privacy, and 3GPP compliance while integrating with the NFLambda event-driven architecture.
+```c
+// Registration Accept structure matching the binary layout
+// Hex: 7e:02:72:39:67:4c:01:7e:00:42:01:01:77:00:0b:f2:99:f9:07:02:00:40:c0:00:07:27:54:07:40:99:f9:07:00:00:01:15:02:01:01:21:02:01:00:5e:01:92
+typedef struct {
+    // Security Header (7 bytes)
+    uint8_t epd;                        // 0x7E - Extended Protocol Discriminator
+    uint8_t security_header_type;       // 0x02 - Integrity protected and ciphered
+    uint32_t mac;                       // 0x7239674C - Message Authentication Code (big-endian)
+    uint8_t sequence_number;            // 0x01 - Sequence number
+    
+    // Plain NAS Message Header (3 bytes)
+    uint8_t inner_epd;                  // 0x7E - Inner EPD
+    uint8_t inner_security_header;      // 0x00 - Plain NAS message
+    uint8_t message_type;               // 0x42 - Registration Accept
+    
+    // 5GS Registration Result (1 byte)
+    uint8_t reg_result_length;          // 0x01 - Length
+    union {
+        uint8_t reg_result_value;       // 0x01
+        struct {
+            uint8_t reg_result:3;       // bits 2-0: Registration result (1 = 3GPP access)
+            uint8_t sms_allowed:1;      // bit 3: SMS allowed (0)
+            uint8_t nssaa_perf:1;       // bit 4: NSSAA performed (0)
+            uint8_t emergency_reg:1;    // bit 5: Emergency registered (0)
+            uint8_t spare:2;            // bits 7-6: Spare
+        } bits;
+    } registration_result;
+    
+    // 5G-GUTI
+    uint8_t guti_iei;                   // 0x77 - 5G-GUTI IEI
+    uint8_t guti_spare_length;          // 0x00 - Spare half octet
+    uint8_t guti_length;                // 0x0B - Length (11 bytes)
+    
+    union {
+        uint8_t guti_header;            // 0xF2
+        struct {
+            uint8_t type_id:3;          // bits 2-0: Identity type (2 = 5G-GUTI)
+            uint8_t spare_b3:1;         // bit 3: Spare (0)
+            uint8_t spare_b4:1;         // bit 4: Spare (1)
+            uint8_t spare_b5:1;         // bit 5: Spare (1)
+            uint8_t spare_b6:1;         // bit 6: Spare (1)
+            uint8_t spare_b7:1;         // bit 7: Spare (1)
+        } bits;
+    } guti_hdr;
+    
+    // GUAMI components
+    uint8_t plmn[3];                    // 0x99:F9:07 - PLMN (MCC=999, MNC=70)
+    struct {
+        uint8_t amf_region_id;          // 0x02 - AMF Region ID
+        uint16_t amf_set_id_and_ptr;   // 0x0040 - AMF Set ID (10 bits) + Pointer (6 bits)
+    } amf_id;
+    uint32_t _5g_tmsi;                  // 0xC0000727 - 5G-TMSI (big-endian)
+    
+    // TAI List
+    uint8_t tai_list_iei;               // 0x54 - TAI list IEI
+    uint8_t tai_list_length;            // 0x07 - Length (7 bytes)
+    
+    union {
+        uint8_t tai_list_type_num;      // 0x40
+        struct {
+            uint8_t num_elements:5;     // bits 4-0: Number of elements (0 = 1 TAI)
+            uint8_t spare:1;            // bit 5: Spare
+            uint8_t list_type:2;        // bits 7-6: TAI list type (2)
+        } bits;
+    } tai_type;
+    
+    // TAI entry
+    uint8_t tai_plmn[3];                // 0x99:F9:07 - TAI PLMN
+    uint16_t tac;                       // 0x0001 - Tracking Area Code (big-endian)
+    
+    // Allowed NSSAI
+    uint8_t nssai_iei;                  // 0x15 - Allowed NSSAI IEI
+    uint8_t nssai_length;               // 0x02 - Length
+    uint8_t s_nssai_length;             // 0x01 - S-NSSAI length
+    uint8_t sst;                        // 0x01 - SST (eMBB)
+    
+    // 5GS Network Feature Support
+    uint8_t nw_feat_iei;                // 0x21 - Network feature support IEI
+    uint8_t nw_feat_length;             // 0x02 - Length
+    
+    union {
+        uint8_t nw_feat_octet1;         // 0x01
+        struct {
+            uint8_t ims_vops_n3gpp:1;   // bit 0: IMS VoPS non-3GPP (0)
+            uint8_t ims_vops_3gpp:1;    // bit 1: IMS VoPS 3GPP (1)
+            uint8_t emc:1;              // bit 2: Emergency services (0)
+            uint8_t emf:1;              // bit 3: Emergency fallback (0)
+            uint8_t iwk_n26:1;          // bit 4: N26 interface (0)
+            uint8_t mpsi:1;             // bit 5: MPSI (0)
+            uint8_t spare:2;            // bits 7-6: Spare
+        } bits;
+    } network_features_1;
+    
+    union {
+        uint8_t nw_feat_octet2;         // 0x00
+        struct {
+            uint8_t emcn3:1;            // bit 0: Emergency N3 (0)
+            uint8_t mcsi:1;             // bit 1: MCSI (0)
+            uint8_t restrict_ec:1;      // bit 2: Restricted EC (0)
+            uint8_t _5g_cp_ciot:1;      // bit 3: 5G CP CIoT (0)
+            uint8_t n3_data:1;          // bit 4: N3 data (0)
+            uint8_t _5g_iphc_cp_ciot:1; // bit 5: 5G IPHC CP CIoT (0)
+            uint8_t _5g_ciot_up:1;      // bit 6: 5G CIoT UP (0)
+            uint8_t spare:1;            // bit 7: Spare
+        } bits;
+    } network_features_2;
+    
+    // T3512 Timer
+    uint8_t t3512_iei;                  // 0x5E - T3512 IEI
+    uint8_t t3512_length;               // 0x01 - Length
+    union {
+        uint8_t timer_value;            // 0x92
+        struct {
+            uint8_t value:5;            // bits 4-0: Timer value (18)
+            uint8_t unit:3;             // bits 7-5: Timer unit (4 = deci hours)
+        } bits;
+    } t3512;
+} registration_accept_t;
+
+// Static assert to ensure structure size matches message
+_Static_assert(sizeof(registration_accept_t) == 46, "Registration Accept structure size mismatch");
+```
