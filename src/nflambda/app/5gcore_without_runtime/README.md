@@ -171,6 +171,11 @@ This library is ideal for:
 - **Protocol validation** in other 5G applications
 - **Education** - understanding 5G AMF message flows
 - **Integration** into custom NFLambda applications
+- **Direct function call mode** - Used by UERANSIM's `nr-gnb-direct` binary for standalone testing
+
+### UERANSIM Direct Call Integration
+
+This library is used by UERANSIM's `nr-gnb-direct` binary, which directly calls the event handlers (e.g., `generate_auth_req`, `generate_security_cmd`) without requiring the NFLambda runtime process. This enables standalone testing of the complete 5G NAS message flow through direct function calls.
 
 ## See Also
 
