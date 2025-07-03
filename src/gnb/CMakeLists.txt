@@ -35,3 +35,20 @@ target_link_libraries(gnb-nflambda 5gcore_without_runtime_lib)
 target_link_libraries(gnb-nflambda event_system)
 target_link_libraries(gnb-nflambda nas_ipc_protocol)
 
+# Direct calls gnb library (with USE_NFLAMBDA and USE_DIRECT_CALLS defined)
+add_library(gnb-direct ${HDR_FILES} ${SRC_FILES})
+
+target_include_directories(gnb-direct PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../nflambda/app/5gcore_without_runtime
+    ${CMAKE_CURRENT_SOURCE_DIR}/../nflambda
+)
+
+target_compile_options(gnb-direct PRIVATE -Wall -Wextra -pedantic -Wno-unused-parameter -DUSE_NFLAMBDA -DUSE_DIRECT_CALLS)
+
+target_link_libraries(gnb-direct asn-ngap)
+target_link_libraries(gnb-direct asn-rrc)
+target_link_libraries(gnb-direct common-lib)
+target_link_libraries(gnb-direct 5gcore_without_runtime_lib)
+target_link_libraries(gnb-direct event_system)
+target_link_libraries(gnb-direct nas_ipc_protocol)
+

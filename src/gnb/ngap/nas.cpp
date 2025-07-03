@@ -186,7 +186,11 @@ void NgapTask::handleInitialNasTransport(int ueId, OctetString &nasPdu, int64_t 
     }
     m_logger->debug("UplinkNAS PDU content: %s", hexString.c_str());
     
+#ifdef USE_DIRECT_CALLS
+    deliverDownlinkNasRefactored();
+#else
     deliverDownlinkNasViaIpc();
+#endif
 #else
     // Original: Send via NGAP/SCTP
     // Debug: print the NAS PDU content being sent
@@ -539,7 +543,11 @@ void NgapTask::handleUplinkNasTransport(int ueId, const OctetString &nasPdu)
     if (times <= guard)
     {
         usleep(500000);
+#ifdef USE_DIRECT_CALLS
+        deliverDownlinkNasRefactored();
+#else
         deliverDownlinkNasViaIpc();
+#endif
     }
 #else
     // Original: Send via NGAP/SCTP
