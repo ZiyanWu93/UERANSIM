@@ -1,0 +1,118 @@
+No.     Time           Source                Destination           Protocol Length Info
+   1202 2.134316516    127.0.0.1             127.0.0.5             NGAP     134    NGSetupRequest
+
+Frame 1202: 134 bytes on wire (1072 bits), 134 bytes captured (1072 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.5
+Stream Control Transmission Protocol, Src Port: 38032 (38032), Dst Port: 38412 (38412)
+NG Application Protocol (NGSetupRequest)
+
+No.     Time           Source                Destination           Protocol Length Info
+   1204 2.151293772    127.0.0.5             127.0.0.1             NGAP     118    NGSetupResponse
+
+Frame 1204: 118 bytes on wire (944 bits), 118 bytes captured (944 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.5, Dst: 127.0.0.1
+Stream Control Transmission Protocol, Src Port: 38412 (38412), Dst Port: 38032 (38032)
+NG Application Protocol (NGSetupResponse)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3064 9.054634122    127.0.0.1             127.0.0.5             NGAP/NAS-5GS 138    InitialUEMessage, Registration request
+
+Frame 3064: 138 bytes on wire (1104 bits), 138 bytes captured (1104 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.5
+Stream Control Transmission Protocol, Src Port: 38032 (38032), Dst Port: 38412 (38412)
+NG Application Protocol (InitialUEMessage)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3118 9.065680984    127.0.0.5             127.0.0.1             NGAP/NAS-5GS 146    SACK (Ack=1, Arwnd=106496) , DownlinkNASTransport, Authentication request
+
+Frame 3118: 146 bytes on wire (1168 bits), 146 bytes captured (1168 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.5, Dst: 127.0.0.1
+Stream Control Transmission Protocol, Src Port: 38412 (38412), Dst Port: 38032 (38032)
+NG Application Protocol (DownlinkNASTransport)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3121 9.066008582    127.0.0.1             127.0.0.5             NGAP/NAS-5GS 146    SACK (Ack=1, Arwnd=106496) , UplinkNASTransport, Authentication response
+
+Frame 3121: 146 bytes on wire (1168 bits), 146 bytes captured (1168 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.5
+Stream Control Transmission Protocol, Src Port: 38032 (38032), Dst Port: 38412 (38412)
+NG Application Protocol (UplinkNASTransport)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3156 9.067649076    127.0.0.5             127.0.0.1             NGAP/NAS-5GS 126    SACK (Ack=2, Arwnd=106496) , DownlinkNASTransport, Security mode command
+
+Frame 3156: 126 bytes on wire (1008 bits), 126 bytes captured (1008 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.5, Dst: 127.0.0.1
+Stream Control Transmission Protocol, Src Port: 38412 (38412), Dst Port: 38032 (38032)
+NG Application Protocol (DownlinkNASTransport)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3159 9.067952858    127.0.0.1             127.0.0.5             NGAP/NAS-5GS/NAS-5GS 186    SACK (Ack=2, Arwnd=106496) , UplinkNASTransport, Security mode complete, Registration request
+
+Frame 3159: 186 bytes on wire (1488 bits), 186 bytes captured (1488 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.5
+Stream Control Transmission Protocol, Src Port: 38032 (38032), Dst Port: 38412 (38412)
+NG Application Protocol (UplinkNASTransport)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3266 9.076120130    127.0.0.5             127.0.0.1             NGAP/NAS-5GS 230    SACK (Ack=3, Arwnd=106496) , InitialContextSetupRequest, Registration accept
+
+Frame 3266: 230 bytes on wire (1840 bits), 230 bytes captured (1840 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.5, Dst: 127.0.0.1
+Stream Control Transmission Protocol, Src Port: 38412 (38412), Dst Port: 38032 (38032)
+NG Application Protocol (InitialContextSetupRequest)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3267 9.076276425    127.0.0.1             127.0.0.5             NGAP     98     SACK (Ack=3, Arwnd=106496) , InitialContextSetupResponse
+
+Frame 3267: 98 bytes on wire (784 bits), 98 bytes captured (784 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.5
+Stream Control Transmission Protocol, Src Port: 38032 (38032), Dst Port: 38412 (38412)
+NG Application Protocol (InitialContextSetupResponse)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3313 9.277020488    127.0.0.1             127.0.0.5             NGAP/NAS-5GS 238    UplinkNASTransport, Registration complete, UplinkNASTransport, UL NAS transport, PDU session establishment request
+
+Frame 3313: 238 bytes on wire (1904 bits), 238 bytes captured (1904 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.5
+Stream Control Transmission Protocol, Src Port: 38032 (38032), Dst Port: 38412 (38412)
+NG Application Protocol (UplinkNASTransport)
+Stream Control Transmission Protocol
+NG Application Protocol (UplinkNASTransport)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3314 9.277423588    127.0.0.5             127.0.0.1             NGAP/NAS-5GS 154    SACK (Ack=6, Arwnd=106496) , DownlinkNASTransport, Configuration update command
+
+Frame 3314: 154 bytes on wire (1232 bits), 154 bytes captured (1232 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.5, Dst: 127.0.0.1
+Stream Control Transmission Protocol, Src Port: 38412 (38412), Dst Port: 38032 (38032)
+NG Application Protocol (DownlinkNASTransport)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3423 9.293229745    127.0.0.5             127.0.0.1             NGAP/NAS-5GS 242    PDUSessionResourceSetupRequest, DL NAS transport, PDU session establishment accept
+
+Frame 3423: 242 bytes on wire (1936 bits), 242 bytes captured (1936 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.5, Dst: 127.0.0.1
+Stream Control Transmission Protocol, Src Port: 38412 (38412), Dst Port: 38032 (38032)
+NG Application Protocol (PDUSessionResourceSetupRequest)
+
+No.     Time           Source                Destination           Protocol Length Info
+   3430 9.294571355    127.0.0.1             127.0.0.5             NGAP     126    PDUSessionResourceSetupResponse
+
+Frame 3430: 126 bytes on wire (1008 bits), 126 bytes captured (1008 bits) on interface lo, id 0
+Ethernet II, Src: 00:00:00_00:00:00 (00:00:00:00:00:00), Dst: 00:00:00_00:00:00 (00:00:00:00:00:00)
+Internet Protocol Version 4, Src: 127.0.0.1, Dst: 127.0.0.5
+Stream Control Transmission Protocol, Src Port: 38032 (38032), Dst Port: 38412 (38412)
+NG Application Protocol (PDUSessionResourceSetupResponse)
