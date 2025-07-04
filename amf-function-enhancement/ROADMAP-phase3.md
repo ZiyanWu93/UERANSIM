@@ -141,12 +141,16 @@
 ### Protocol Encoding Fields
 1. **per.octet_string_length (46)**: Total length of the NAS PDU in octets
    - Calculated as: Security header (7) + Plain message (39) = 46 bytes
+   - Function: `amf_build_registration_accept()` → calculates total message length after building all IEs
 2. **nas_5gs.epd (126)**: Extended Protocol Discriminator = 0x7E
    - Always 126 (0x7E) for 5GS messages per TS 24.501
+   - Function: `amf_build_registration_accept()` → sets EPD for both outer and inner messages
 3. **nas_5gs.spare_half_octet (0)**: Always set to 0 for alignment
+   - Function: `amf_build_registration_accept()` → sets spare bits to 0 in message headers
 4. **ngap.NAS_PDU**: Complete hex-encoded NAS message
    - Starts with 7E:02 (EPD + Security header type)
    - Contains full security protected message
+   - Function: `amf_apply_nas_security()` → generates final encoded PDU with security protection
 
 ### NAS PDU Encoding
 Complete hex breakdown of ngap.NAS_PDU:
@@ -188,127 +192,189 @@ Breakdown by field:
 
 ### Information Element Identifiers
 1. **0x77**: 5G-GUTI element identifier
+   - Function: `amf_build_registration_accept()` → sets GUTI IE identifier when 5G-GUTI is included
 2. **0x54**: TAI list element identifier  
+   - Function: `amf_build_registration_accept()` → sets TAI list IE identifier
 3. **0x15**: Allowed NSSAI element identifier
+   - Function: `amf_build_registration_accept()` → sets NSSAI IE identifier when allowed NSSAI is present
 4. **0x21**: Network feature support element identifier
+   - Function: `amf_build_registration_accept()` → sets network feature support IE identifier
 5. **0x5e**: T3512 timer element identifier
+   - Function: `amf_build_registration_accept()` → sets T3512 timer IE identifier
 
 ### Length Calculations
 1. **GUTI IE length (11)**: 
    - Type/spare byte (1) + PLMN (3) + AMF ID (3) + 5G-TMSI (4) = 11 bytes
+   - Function: `amf_build_registration_accept()` → calculates GUTI IE length when encoding 5G-GUTI
 2. **TAI list IE length (7)**:
    - Type/number byte (1) + TAI entry [PLMN (3) + TAC (2)] = 7 bytes
+   - Function: `amf_determine_tai_list()` → calculates TAI list length based on number of TAIs
 3. **NSSAI IE length (2)**:
    - S-NSSAI length (1) + SST (1) = 2 bytes
+   - Function: `amf_validate_network_slices()` → determines allowed NSSAI length
 4. **Network feature length (2)**: Two octets of feature bitmap
+   - Function: `amf_build_registration_accept()` → sets network feature support length to 2 bytes
 5. **Timer IE length (1)**: Single octet encoding unit and value
+   - Function: `amf_build_registration_accept()` → sets timer IE length to 1 byte
 
 ### Static Fields (Direct Assignment)
 1. **EPD (126)**: Always 0x7E for 5GS messages
+   - Function: `build_registration_accept()` → assigns EPD value 0x7E to message header
 2. **Security Header Type (2)**: Integrity protected and ciphered for DL
+   - Function: `apply_nas_security()` → sets security header type for downlink message
 3. **Message Type (0x42)**: Registration Accept constant
+   - Function: `build_registration_accept()` → sets message type to OGS_NAS_5GS_REGISTRATION_ACCEPT
 4. **Registration Result (1)**: 3GPP access type
+   - Function: `build_registration_accept()` → sets registration result to 3GPP access
 
 ### Security Context Fields
 1. **Sequence Number**: 0 → 1 (incremented for next downlink message)
+   - Function: `apply_nas_security()` → increments DL count and sets sequence number
 2. **MAC Calculation**: New MAC using DL count, NAS integrity key, and message content
+   - Function: `apply_nas_security()` → calculates MAC using integrity algorithm and keys
 3. **Security Algorithm**: Uses established 5G-IA2 (from security mode command phase)
+   - Function: `nflambda_amf_handle_security_mode_complete()` → retrieves established security algorithm from UE context
 
 ### Complete Registration Result Encoding
 1. **gsm_a.len (1)**: Length of registration result IE = 1 byte
+   - Function: `build_registration_accept()` → sets registration result IE length
 2. **emergency_reg (0)**: Emergency registration not performed
+   - Function: `build_registration_accept()` → sets emergency registration flag to 0
 3. **nssaa_perf (0)**: Network slice-specific authentication not performed
+   - Function: `build_registration_accept()` → sets NSSAA performed flag to 0
 4. **sms_all (0)**: SMS over NAS not allowed in this registration
+   - Function: `build_registration_accept()` → sets SMS allowed flag based on policy
 5. **res (1)**: Registration result = 3GPP access
+   - Function: `build_registration_accept()` → sets registration result to 3GPP access type
 
 ### GUTI Spare Fields
 1. **nas_5gs.spare_b7 to b4**: Set to 1111b (0xF) per specification
+   - Function: `build_registration_accept()` → sets spare bits in GUTI header per 3GPP spec
 2. **nas_5gs.spare_b3**: Set to 0 for odd/even indication
+   - Function: `build_registration_accept()` → sets odd/even indicator bit for GUTI
 3. **Combined value**: 0xF0 (11110010b) for type field
+   - Function: `build_registration_accept()` → combines spare bits and type ID into header byte
 4. **Type ID (2)**: Lower 3 bits = 010b for 5G-GUTI
+   - Function: `build_registration_accept()` → sets mobile identity type to 5G-GUTI (type 2)
 
 ### UE Identity Management
 1. **IMEISV Storage**: Extract and store 4370816125816151 in UE context
+   - Function: `extract_and_store_imeisv()` → converts BCD IMEISV to buffer and stores in UE context
 2. **GUTI Allocation**:
    - PLMN ID: From serving network (MCC=999, MNC=70)
+     - Function: `allocate_5g_guti()` → copies PLMN ID from serving network configuration
    - AMF ID: From AMF configuration (Region=2, Set=1, Pointer=0)
+     - Function: `allocate_5g_guti()` → copies AMF ID from GUAMI configuration
    - 5G-TMSI: Allocated from pool (0xC0000727 = 3221227303)
+     - Function: `allocate_5g_guti()` → allocates new 5G-TMSI from AMF pool
    - 3gpp.tmsi: Mirrors the 5G-TMSI value for compatibility
+     - Function: `allocate_5g_guti()` → copies 5G-TMSI value for backward compatibility
 
 ### Location and Mobility Management
 1. **TAI List Generation**:
    - Type 2: TAIs belonging to different PLMNs
+     - Function: `determine_tai_list()` → sets TAI list type based on configuration
    - Single entry: PLMN(999,70) + TAC(1)
+     - Function: `determine_tai_list()` → adds current TAI to list with PLMN and TAC
    - Based on UE's current location from RAN
+     - Function: `determine_tai_list()` → uses UE's current TAI from RAN connection
 
 ### Network Slice Selection
 1. **Requested NSSAI**: SST=1 from registration request
+   - Function: `validate_nas_message_container()` → extracts requested NSSAI from replayed registration request
 2. **Allowed NSSAI**: SST=1 (validated against subscription)
+   - Function: `validate_network_slices()` → validates requested slices against UDM subscription data
 3. **Rejected NSSAI**: None in this case
+   - Function: `validate_network_slices()` → determines rejected slices with rejection causes
 
 ### Timer Configuration
 1. **T3512 (Periodic Registration Timer)**:
    - Element ID: 0x5e (GPRS Timer 3 identifier)
+     - Function: `build_registration_accept()` → sets T3512 timer element ID
    - Raw value: 0x92 (combines unit and value)
+     - Function: `build_registration_accept()` → encodes timer unit and value into single byte
    - Unit: 4 (multiples of deci hours = 6 minutes) 
+     - Function: `build_registration_accept()` → sets timer unit to deci hours
    - Value: 18 (0x12 in lower 5 bits)
+     - Function: `build_registration_accept()` → sets timer value based on AMF configuration
    - Total: 18 × 6 = 108 minutes
+     - Function: `build_registration_accept()` → calculates total timer duration
    - Encoding: Upper 3 bits (100b = unit 4) + Lower 5 bits (10010b = value 18)
+     - Function: `build_registration_accept()` → combines unit and value bits per GPRS Timer 3 format
 
 ### Complete Network Feature Support Bitmap
 1. **First octet (LSB to MSB)**:
    - Bit 0: vops_n3gpp (0) - Voice over PS via non-3GPP access
+     - Function: `build_registration_accept()` → sets VoPS non-3GPP support bit
    - Bit 1: vops_3gpp (1) - Voice over PS via 3GPP access supported
+     - Function: `build_registration_accept()` → sets VoPS 3GPP support bit based on AMF capabilities
    - Bit 2: emc (0) - Emergency services not supported
+     - Function: `build_registration_accept()` → sets emergency services capability bit
    - Bit 3: emf (0) - Emergency fallback not supported
+     - Function: `build_registration_accept()` → sets emergency fallback capability bit
    - Bit 4: iwk_n26 (0) - Interworking without N26 interface
+     - Function: `build_registration_accept()` → sets N26 interworking capability bit
    - Bit 5: mpsi (0) - MPSI indicator not supported
+     - Function: `build_registration_accept()` → sets MPSI support bit
    - Bits 6-7: Spare (00)
+     - Function: `amf_build_registration_accept()` → sets spare bits to 0
    
 2. **Second octet (LSB to MSB)**:
    - Bit 0: emcn3 (0) - Emergency services via N3 not supported
+     - Function: `amf_build_registration_accept()` → sets emergency N3 capability bit
    - Bit 1: mcsi (0) - MCSI not supported
+     - Function: `amf_build_registration_accept()` → sets MCSI support bit
    - Bit 2: restrict_ec (0) - Restricted enhanced coverage
+     - Function: `amf_build_registration_accept()` → sets restricted EC capability bit
    - Bit 3: 5g_cp_ciot (0) - 5G CP CIoT not supported
+     - Function: `amf_build_registration_accept()` → sets 5G CP CIoT capability bit
    - Bit 4: n3_data (0) - N3 data transfer not supported
+     - Function: `amf_build_registration_accept()` → sets N3 data transfer capability bit
    - Bit 5: 5g_iphc_cp_ciot (0) - IP header compression not supported
+     - Function: `amf_build_registration_accept()` → sets IP header compression capability bit
    - Bit 6: 5g_ciot_up (0) - 5G CIoT user plane not supported
+     - Function: `amf_build_registration_accept()` → sets 5G CIoT UP capability bit
    - Bit 7: Spare (0)
+     - Function: `amf_build_registration_accept()` → sets spare bit to 0
 
 ### Network Capabilities
 1. **Network Feature Support**:
    - Length: 2 bytes (element ID 0x21)
+     - Function: `amf_build_registration_accept()` → sets network feature support IE length
    - VoPS 3GPP: 1 (Voice over PS supported)
+     - Function: `amf_build_registration_accept()` → enables VoPS 3GPP based on IMS configuration
    - Other features: 0 (not supported)
+     - Function: `amf_build_registration_accept()` → disables unsupported network features
    - Encoded value: 0x02 0x00 (bit 1 set in first octet)
+     - Function: `amf_build_registration_accept()` → encodes feature bitmap into 2-byte value
 
 ## Implementation Function Chain
 
 ### Phase 3: NFLambda AMF Function Implementation
 
 ```
-nflambda_amf_handle_security_mode_complete()
+amf_handle_security_mode_complete()
     ↓
-validate_nas_message_container()
+amf_validate_nas_message_container()
     ↓
-extract_and_store_imeisv()
+amf_extract_and_store_imeisv()
     ↓
-allocate_5g_guti()
+amf_allocate_5g_guti()
     ↓
-determine_tai_list()
+amf_determine_tai_list()
     ↓
-validate_network_slices()
+amf_validate_network_slices()
     ↓
-build_registration_accept()
+amf_build_registration_accept()
     ↓
-apply_nas_security()
+amf_apply_nas_security()
     ↓
-send_registration_accept()
+amf_send_registration_accept()
 ```
 
 ### Detailed Function Specifications
 
-#### 1. `nflambda_amf_handle_security_mode_complete()`
+#### 1. `amf_handle_security_mode_complete()`
 **Input**: Security Mode Complete NAS PDU
 **Output**: Trigger registration accept flow
 **Logic**:
@@ -332,7 +398,7 @@ if (security_mode_complete->presencemask &
 }
 ```
 
-#### 2. `validate_nas_message_container()`
+#### 2. `amf_validate_nas_message_container()`
 **Input**: NAS message container from security mode complete
 **Output**: Validation result
 **Logic**:
@@ -355,7 +421,7 @@ if (memcmp(amf_ue->registration_request_hash,
 }
 ```
 
-#### 3. `extract_and_store_imeisv()`
+#### 3. `amf_extract_and_store_imeisv()`
 **Input**: IMEISV mobile identity IE
 **Output**: Stored IMEISV in UE context
 **Logic**:
@@ -374,7 +440,7 @@ memcpy(amf_ue->masked_imeisv, amf_ue->imeisv,
 amf_ue->imeisv_received = true;
 ```
 
-#### 4. `allocate_5g_guti()`
+#### 4. `amf_allocate_5g_guti()`
 **Input**: AMF UE context
 **Output**: New 5G-GUTI allocated
 **Logic**:
@@ -399,7 +465,7 @@ amf_ue->next.guti.m_tmsi = *(amf_ue->next.m_tmsi);
 // 5G-TMSI = 0xC0000727 (3221227303)
 ```
 
-#### 5. `determine_tai_list()`
+#### 5. `amf_determine_tai_list()`
 **Input**: UE's current TAI from RAN
 **Output**: TAI list for registration area
 **Logic**:
@@ -421,7 +487,7 @@ registration_accept->tai_list.tai[0].plmn_id = amf_ue->nr_tai.plmn_id;
 registration_accept->tai_list.tai[0].tac = amf_ue->nr_tai.tac;
 ```
 
-#### 6. `validate_network_slices()`
+#### 6. `amf_validate_network_slices()`
 **Input**: Requested NSSAI from registration request
 **Output**: Allowed and rejected NSSAIs
 **Logic**:
@@ -448,7 +514,7 @@ for (i = 0; i < requested_nssai->num_of_s_nssai; i++) {
 }
 ```
 
-#### 7. `build_registration_accept()`
+#### 7. `amf_build_registration_accept()`
 **Input**: UE context with all derived parameters
 **Output**: Registration Accept NAS PDU
 **Logic**:
@@ -494,7 +560,7 @@ network_feature_support->length = 2;
 network_feature_support->ims_vops_3gpp = 1; // VoPS supported
 ```
 
-#### 8. `apply_nas_security()`
+#### 8. `amf_apply_nas_security()`
 **Input**: Plain NAS message
 **Output**: Security protected NAS message
 **Logic**:
@@ -529,7 +595,7 @@ if (amf_ue->selected_enc_algorithm != OGS_NAS_SECURITY_ALGORITHMS_5G_EA0) {
 security_header->sequence_number = amf_ue->dl_count.overflow & 0xff;
 ```
 
-#### 9. `send_registration_accept()`
+#### 9. `amf_send_registration_accept()`
 **Input**: Security protected Registration Accept
 **Output**: Message sent to RAN
 **Logic**:

@@ -69,70 +69,89 @@
 
 ### Static Fields (Direct Assignment)
 1. **EPD (126)**: Always 0x7E for 5GS messages
+   - Function: `amf_build_authentication_request()`
 2. **Spare Half Octet (0)**: Reserved bits, always 0
+   - Function: `amf_build_authentication_request()`
 3. **Security Header Type (0)**: Plain message (no security context yet)
+   - Function: `amf_build_authentication_request()`
 4. **Message Type (0x56)**: Authentication Request constant
+   - Function: `amf_build_authentication_request()`
 5. **ABBA Contents (00:00)**: Default anti-bidding down parameter
+   - Function: `amf_build_authentication_request()`
 
 ### Derived Fields from Registration Request
 1. **NAS KSI TSC (0)**: Reset from registration request value (new security context)
+   - Function: `amf_build_authentication_request()` → sets to 0
 2. **NAS KSI ID (0)**: Reset from 7 → 0 (new key set identifier)
+   - Function: `amf_build_authentication_request()` → sets to 0
 3. **SUCI Extraction**: MCC=999, MNC=70, MSIN=0000000001 → Used for AUSF lookup
+   - Function: `amf_extract_suci_from_mobile_identity()`
 
 ### Generated Fields (from UDM/AUSF)
 1. **RAND (16 bytes)**: Random challenge from authentication vector
    - Value: `5c:a0:df:8c:9b:b8:db:cf:3c:2a:7d:d4:48:da:13:69`
+   - Function: `udm_generate_authentication_vector()` → generates RAND
 2. **AUTN Components**:
    - SQN ⊕ AK (6 bytes): `40:62:96:99:30:82` - Sequence number XOR anonymity key
-   - AMF (2 bytes): `80:00` - Authentication Management Field  
+     - Function: `udm_generate_authentication_vector()` → calculates SQN⊕AK
+   - AMF (2 bytes): `80:00` - Authentication Management Field
+     - Function: `udm_generate_authentication_vector()` → sets AMF bits
    - MAC (8 bytes): `30:b7:62:45:5c:89:0b:19` - Message Authentication Code
+     - Function: `udm_generate_authentication_vector()` → calculates MAC = f1(K, SQN||RAND||AMF)
 
 ### Protocol Encoding Fields
 1. **PER Octet String Length (42)**: Total length of the NAS PDU in octets
    - Calculation: 1 (EPD) + 1 (Security header) + 1 (Message type) + 1 (ngKSI) + 3 (ABBA with length) + 1 (RAND IE ID) + 16 (RAND) + 1 (AUTN IE ID) + 1 (AUTN length) + 16 (AUTN) = 42 bytes
+   - Function: `amf_build_authentication_request()` → calculated during message assembly
 
 ### Information Element Identifiers
 1. **RAND Element ID (0x21)**: Fixed identifier for Authentication Parameter RAND IE
+   - Function: `amf_build_authentication_request()` → sets IE identifier
 2. **AUTN Element ID (0x20)**: Fixed identifier for Authentication Parameter AUTN IE
+   - Function: `amf_build_authentication_request()` → sets IE identifier
    - These IDs are defined in 3GPP TS 24.501 Table 9.11.3.16.1
 
 ### Length Calculations
 1. **ABBA Length (2)**: Length of ABBA contents field
    - Fixed at 2 bytes for this implementation (1 byte length + 1 byte content)
+   - Function: `amf_build_authentication_request()` → sets length field
 2. **AUTN Length (16)**: Fixed length of AUTN parameter
    - Always 16 bytes per 3GPP TS 33.501
+   - Function: `amf_build_authentication_request()` → sets length field
 
 ### Container Structures
 1. **NGAP NAS PDU**: Complete encoded NAS message as hex string
    - Value: `7e:00:56:00:02:00:00:21:5c:a0:df:8c:9b:b8:db:cf:3c:2a:7d:d4:48:da:13:69:20:10:40:62:96:99:30:82:80:00:30:b7:62:45:5c:89:0b:19`
    - This is the complete Authentication Request message encoded for transmission
+   - Function: `amf_build_authentication_request()` → assembles complete NAS PDU
 2. **AUTN Complete Field**: Concatenated AUTN before decomposition
    - Value: `40:62:96:99:30:82:80:00:30:b7:62:45:5c:89:0b:19`
    - Structure: SQN⊕AK || AMF || MAC (6 + 2 + 8 = 16 bytes)
+   - Function: `udm_generate_authentication_vector()` → creates concatenated AUTN
 
 ## Implementation Function Chain
 
 ### Phase 1: NFLambda AMF Function Implementation
 
 ```
-nflambda_amf_handle_registration_request()
+amf_handle_registration_request()
     ↓
-extract_suci_from_mobile_identity()
+amf_extract_suci_from_mobile_identity()
     ↓ 
-validate_registration_request()
+amf_validate_registration_request()
     ↓
 ausf_authenticate_request()
     ↓
 udm_generate_authentication_vector()
     ↓
-build_authentication_request()
+amf_build_authentication_request()
     ↓
-send_authentication_request()
+amf_send_authentication_request()
 ```
 
 ### Detailed Function Specifications
 
-#### 1. `nflambda_amf_handle_registration_request()`
+#### 1. `amf_handle_registration_request()`
 **Input**: Registration Request NAS PDU
 **Output**: Trigger authentication flow
 **Logic**:
@@ -141,7 +160,7 @@ send_authentication_request()
 - Extract UE security capabilities
 - Store in UE context
 
-#### 2. `extract_suci_from_mobile_identity()`  
+#### 2. `amf_extract_suci_from_mobile_identity()`  
 **Input**: Mobile Identity IE from registration request
 **Output**: SUCI structure
 **Logic**:
@@ -150,7 +169,7 @@ send_authentication_request()
 - Validate protection scheme
 - Convert to string format for AUSF
 
-#### 3. `validate_registration_request()`
+#### 3. `amf_validate_registration_request()`
 **Input**: Registration request components  
 **Output**: Validation result
 **Logic**:
@@ -181,7 +200,7 @@ send_authentication_request()
   - Calculate AUTN = SQN⊕AK || AMF || MAC
 - Calculate HXRES* = SHA-256(RAND || XRES*)
 
-#### 6. `build_authentication_request()`
+#### 6. `amf_build_authentication_request()`
 **Input**: Authentication vectors (RAND, AUTN)
 **Output**: Authentication Request NAS PDU
 **Logic**:
@@ -192,7 +211,7 @@ send_authentication_request()
 - Copy AUTN (16 bytes)
 - Encode as plain NAS message
 
-#### 7. `send_authentication_request()`
+#### 7. `amf_send_authentication_request()`
 **Input**: Authentication Request NAS PDU
 **Output**: Message sent to RAN
 **Logic**:

@@ -101,9 +101,13 @@
 
 ### Static Fields (Direct Assignment)
 1. **EPD (126)**: Always 0x7E for 5GS messages
+   - Function: `amf_build_security_mode_command()` → Sets EPD in outer security header
 2. **Inner Security Header Type (0)**: Plain for the encapsulated message
+   - Function: `amf_build_security_mode_command()` → Sets inner security header type to plain
 3. **Message Type (0x5d)**: Security Mode Command constant
+   - Function: `amf_build_security_mode_command()` → Sets message type for Security Mode Command
 4. **TSC (0)**: Native security context (not mapped from EPS)
+   - Function: `amf_build_security_mode_command()` → Sets TSC in ngKSI field
 
 ### Protocol Encoding Fields
 
@@ -114,6 +118,7 @@
   - Plain message: 14 bytes
   - Total: 21 bytes
 - **Encoding**: ASN.1 PER length encoding for NGAP container
+- Function: `amf_send_security_mode_command()` → Calculates total PDU length for NGAP encoding
 
 ### Information Element Identifiers
 
@@ -122,12 +127,14 @@
 - **Value**: 0x0E (14 decimal)
 - **Standard**: 3GPP TS 24.301 Table 9.9.1.1
 - **Type**: Type 1 IEI (single octet)
+- Function: `amf_build_security_mode_command()` → Sets IMEISV request IEI
 
 #### Additional 5G Security Information Element ID
 - **Field**: `nas_eps.emm.elem_id = "0x36"`
 - **Value**: 0x36 (54 decimal)
 - **Standard**: 3GPP TS 24.501 Table 9.11.1.1
 - **Type**: Type 4 IEI (TLV format)
+- Function: `amf_build_security_mode_command()` → Sets additional security info IEI
 
 ### Length Calculations
 
@@ -138,11 +145,13 @@
   - EPS algorithms: 2 bytes (16 bits)
   - Total: 4 bytes
 - **Format**: Length octet for Type 4 IE
+- Function: `amf_build_security_mode_command()` → Calculates UE security capability length
 
 #### Additional 5G Security Information Length
 - **Field**: `gsm_a.len = "1"`
 - **Content**: Single octet containing RINMR, HDP, and spare bits
 - **Format**: Length octet for Type 4 IE
+- Function: `amf_build_security_mode_command()` → Sets additional security info length
 
 ### Spare Bit Handling
 
@@ -150,26 +159,31 @@
 - **Field**: `nas_5gs.spare_half_octet = "0"`
 - **Location**: Upper 4 bits of security header type octet
 - **Requirement**: Must be set to 0 by sender, ignored by receiver
+- Function: `amf_build_security_mode_command()` → Clears spare bits in message header
 
 #### Algorithm Selection Spare Bits
 - **Field**: `nas_5gs.mm.spare_bits = "0"`
 - **Location**: Upper 4 bits of each algorithm octet
 - **Purpose**: Reserved for future algorithm types
+- Function: `amf_build_security_mode_command()` → Clears spare bits in algorithm fields
 
 #### ngKSI Spare Bits
 - **Field**: `nas_5gs.mm.spare_bits = "0"`
 - **Location**: Bits 4-7 of ngKSI octet
 - **Purpose**: Reserved for future use
+- Function: `amf_build_security_mode_command()` → Clears spare bits in ngKSI field
 
 #### IMEISV Request Spare Bits
 - **Field**: `nas_5gs.mm.imeisv_req_spare = "0"`
 - **Location**: Bits 4-8 of IMEISV request octet
 - **Format**: 5 spare bits before the 3-bit IMEISV request value
+- Function: `amf_build_security_mode_command()` → Clears spare bits in IMEISV request
 
 #### Additional Security Information Spare Bits
 - **Field**: `nas_5gs.mm.spare_bits6 = "0"`
 - **Location**: Bits 3-8 of additional security info octet
 - **Purpose**: Reserved for future security parameters
+- Function: `amf_build_security_mode_command()` → Clears spare bits in additional security info
 
 ### Complete UE Security Capability Encoding
 
@@ -184,6 +198,7 @@
 - Bit 2: 5G-EA6 = 0 (reserved)
 - Bit 1: 5G-EA7 = 0 (reserved)
 - **Hex**: 0x80
+- Function: `amf_build_security_mode_command()` → Copies UE encryption capabilities from registration request
 
 **Byte 2 - Integrity Algorithms**:
 - Bit 8: 5G-IA0 = 1 (null integrity supported)
@@ -195,6 +210,7 @@
 - Bit 2: 5G-IA6 = 0 (reserved)
 - Bit 1: 5G-IA7 = 0 (reserved)
 - **Hex**: 0xF0
+- Function: `amf_build_security_mode_command()` → Copies UE integrity capabilities from registration request
 
 #### EPS Algorithm Support (2 bytes)
 **Byte 3 - EPS Encryption Algorithms**:
@@ -207,6 +223,7 @@
 - Bit 2: EEA6 = 0 (reserved)
 - Bit 1: EEA7 = 0 (reserved)
 - **Hex**: 0x80
+- Function: `amf_build_security_mode_command()` → Copies EPS encryption capabilities from registration request
 
 **Byte 4 - EPS Integrity Algorithms**:
 - Bit 8: EIA0 = 1 (null integrity supported)
@@ -218,8 +235,10 @@
 - Bit 2: EIA6 = 0 (reserved)
 - Bit 1: EIA7 = 0 (reserved)
 - **Hex**: 0xF0
+- Function: `amf_build_security_mode_command()` → Copies EPS integrity capabilities from registration request
 
 **Complete UE Security Capability**: `0x80 0xF0 0x80 0xF0`
+- Function: `amf_build_security_mode_command()` → Assembles complete 4-byte UE security capability
 
 ### Complete Message Encoding
 
@@ -241,6 +260,7 @@
   - `80:f0:80:f0`: Capability bits
   - `0e:01`: IMEISV request
   - `36:01:01`: Additional 5G security info
+- Function: `amf_send_security_mode_command()` → Encodes complete NAS PDU for NGAP transport
 
 ### Container Structures
 
@@ -272,11 +292,13 @@
 - Value: Integrity protected with new security context
 - Reason: First message after authentication establishes new security context
 - Triggers MAC calculation and security header addition
+- Function: `amf_build_security_mode_command()` → Sets security header type for new context
 
 #### 2. **Sequence Number (0)**
 - Value: 0 for first protected message
 - Storage: Initialize downlink counter in UE context
 - Purpose: Replay protection mechanism
+- Function: `amf_send_security_mode_command()` → Initializes sequence number for first protected message
 
 #### 3. **MAC (0x13bf995a)**
 - Calculation: AES-CMAC with KNAS-int over entire message
@@ -287,20 +309,24 @@
   - Direction: Downlink (0x01)
   - Message: Complete NAS PDU
 - Output: First 32 bits of AES-CMAC result
+- Function: `amf_calculate_mac()` → Computes MAC using AES-CMAC algorithm
 
 #### 4. **Selected Algorithms**
 - **Encryption (0)**: 5G-EA0 (null encryption)
   - Selected based on AMF configuration and UE capabilities
   - UE supports: EA0=1, EA1=0, EA2=0, EA3=0
   - AMF selects EA0 as it's the only supported algorithm
+  - Function: `amf_select_security_algorithms()` → Selects encryption algorithm based on capabilities
 - **Integrity (2)**: 5G-IA2 (128-bit AES)
   - UE supports: IA0=1, IA1=1, IA2=1, IA3=1
   - AMF priority order selects IA2 (AES) over IA1 (SNOW3G)
+  - Function: `amf_select_security_algorithms()` → Selects integrity algorithm based on priorities
 
 #### 5. **ngKSI (0)**
 - Reset from previous value (7) to new value (0)
 - Indicates new security context after authentication
 - Will be used in all subsequent protected messages
+- Function: `amf_derive_security_keys()` → Assigns new ngKSI value for fresh security context
 
 ### Replayed Fields from Registration Request
 
@@ -309,34 +335,38 @@
 - Includes all encryption and integrity algorithm support flags
 - Must match stored values or security mode reject
 - Complete 32-bit encoding replayed verbatim
+- Function: `amf_build_security_mode_command()` → Replays stored UE capabilities from registration
 
 #### 2. **Additional Security Parameters**
 - **RINMR (1)**: Retransmission of initial NAS message requested
+  - Function: `amf_build_security_mode_command()` → Sets RINMR flag for retransmission
 - **HDP (0)**: No horizontal key derivation performed
+  - Function: `amf_build_security_mode_command()` → Sets HDP flag to indicate no horizontal derivation
 - **IMEISV Request (1)**: UE should include IMEISV in response
+  - Function: `amf_build_security_mode_command()` → Sets IMEISV request flag
 
 ## Implementation Function Chain
 
 ### Phase 2: NFLambda AMF Function Implementation
 
 ```
-nflambda_amf_handle_authentication_response()
+amf_handle_authentication_response()
     ↓
-verify_res_star()
+amf_verify_res_star()
     ↓
 ausf_confirm_authentication()
     ↓
-receive_kseaf_and_supi()
+ausf_derive_kseaf()
     ↓
-derive_security_keys()
+amf_derive_security_keys()
     ↓
-select_security_algorithms()
+amf_select_security_algorithms()
     ↓
-build_security_mode_command()
+amf_build_security_mode_command()
     ↓
-calculate_mac()
+amf_calculate_mac()
     ↓
-send_security_mode_command()
+amf_send_security_mode_command()
 ```
 
 ### MAC Calculation
@@ -352,7 +382,7 @@ send_security_mode_command()
 
 ### Detailed Function Specifications
 
-#### 1. `nflambda_amf_handle_authentication_response()`
+#### 1. `amf_handle_authentication_response()`
 **Input**: Authentication Response NAS PDU
 **Output**: Trigger security establishment flow
 **Logic**:
@@ -361,7 +391,7 @@ send_security_mode_command()
 - Validate message format and length
 - Store RES* in UE context for verification
 
-#### 2. `verify_res_star()`
+#### 2. `amf_verify_res_star()`
 **Input**: Received RES*, stored authentication data
 **Output**: Verification result
 **Logic**:
@@ -382,7 +412,7 @@ send_security_mode_command()
 - Include serving network name
 - Send HTTP PUT request to AUSF
 
-#### 4. `receive_kseaf_and_supi()`
+#### 4. `ausf_derive_kseaf()`
 **Input**: AUSF confirmation response
 **Output**: KSEAF and authenticated SUPI
 **Logic**:
@@ -391,7 +421,7 @@ send_security_mode_command()
 - Store both in UE context
 - Update UE state to authenticated
 
-#### 5. `derive_security_keys()`
+#### 5. `amf_derive_security_keys()`
 **Input**: KSEAF, SUPI, ABBA
 **Output**: KAMF, KNAS-int, KNAS-enc
 **Logic**:
@@ -412,7 +442,7 @@ KNAS-enc = KDF(KAMF, 0x69, algorithm_type || algorithm_id)
 // algorithm_id = 0x00 (5G-EA0)
 ```
 
-#### 6. `select_security_algorithms()`
+#### 6. `amf_select_security_algorithms()`
 **Input**: UE security capabilities, AMF configuration
 **Output**: Selected encryption and integrity algorithms
 **Logic**:
@@ -422,7 +452,7 @@ KNAS-enc = KDF(KAMF, 0x69, algorithm_type || algorithm_id)
 - For encryption: Select first matching (EA0 in this case)
 - Validate at least one algorithm selected for each type
 
-#### 7. `build_security_mode_command()`
+#### 7. `amf_build_security_mode_command()`
 **Input**: Selected algorithms, UE capabilities, security context
 **Output**: Security Mode Command NAS PDU
 **Logic**:
@@ -434,7 +464,7 @@ KNAS-enc = KDF(KAMF, 0x69, algorithm_type || algorithm_id)
 - Set additional security info (RINMR=1, HDP=0)
 - Build complete NAS message structure
 
-#### 8. `calculate_mac()`
+#### 8. `amf_calculate_mac()`
 **Input**: Complete NAS message, security context
 **Output**: 4-byte MAC
 **Logic**:
@@ -451,7 +481,7 @@ full_mac = AES_CMAC(KNAS-int, count || bearer || direction || message)
 mac = full_mac[0..3]
 ```
 
-#### 9. `send_security_mode_command()`
+#### 9. `amf_send_security_mode_command()`
 **Input**: Protected NAS PDU with MAC
 **Output**: Message sent to RAN
 **Logic**:
@@ -475,6 +505,7 @@ mac = full_mac[0..3]
                    ef:27:70:c6:9e:73:82:aa:38:e8:13:4f:60:22:34:e1)
   ```
 - **Purpose**: Privacy protection - HXRES* stored instead of RES*
+- Function: `amf_verify_res_star()` → Calculates HXRES* and verifies against stored value
 
 ### Security Key Hierarchy and Derivation
 
@@ -482,6 +513,7 @@ mac = full_mac[0..3]
 - **Input**: KAUSF from authentication
 - **Output**: KSEAF (256 bits)
 - **Function**: KDF with serving network name
+- Function: `ausf_derive_kseaf()` → Derives KSEAF from KAUSF (AUSF function)
 
 #### KSEAF → KAMF (in AMF)
 - **Input**: 
@@ -493,6 +525,7 @@ mac = full_mac[0..3]
   KAMF = KDF(KSEAF, 0x6D, SUPI || length(ABBA) || ABBA)
   ```
 - **Output**: KAMF (256 bits)
+- Function: `amf_derive_security_keys()` → Derives KAMF from KSEAF
 
 #### KAMF → NAS Keys
 - **KNAS-int** (Integrity):
@@ -501,12 +534,14 @@ mac = full_mac[0..3]
   // 0x02 = integrity algorithm type
   // 0x02 = 5G-IA2 algorithm ID
   ```
+  - Function: `amf_derive_security_keys()` → Derives KNAS-int from KAMF
 - **KNAS-enc** (Encryption):
   ```
   KNAS-enc = KDF(KAMF, 0x69, 0x01 || 0x00)
   // 0x01 = encryption algorithm type
   // 0x00 = 5G-EA0 algorithm ID
   ```
+  - Function: `amf_derive_security_keys()` → Derives KNAS-enc from KAMF
 
 ### MAC Calculation Details
 - **Algorithm**: AES-CMAC (for 5G-IA2)
@@ -524,6 +559,7 @@ mac = full_mac[0..3]
   - MESSAGE = Complete NAS PDU before security header
   ```
 - **Output**: First 32 bits = `0x13bf995a`
+- Function: `amf_calculate_mac()` → Constructs input and computes AES-CMAC
 
 ### Algorithm Selection Logic
 From UE capabilities and AMF configuration:
@@ -532,17 +568,20 @@ From UE capabilities and AMF configuration:
 - UE supports: IA0=1, IA1=1, IA2=1, IA3=1
 - AMF priority: [IA2, IA1, IA3, IA0]
 - Selected: IA2 (128-bit AES)
+- Function: `amf_select_security_algorithms()` → Matches UE capabilities with AMF priorities
 
 **Encryption Algorithm Selection**:
 - UE supports: EA0=1, EA1=0, EA2=0, EA3=0
 - AMF priority: [EA2, EA1, EA3, EA0]
 - Selected: EA0 (null encryption) - only supported algorithm
+- Function: `amf_select_security_algorithms()` → Selects only mutually supported algorithm
 
 ### Replayed UE Security Capabilities
 Exact copy from registration request to prevent modification attacks:
 - 5G algorithms: EA0=1, IA0=1, IA1=1, IA2=1, IA3=1
 - EPS algorithms: EEA0=1, EIA0=1, EIA1=1, EIA2=1, EIA3=1
 - Total: 4 bytes (32 bits of capability flags)
+- Function: `amf_build_security_mode_command()` → Copies exact capabilities from stored registration
 
 ## Open5GS Code Reference Mapping
 

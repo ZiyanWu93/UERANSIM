@@ -164,34 +164,52 @@
 
 ### Protocol Constants
 1. **EPD (126)**: Always 0x7E for 5GS messages (3GPP TS 24.501)
+   - Function: `amf_build_dl_nas_transport()` → Sets EPD in NAS header
 2. **5GSM EPD (46)**: Always 0x2E for 5GSM messages
+   - Function: `smf_build_pdu_session_accept()` → Sets 5GSM EPD in PDU session message
 3. **Message Type (0x68)**: DL NAS Transport constant
+   - Function: `amf_build_dl_nas_transport()` → Sets message type for downlink transport
 4. **5GSM Message Type (0xC2)**: PDU Session Establishment Accept
+   - Function: `smf_build_pdu_session_accept()` → Sets PDU session accept message type
 5. **Payload Container Type (1)**: N1 SM information constant
+   - Function: `amf_build_dl_nas_transport()` → Sets container type for SM information
 
 ### Protocol Encoding Fields
 1. **per.octet_string_length (86)**: Total length of NGAP NAS-PDU
    - Calculated as: Security header (6) + Message content (80)
    - Security header: Type (1) + MAC (4) + Seq (1) = 6 bytes
    - Message content: All fields after security header
+   - Function: `amf_send_dl_nas_transport()` → Calculates total length for NGAP encoding
 
 2. **ngap.NAS_PDU**: Complete hex encoding of NAS message
    - Starts with 0x7e (EPD) followed by security header
    - Contains all encoded IEs in binary format
    - Used by NGAP layer for transport to RAN
+   - Function: `amf_send_dl_nas_transport()` → Encodes complete NAS PDU for NGAP transport
 
 ### Information Element Identifiers
 1. **0x01**: Payload container type (MM context)
+   - Function: `amf_build_dl_nas_transport()` → Sets IE identifier for container type
 2. **0x7b**: Payload container (MM context)
+   - Function: `amf_build_dl_nas_transport()` → Sets IE identifier for payload container
 3. **0x12**: PDU session identity 2 (MM context)
+   - Function: `amf_build_dl_nas_transport()` → Sets IE identifier for PDU session ID
 4. **0x59**: PDU session type (SM context)
+   - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for PDU session type
 5. **0x7a**: QoS rules (SM context)
+   - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for QoS rules
 6. **0x2a**: Session-AMBR (SM context)
+   - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for session AMBR
 7. **0x29**: PDU address (SM context)
+   - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for PDU address
 8. **0x22**: S-NSSAI (SM context)
+   - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for S-NSSAI
 9. **0x79**: QoS flow descriptions (SM context)
+   - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for QoS flows
 10. **0x7b**: Extended protocol configuration options (SM context)
+    - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for extended PCO
 11. **0x25**: DNN (SM context)
+    - Function: `smf_build_pdu_session_accept()` → Sets IE identifier for DNN
 
 ### Length Calculations for Complex IEs
 1. **Payload Container (71 bytes)**:
@@ -199,165 +217,213 @@
    - Message type: 1 byte
    - Selected SSC mode: 1 byte
    - All IEs with TLV encoding: 66 bytes total
+   - Function: `amf_build_dl_nas_transport()` → Calculates total payload container length
 
 2. **QoS Rules (9 bytes)**:
    - Rule ID: 1 byte
    - Length: 2 bytes (0x0006)
    - Rule content: 6 bytes (operation, filters, precedence, QFI)
+   - Function: `smf_create_default_qos_flows()` → Calculates QoS rule encoding length
 
 3. **Session-AMBR (6 bytes)**:
    - DL unit: 1 byte
    - DL value: 2 bytes
    - UL unit: 1 byte
    - UL value: 2 bytes
+   - Function: `smf_build_pdu_session_accept()` → Encodes session AMBR with length
 
 4. **PDU Address (5 bytes)**:
    - Type + SI6LLA: 1 byte
    - IPv4 address: 4 bytes
+   - Function: `smf_build_pdu_session_accept()` → Encodes PDU address with length
 
 5. **QoS Flow Descriptions (5 bytes)**:
    - QFI: 1 byte
    - Operation code + E bit: 1 byte
    - Number of parameters: 1 byte
    - Parameter (5QI): 2 bytes (ID + length + value)
+   - Function: `smf_create_default_qos_flows()` → Calculates QoS flow encoding length
 
 6. **Extended PCO (15 bytes)**:
    - Extension + config protocol: 1 byte
    - Container structure: 14 bytes
+   - Function: `smf_build_pdu_session_accept()` → Builds extended PCO response
 
 7. **DNN (9 bytes)**:
    - Label encoding of "internet": 8 bytes
    - Length byte: 1 byte
+   - Function: `smf_build_pdu_session_accept()` → Encodes DNN label with length
 
 ### Derived Fields from PDU Session Request
 1. **PDU Session ID**: Copied from request (1)
+   - Function: `amf_extract_pdu_session_request()` → Extracts from UL NAS transport
 2. **Procedure Transaction ID**: Copied from request (1)
+   - Function: `amf_extract_pdu_session_request()` → Extracts PTI from 5GSM header
 3. **Selected SSC Mode**: Validated and echoed (1)
+   - Function: `smf_nflambda_smf_handle_create_sm_context()` → Validates requested SSC mode
 4. **Selected PDU Session Type**: Validated IPv4 request → IPv4
+   - Function: `smf_nflambda_smf_handle_create_sm_context()` → Validates PDU type support
 5. **S-NSSAI**: Validated against allowed slices → SST=1
+   - Function: `amf_validate_snssai_and_dnn()` → Validates against subscription
 6. **DNN**: Used for SMF selection, echoed in response
+   - Function: `amf_validate_snssai_and_dnn()` → Validates DNN for slice
 
 ### SMF-Generated Fields
 1. **PDU Address (10.45.0.2)**: Allocated from SMF IP pool
    - Pool selection based on DNN and S-NSSAI
    - Sequential or random allocation strategy
    - Address tracking in session context
+   - Function: `smf_allocate_ip_address()` → Allocates IP from configured pool
 
 2. **DNS Server (8.8.4.4)**: From SMF configuration
    - Primary DNS for the selected DNN
    - Can be overridden by policy
+   - Function: `smf_build_pdu_session_accept()` → Retrieves DNS from SMF config
 
 ### QoS Rule Creation
 1. **Rule ID**: 1 (first rule, auto-assigned)
+   - Function: `smf_create_default_qos_flows()` → Assigns rule ID for default rule
 2. **Length**: 6 bytes of rule content
+   - Function: `smf_create_default_qos_flows()` → Calculates rule content length
 3. **Rule Operation (ROP)**: 1 (create new QoS rule)
+   - Function: `smf_create_default_qos_flows()` → Sets operation code for rule creation
 4. **DQR bit**: 1 (marks as default QoS rule)
+   - Function: `smf_create_default_qos_flows()` → Sets default QoS rule indicator
 5. **Number of packet filters**: 1
+   - Function: `smf_create_default_qos_flows()` → Creates match-all packet filter
 6. **Precedence**: 255 (lowest priority for default rule)
+   - Function: `smf_create_default_qos_flows()` → Sets lowest precedence for default
 7. **QFI**: 1 (links to default QoS flow)
+   - Function: `smf_create_default_qos_flows()` → Links rule to default QoS flow
 
 ### QoS Rule Packet Filter Encoding
 1. **Packet Filter Direction**: 3 (bidirectional)
    - Encoded in 2 bits: 11b = bidirectional
+   - Function: `smf_create_default_qos_flows()` → Sets bidirectional filter for default
 2. **Packet Filter ID**: 1 (first filter)
    - Encoded in 6 bits: 000001b
+   - Function: `smf_create_default_qos_flows()` → Assigns filter ID within rule
 3. **Packet Filter Length**: 1 byte
    - Only contains component type for match-all
+   - Function: `smf_create_default_qos_flows()` → Calculates filter content length
 4. **Component Type**: 1 (match all packets)
    - Special value indicating no specific matching
+   - Function: `smf_create_default_qos_flows()` → Sets match-all filter type
 
 ### QoS Flow Parameter Encoding
 1. **QFI**: 1 (default flow identifier, 6 bits)
+   - Function: `smf_create_default_qos_flows()` → Assigns QFI for default flow
 2. **Operation Code**: 1 (create new QoS flow description)
+   - Function: `smf_create_default_qos_flows()` → Sets create operation for flow
 3. **E bit**: 1 (parameters list is present)
+   - Function: `smf_create_default_qos_flows()` → Sets E bit for parameter presence
 4. **Number of Parameters**: 1 (only 5QI)
+   - Function: `smf_create_default_qos_flows()` → Counts QoS flow parameters
 5. **Parameter ID**: 1 (5QI parameter)
+   - Function: `smf_create_default_qos_flows()` → Sets parameter type as 5QI
 6. **Parameter Length**: 1 byte
+   - Function: `smf_create_default_qos_flows()` → Calculates 5QI parameter length
 7. **5QI Value**: 9 (default internet QoS)
+   - Function: `smf_create_default_qos_flows()` → Sets 5QI=9 for best effort
 
 ### Session AMBR Calculation
 1. **Input**: Subscription data AMBR
    - Subscribed UL: 100 Mbps
    - Subscribed DL: 100 Mbps
+   - Function: `smf_handle_create_sm_context()` → Retrieves from subscription
 
 2. **Processing**:
    - Apply slice-specific limits
    - Apply DNN-specific limits
    - Apply session policy
+   - Function: `smf_handle_create_sm_context()` → Applies policy limits
 
 3. **Output**: Session AMBR
    - Session UL: 62.5 Mbps (policy limited)
    - Session DL: 62.5 Mbps (policy limited)
    - Encoding: value in kbps (62500)
    - Unit: 3 (indicates Mbps)
+   - Function: `smf_build_pdu_session_accept()` → Encodes AMBR values with units
 
 ### Extended PCO Structure
 1. **Extension bit**: 1 (always set for extended PCO)
+   - Function: `smf_build_pdu_session_accept()` → Sets extension bit for extended PCO
 2. **Configuration Protocol**: 0 (PPP for compatibility)
+   - Function: `smf_build_pdu_session_accept()` → Sets protocol type for compatibility
 3. **Container Structure**:
    - Protocol ID: 0x000D (DNS Server IPv4 Address Request)
    - Length: 0x04 (4 bytes for IPv4 address)
    - Content: IPv4 address (8.8.4.4)
+   - Function: `smf_build_pdu_session_accept()` → Builds DNS container response
 
 ### DNN Label Encoding
 1. **Input**: "internet" (8 characters)
+   - Function: `amf_extract_pdu_session_request()` → Extracts from request
 2. **Encoding**: DNS label format
    - Length byte: 8
    - ASCII bytes: "internet"
    - Total: 9 bytes (1 + 8)
+   - Function: `smf_build_pdu_session_accept()` → Encodes DNN in DNS label format
 3. **No compression or null terminator**
+   - Function: `smf_build_pdu_session_accept()` → Ensures proper label encoding
 
 ### PDU Address Encoding
 1. **PDU Session Type**: 1 (IPv4)
    - Encoded in 3 bits: 001b
+   - Function: `smf_build_pdu_session_accept()` → Encodes PDU type in address field
 2. **SI6LLA bit**: 0 (no IPv6 link-local address)
    - Only relevant for IPv6 PDU types
+   - Function: `smf_build_pdu_session_accept()` → Clears SI6LLA for IPv4
 3. **IPv4 Address**: 10.45.0.2
    - 4 bytes in network byte order
    - From SMF IP pool allocation
+   - Function: `smf_allocate_ip_address()` → Returns allocated IP address
 
 ### Security-Related Fields
 1. **Security Header Type**: 2 (integrity protected and ciphered)
+   - Function: `amf_build_dl_nas_transport()` → Sets security header type based on context
 2. **Message Authentication Code**: 0xfbd62d81
    - Calculated using NAS integrity algorithm
    - Based on COUNT, direction, and message content
+   - Function: `amf_build_dl_nas_transport()` → Calculates MAC using NAS security context
 3. **Sequence Number**: 3
    - Incremented from request (2 → 3)
    - Part of NAS COUNT for replay protection
+   - Function: `amf_build_dl_nas_transport()` → Increments and sets sequence number
 
 ## Implementation Function Chain
 
 ### Phase 5: NFLambda AMF/SMF Function Implementation
 
 ```
-nflambda_amf_handle_ul_nas_transport()
+amf_handle_ul_nas_transport()
     ↓
-extract_pdu_session_request()
+amf_extract_pdu_session_request()
     ↓
-validate_snssai_and_dnn()
+amf_validate_snssai_and_dnn()
     ↓
-discover_and_select_smf()
+amf_discover_and_select_smf()
     ↓
-create_sm_context_request()
+amf_create_sm_context_request()
     ↓
 [SMF Processing]
-nflambda_smf_handle_create_sm_context()
+smf_handle_create_sm_context()
     ↓
-allocate_ip_address()
+smf_allocate_ip_address()
     ↓
-create_default_qos_flows()
+smf_create_default_qos_flows()
     ↓
-build_pdu_session_accept()
+smf_build_pdu_session_accept()
     ↓
 [AMF Processing]
-build_dl_nas_transport()
+amf_build_dl_nas_transport()
     ↓
-send_dl_nas_transport()
+amf_send_dl_nas_transport()
 ```
 
 ### Detailed Function Specifications
 
-#### 1. `nflambda_amf_handle_ul_nas_transport()`
+#### 1. `amf_handle_ul_nas_transport()`
 **Input**: UL NAS Transport containing PDU Session Request
 **Output**: Trigger SMF interaction
 **Logic**:
@@ -367,7 +433,7 @@ send_dl_nas_transport()
 - Parse embedded PDU session establishment request
 - Create or find session context
 
-#### 2. `extract_pdu_session_request()`
+#### 2. `amf_extract_pdu_session_request()`
 **Input**: Payload container from UL NAS transport
 **Output**: Parsed PDU session request structure
 **Logic**:
@@ -378,7 +444,7 @@ send_dl_nas_transport()
 - Parse 5GSM capabilities
 - Extract extended PCO if present
 
-#### 3. `validate_snssai_and_dnn()`
+#### 3. `amf_validate_snssai_and_dnn()`
 **Input**: S-NSSAI, DNN from request, UE subscription
 **Output**: Validation result with selected slice
 **Logic**:
@@ -388,7 +454,7 @@ send_dl_nas_transport()
 - Check concurrent session limits
 - Return selected S-NSSAI or rejection cause
 
-#### 4. `discover_and_select_smf()`
+#### 4. `amf_discover_and_select_smf()`
 **Input**: S-NSSAI, DNN, TAI, PLMN
 **Output**: Selected SMF instance
 **Logic**:
@@ -404,7 +470,7 @@ send_dl_nas_transport()
   - Capacity constraints
 - Cache SMF selection for session
 
-#### 5. `create_sm_context_request()`
+#### 5. `amf_create_sm_context_request()`
 **Input**: Session info, N1 SM message, UE context
 **Output**: HTTP request to SMF
 **Logic**:
@@ -418,7 +484,7 @@ send_dl_nas_transport()
 - Attach N1 SM message as binary
 - Set AMF callback URI
 
-#### 6. `nflambda_smf_handle_create_sm_context()`
+#### 6. `smf_handle_create_sm_context()`
 **Input**: SM context create request from AMF
 **Output**: SM context and PDU session accept
 **Logic**:
@@ -429,7 +495,7 @@ send_dl_nas_transport()
 - Select UPF based on topology
 - Build response with session accept
 
-#### 7. `allocate_ip_address()`
+#### 7. `smf_allocate_ip_address()`
 **Input**: Session type, DNN, S-NSSAI
 **Output**: Allocated IP address
 **Logic**:
@@ -444,7 +510,7 @@ send_dl_nas_transport()
 - Update session context
 - Configure UPF with IP rules
 
-#### 8. `create_default_qos_flows()`
+#### 8. `smf_create_default_qos_flows()`
 **Input**: Session context, subscription data
 **Output**: QoS flows and rules
 **Logic**:
@@ -459,7 +525,7 @@ send_dl_nas_transport()
   - Precedence = 255
 - Set session AMBR from subscription
 
-#### 9. `build_pdu_session_accept()`
+#### 9. `smf_build_pdu_session_accept()`
 **Input**: Session context with allocated resources
 **Output**: PDU Session Establishment Accept message
 **Logic**:
@@ -475,7 +541,7 @@ send_dl_nas_transport()
 - Build extended PCO response
 - Add DNN
 
-#### 10. `build_dl_nas_transport()`
+#### 10. `amf_build_dl_nas_transport()`
 **Input**: N1 SM message, session context
 **Output**: DL NAS Transport message
 **Logic**:
@@ -488,7 +554,7 @@ send_dl_nas_transport()
   - Encrypt if required
   - Increment sequence number
 
-#### 11. `send_dl_nas_transport()`
+#### 11. `amf_send_dl_nas_transport()`
 **Input**: DL NAS Transport message
 **Output**: Message sent to RAN
 **Logic**:

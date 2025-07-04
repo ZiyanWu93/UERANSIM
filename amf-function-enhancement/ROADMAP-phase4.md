@@ -85,55 +85,69 @@
    - Counts total bytes in the NAS PDU
    - Security header (6 bytes) + Plain message (45 bytes) = 51 bytes
    - Used by NGAP layer for PDU container encoding
+   - Function: `amf_send_configuration_update_command()` → calculates total PDU length before NGAP encapsulation
 
 2. **nas_5gs.epd (126)**:
    - Extended Protocol Discriminator = 0x7E
    - Identifies 5GS mobility management messages
    - Appears twice: once in security header, once in plain message
+   - Function: `amf_build_configuration_update_command()` → sets protocol discriminator in message header
 
 3. **nas_5gs.spare_half_octet (0)**:
    - Always set to 0 for 5GS messages
    - Reserved for future use per 3GPP TS 24.501
+   - Function: `amf_build_configuration_update_command()` → initializes spare bits to zero
 
 ### Security Header Configuration
 1. **nas_5gs.security_header_type**:
    - Value 2 = Integrity protected and ciphered
    - Value 0 = Plain NAS message (inner header)
    - Determines security processing required
+   - Function: `amf_apply_nas_security()` → sets security header type based on security context
 
 ### Security Context Management
 1. **nas_5gs.seq_no (2)**:
    - Downlink NAS count least significant 8 bits
    - Incremented for each downlink NAS message
    - Prevents replay attacks
+   - Function: `amf_apply_nas_security()` → increments and applies downlink NAS count
 
 ### Security Calculations
 1. **nas_5gs.msg_auth_code (0xde0d22e3)**:
    - 32-bit MAC calculated using NIA algorithm
    - Inputs: K_AMF, downlink count, bearer ID, direction, message
    - Algorithm specified during security mode setup
+   - Function: `amf_apply_nas_security()` → calculates MAC using selected NIA algorithm
 
 ### Message Type Constants
 1. **nas_5gs.mm.message_type (0x54)**:
    - Configuration Update Command per TS 24.501 Table 9.7.1
    - Fixed value for this message type
+   - Function: `amf_build_configuration_update_command()` → sets message type for Configuration Update Command
 
 ### Information Element Identifiers
 1. **gsm_a.dtap.elem_id (0x43)**: Full name for network (TS 24.008 10.5.3.5a)
+   - Function: `amf_build_configuration_update_command()` → adds full network name IE with ID 0x43
 2. **gsm_a.dtap.elem_id (0x45)**: Short name for network (TS 24.008 10.5.3.5a)
+   - Function: `amf_build_configuration_update_command()` → adds short network name IE with ID 0x45
 3. **gsm_a.dtap.elem_id (0x46)**: Time Zone (TS 24.008 10.5.3.8)
+   - Function: `amf_build_configuration_update_command()` → adds time zone IE with ID 0x46
 4. **gsm_a.dtap.elem_id (0x47)**: Time Zone and Time (TS 24.008 10.5.3.9)
+   - Function: `amf_build_configuration_update_command()` → adds time zone and time IE with ID 0x47
 5. **gsm_a.dtap.elem_id (0x49)**: Daylight Saving Time (TS 24.008 10.5.3.12)
+   - Function: `amf_build_configuration_update_command()` → adds DST IE with ID 0x49
 
 ### Information Element Lengths
 1. **Network Name Lengths**:
    - Full name: 15 = 1 (header) + 14 (7 UTF-16 chars)
    - Short name: 9 = 1 (header) + 8 (4 UTF-16 chars)
+   - Function: `amf_encode_network_names_utf16()` → calculates length based on UTF-16 encoding
 
 2. **Fixed Length IEs**:
    - Time Zone: No length field (fixed 1 byte)
    - Time Zone and Time: No length field (fixed 7 bytes)
    - DST: Length = 1 (value byte only)
+   - Function: `amf_build_configuration_update_command()` → applies fixed lengths per 3GPP spec
 
 ### Network Name Header Byte Construction
 1. **Header Byte (0x90)**:
@@ -142,17 +156,20 @@
    - Bit 4: Add Country Initials = 0
    - Bits 3-0: Number of spare bits = 0000
    - Binary: 1001 0000 = 0x90
+   - Function: `amf_encode_network_names_utf16()` → constructs header byte with UTF-16 encoding
 
 ### Network Name Length Calculations
 1. **Full Name "Open5GS" (15 bytes)**:
    - Header byte: 1 byte (0x90)
    - UTF-16 text: 7 chars × 2 bytes/char = 14 bytes
    - Total: 1 + 14 = 15 bytes
+   - Function: `amf_encode_network_names_utf16()` → calculates total length for full network name
 
 2. **Short Name "Next" (9 bytes)**:
    - Header byte: 1 byte (0x90)
    - UTF-16 text: 4 chars × 2 bytes/char = 8 bytes
    - Total: 1 + 8 = 9 bytes
+   - Function: `amf_encode_network_names_utf16()` → calculates total length for short network name
 
 ### UTF-16 Text Encoding
 1. **Full Name "Open5GS"**:
@@ -164,6 +181,7 @@
    - 'G' (0x47) → 0x00:47
    - 'S' (0x53) → 0x00:53
    - Result: 00:4F:00:70:00:65:00:6E:00:35:00:47:00:53
+   - Function: `amf_encode_network_names_utf16()` → converts ASCII to UTF-16 for full name
 
 2. **Short Name "Next"**:
    - 'N' (0x4E) → 0x00:4E
@@ -171,6 +189,7 @@
    - 'x' (0x78) → 0x00:78
    - 't' (0x74) → 0x00:74
    - Result: 00:4E:00:65:00:78:00:74
+   - Function: `amf_encode_network_names_utf16()` → converts ASCII to UTF-16 for short name
 
 ### Time Zone BCD Encoding
 1. **gsm_a.dtap.timezone values**:
@@ -180,6 +199,7 @@
    - Discrepancy between parse tree display and actual encoding
    - BCD format: [units nibble][tens nibble + sign bit]
    - Sign bit (bit 3 of high nibble): 0 for positive offset
+   - Function: `amf_calculate_time_zone_info()` → encodes time zone offset in BCD format
 
 ### Universal Time BCD Encoding
 1. **Time String "Jun 9, 2025 08:53:35"**:
@@ -191,26 +211,31 @@
    - Second: 35 → 0x53 (swapped: 5|3)
    - Time zone: 0x0A (UTC+5:00, different encoding)
    - Actual in trace: 52:60:90:30:35:53:0A
+   - Function: `amf_calculate_time_zone_info()` → converts time components to BCD format
 
 ### DST Value Encoding
 1. **gsm_a.spare_bits (0)**:
    - Bits 7-2 reserved, set to 0
+   - Function: `amf_calculate_time_zone_info()` → sets spare bits to zero
 
 2. **gsm_a.dtap.dst_adjustment (1)**:
    - 0 = No adjustment
    - 1 = +1 hour adjustment
    - 2 = +2 hours adjustment
    - 3 = Reserved
+   - Function: `amf_calculate_time_zone_info()` → determines DST adjustment from system time
 
 ### Complete NAS PDU Assembly
 1. **Security Header (7 bytes)**:
    - EPD + Security type: 7E:02 (126 decimal, type 2)
    - MAC: DE:0D:22:E3 (4 bytes)
    - Sequence number: 02 (1 byte)
+   - Function: `amf_apply_nas_security()` → constructs complete security header
 
 2. **Plain Message Header (3 bytes)**:
    - EPD + Security type: 7E:00 (126 decimal, type 0)
    - Message type: 54 (Configuration Update Command)
+   - Function: `amf_build_configuration_update_command()` → constructs plain message header
 
 3. **Information Elements (41 bytes total)**:
    - Full name IE (17 bytes): 43:0F:90:00:4F:00:70:00:65:00:6E:00:35:00:47:00:53
@@ -232,38 +257,40 @@
      - IE ID: 49
      - Length: 01
      - Value: 01 (+1 hour)
+   - Function: `amf_build_configuration_update_command()` → assembles all IEs in correct order
 
 4. **Complete PDU (51 bytes)**:
    ```
    7E:02:DE:0D:22:E3:02:7E:00:54:43:0F:90:00:4F:00:70:00:65:00:6E:00:35:00:47:00:53:45:09:90:00:4E:00:65:00:78:00:74:46:0A:47:52:60:90:30:35:53:0A:49:01:01
    ```
    - Matches exactly the ngap.NAS_PDU field from parse tree
+   - Function: `amf_send_configuration_update_command()` → sends complete PDU via NGAP
 
 ## Implementation Function Chain
 
 ### Phase 4: NFLambda AMF Function Implementation
 
 ```
-nflambda_amf_handle_registration_complete()
+amf_handle_registration_complete()
     ↓
-confirm_guti_assignment()
+amf_confirm_guti_assignment()
     ↓
-check_configuration_update_policy()
+amf_check_configuration_update_policy()
     ↓
-encode_network_names_utf16()
+amf_encode_network_names_utf16()
     ↓
-calculate_time_zone_info()
+amf_calculate_time_zone_info()
     ↓
-build_configuration_update_command()
+amf_build_configuration_update_command()
     ↓
-apply_nas_security()
+amf_apply_nas_security()
     ↓
-send_configuration_update_command()
+amf_send_configuration_update_command()
 ```
 
 ### Detailed Function Specifications
 
-#### 1. `nflambda_amf_handle_registration_complete()`
+#### 1. `amf_handle_registration_complete()`
 **Input**: Registration Complete NAS PDU
 **Output**: Trigger configuration update flow
 **Logic**:
@@ -273,7 +300,7 @@ send_configuration_update_command()
 - Update UE state to REGISTERED
 - Check if configuration update needed
 
-#### 2. `confirm_guti_assignment()`
+#### 2. `amf_confirm_guti_assignment()`
 **Input**: AMF UE context
 **Output**: Updated GUTI state
 **Logic**:
@@ -283,7 +310,7 @@ send_configuration_update_command()
 - Clear next GUTI fields
 - Log GUTI confirmation
 
-#### 3. `check_configuration_update_policy()`
+#### 3. `amf_check_configuration_update_policy()`
 **Input**: AMF configuration, UE context
 **Output**: Boolean decision and parameters
 **Logic**:
@@ -293,7 +320,7 @@ send_configuration_update_command()
 - Determine which IEs to include
 - Set acknowledgment requirement
 
-#### 4. `encode_network_names_utf16()`
+#### 4. `amf_encode_network_names_utf16()`
 **Input**: ASCII network names from config
 **Output**: UTF-16 encoded network name structures
 **Logic**:
@@ -305,7 +332,7 @@ send_configuration_update_command()
 - Calculate total length (ASCII length * 2 + 1)
 - Set spare bits and country initials to 0
 
-#### 5. `calculate_time_zone_info()`
+#### 5. `amf_calculate_time_zone_info()`
 **Input**: System time and timezone
 **Output**: BCD encoded time zone and universal time
 **Logic**:
@@ -319,7 +346,7 @@ send_configuration_update_command()
   - Month, day, hour, minute, second → BCD pairs
 - Check DST status from tm_isdst
 
-#### 6. `build_configuration_update_command()`
+#### 6. `amf_build_configuration_update_command()`
 **Input**: Configuration parameters and encoded values
 **Output**: Configuration Update Command NAS PDU
 **Logic**:
@@ -333,7 +360,7 @@ send_configuration_update_command()
   - DST adjustment with IE 0x49
 - Set presence masks for optional IEs
 
-#### 7. `apply_nas_security()`
+#### 7. `amf_apply_nas_security()`
 **Input**: Plain NAS message, security context
 **Output**: Protected NAS message
 **Logic**:
@@ -343,7 +370,7 @@ send_configuration_update_command()
 - Encrypt using NEA algorithm
 - Prepend security header
 
-#### 8. `send_configuration_update_command()`
+#### 8. `amf_send_configuration_update_command()`
 **Input**: Protected Configuration Update Command
 **Output**: Message sent to RAN
 **Logic**:
