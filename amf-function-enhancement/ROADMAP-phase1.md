@@ -152,22 +152,22 @@ amf_send_authentication_request()
 ### Detailed Function Specifications
 
 #### 1. `amf_handle_registration_request()`
-**Input**: Registration Request NAS PDU
+**Input**: Registration Request binary structure
 **Output**: Trigger authentication flow
 **Logic**:
-- Parse NAS PDU using ASN.1 decoder
-- Extract registration type and validate
-- Extract UE security capabilities
-- Store in UE context
+- Extract registration type from input structure (nas_5gs.mm.5gs_reg_type)
+- Extract NAS key set identifier (nas_5gs.mm.nas_key_set_id.h1)
+- Extract UE security capabilities bitmap
+- Store extracted values in UE context
 
 #### 2. `amf_extract_suci_from_mobile_identity()`  
 **Input**: Mobile Identity IE from registration request
 **Output**: SUCI structure
 **Logic**:
-- Parse mobile identity type (must be SUCI = 1)
-- Extract MCC, MNC, MSIN
-- Validate protection scheme
-- Convert to string format for AUSF
+- Verify mobile identity type field equals 1 (SUCI)
+- Extract MCC (999), MNC (70), MSIN (0000000001) from binary fields
+- Check protection scheme field equals 0 (null scheme)
+- Format as SUCI string for AUSF interface
 
 #### 3. `amf_validate_registration_request()`
 **Input**: Registration request components  

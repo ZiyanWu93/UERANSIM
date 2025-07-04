@@ -383,13 +383,13 @@ amf_send_security_mode_command()
 ### Detailed Function Specifications
 
 #### 1. `amf_handle_authentication_response()`
-**Input**: Authentication Response NAS PDU
+**Input**: Authentication Response binary structure
 **Output**: Trigger security establishment flow
 **Logic**:
-- Parse NAS PDU using ASN.1 decoder
-- Extract RES* parameter (16 bytes)
-- Validate message format and length
-- Store RES* in UE context for verification
+- Extract RES* parameter from nas_5gs.mm.auth_resp_par field (16 bytes)
+- Verify message type equals 0x57 (Authentication Response)
+- Check RES* length field matches expected 16 bytes
+- Store RES* value in UE context for verification
 
 #### 2. `amf_verify_res_star()`
 **Input**: Received RES*, stored authentication data

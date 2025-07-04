@@ -403,20 +403,22 @@ if (security_mode_complete->presencemask &
 **Output**: Validation result
 **Logic**:
 ```c
-// Decode the replayed registration request
-ogs_nas_5gs_decode(&nas_message, 
-    nas_message_container->buffer, 
-    nas_message_container->length);
+// Extract message type from container buffer
+message_type = nas_message_container->buffer[2];  // Offset 2 for message type
 
-// Verify it matches original registration request
-if (nas_message.gmm.h.message_type != OGS_NAS_5GS_REGISTRATION_REQUEST) {
+// Verify it matches registration request type
+if (message_type != OGS_NAS_5GS_REGISTRATION_REQUEST) {
     return OGS_ERROR;
 }
+
+// Calculate hash of received container
+calculate_hash(nas_message_container->buffer, 
+               nas_message_container->length, 
+               calculated_hash);
 
 // Compare with stored registration request hash
 if (memcmp(amf_ue->registration_request_hash, 
            calculated_hash, HASH_LEN) != 0) {
-    ogs_error("Registration request mismatch");
     return OGS_ERROR;
 }
 ```

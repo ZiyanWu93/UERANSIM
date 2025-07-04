@@ -424,25 +424,25 @@ amf_send_dl_nas_transport()
 ### Detailed Function Specifications
 
 #### 1. `amf_handle_ul_nas_transport()`
-**Input**: UL NAS Transport containing PDU Session Request
+**Input**: UL NAS Transport binary structure
 **Output**: Trigger SMF interaction
 **Logic**:
-- Decrypt and verify integrity of NAS message
-- Extract payload container type (must be N1 SM)
-- Extract PDU session ID
-- Parse embedded PDU session establishment request
-- Create or find session context
+- Apply decryption and verify integrity using established NAS security
+- Extract payload container type field - verify equals 0x01 (N1 SM information)
+- Extract PDU session ID from request (value: 5)
+- Extract the embedded PDU session establishment request buffer
+- Create or find session context for PDU session ID
 
 #### 2. `amf_extract_pdu_session_request()`
 **Input**: Payload container from UL NAS transport
-**Output**: Parsed PDU session request structure
+**Output**: PDU session request structure
 **Logic**:
-- Parse 5GSM header (EPD, PSI, PTI)
-- Extract PDU session type (IPv4/IPv6/IPv4v6)
-- Extract SSC mode preference
-- Extract integrity protection data rates
-- Parse 5GSM capabilities
-- Extract extended PCO if present
+- Extract 5GSM header fields: EPD (0x2E), PSI (5), PTI (0)
+- Extract PDU session type field (value: 1 for IPv4)
+- Extract SSC mode field if present (default: mode 1)
+- Extract integrity protection max data rate fields
+- Extract 5GSM capability bitmap if present
+- Extract extended protocol configuration options if IEI 0x7B present
 
 #### 3. `amf_validate_snssai_and_dnn()`
 **Input**: S-NSSAI, DNN from request, UE subscription

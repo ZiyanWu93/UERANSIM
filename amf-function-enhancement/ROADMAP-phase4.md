@@ -291,12 +291,13 @@ amf_send_configuration_update_command()
 ### Detailed Function Specifications
 
 #### 1. `amf_handle_registration_complete()`
-**Input**: Registration Complete NAS PDU
+**Input**: Registration Complete NAS PDU (binary structure)
 **Output**: Trigger configuration update flow
 **Logic**:
-- Parse NAS PDU using ASN.1 decoder
+- Extract message type field from byte offset 8 (after security header)
+- Verify message type equals 0x67 (Registration Complete)
 - Clear T3550 timer (registration procedure timer)
-- Extract PDU session request if present
+- If payload container IEI present (0x01), extract PDU session request
 - Update UE state to REGISTERED
 - Check if configuration update needed
 
