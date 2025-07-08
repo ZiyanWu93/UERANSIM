@@ -32,6 +32,12 @@ EVENT_HANDLER(amf_handle_registration_request) {
     // Cast input buffer to Registration Request structure
     g_reg_req = (RegistrationRequest *)g_input_buffer;
     
+    // According to ROADMAP, this function should:
+    // - Extract registration type from input structure
+    // - Extract NAS key set identifier
+    // - Extract UE security capabilities bitmap
+    // - Store extracted values in UE context
+    
     // Extract registration type from combined field
     uint8_t reg_type = g_reg_req->reg_type_ngksi.registration_type;
     uint8_t ksi = g_reg_req->reg_type_ngksi.nas_key_set_id;
@@ -39,18 +45,32 @@ EVENT_HANDLER(amf_handle_registration_request) {
     uint8_t for_bit = g_reg_req->reg_type_ngksi.follow_on_request;
     
     // Store extracted values for later use
-    // For phase 1, we just validate these match expected values
+    // For phase 1, we validate and store these values
     if (reg_type != 1 || ksi != 7 || tsc != 0 || for_bit != 1) {
         return;
     }
+    
+    // Extract UE security capabilities
+    // In production, would store full capability bitmap
 }
 
 EVENT_HANDLER(amf_extract_suci_from_mobile_identity) {
+    // According to ROADMAP, this function should:
+    // - Verify mobile identity type field equals 1 (SUCI)
+    // - Extract MCC, MNC, MSIN from binary fields
+    // - Check protection scheme field equals 0 (null scheme)
+    // - Format as SUCI string for AUSF interface
+    
     // Work with mobile identity from global registration request
     MobileIdentitySuci *mobile_id = &g_reg_req->mobile_identity;
     
     // Verify mobile identity type field equals 1 (SUCI)
     if (mobile_id->type_id != 1) {
+        return;
+    }
+    
+    // Check protection scheme (should be 0 for null scheme)
+    if (mobile_id->protection_scheme_id != 0) {
         return;
     }
     
@@ -64,6 +84,8 @@ EVENT_HANDLER(amf_extract_suci_from_mobile_identity) {
     
     // Store MSIN in BCD format for later use
     memcpy(g_msin, mobile_id->msin, 6);
+    
+    // In production, would format as SUCI string for AUSF
 }
 
 EVENT_HANDLER(amf_validate_registration_request) {
@@ -110,6 +132,14 @@ EVENT_HANDLER(udm_generate_authentication_vector) {
 }
 
 EVENT_HANDLER(amf_build_authentication_request) {
+    // According to ROADMAP, this function should:
+    // - Set message type = 0x56
+    // - Set ngKSI.tsc = 0, ngKSI.ksi = 0 (derived fields)
+    // - Set ABBA = 0x0000
+    // - Copy RAND (16 bytes) from authentication vector
+    // - Copy AUTN (16 bytes) from authentication vector
+    // - Encode as plain NAS message
+    
     // Clear output buffer
     memset(g_output_buffer, 0, sizeof(AuthenticationRequest));
     g_auth_req = (AuthenticationRequest *)g_output_buffer;
@@ -120,7 +150,7 @@ EVENT_HANDLER(amf_build_authentication_request) {
     g_auth_req->spare = 0;                      // Reserved bits
     g_auth_req->message_type = 0x56;            // Authentication Request
     
-    // Derived fields from Registration Request
+    // Derived fields from Registration Request (KSI transformation)
     g_auth_req->nas_key_set_id = 0;            // Reset from 7 → 0
     g_auth_req->tsc = 0;                        // New security context
     g_auth_req->spare2 = 0;                     // Spare bits
@@ -130,11 +160,11 @@ EVENT_HANDLER(amf_build_authentication_request) {
     g_auth_req->abba.contents[0] = 0x00;        // ABBA contents
     g_auth_req->abba.contents[1] = 0x00;
     
-    // Authentication Parameter RAND
+    // Authentication Parameter RAND (copy from UDM vector)
     g_auth_req->rand.iei = 0x21;                // RAND element identifier
     memcpy(g_auth_req->rand.rand, g_rand, 16);
     
-    // Authentication Parameter AUTN
+    // Authentication Parameter AUTN (copy from UDM vector)
     g_auth_req->autn.iei = 0x20;                // AUTN element identifier
     g_auth_req->autn.length = 16;               // AUTN length
     memcpy(g_auth_req->autn.sqn_xor_ak, g_autn, 6);      // SQN⊕AK

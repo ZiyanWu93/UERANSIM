@@ -18,9 +18,10 @@ typedef struct {
 // 5G-GUTI (5G Globally Unique Temporary Identity)
 typedef struct {
     uint8_t iei;                     // IEI = 0x77
-    uint16_t length;                 // Length of GUTI contents (11) - 16-bit field
+    uint8_t spare_half_octet;        // Spare half octet (0x00)
+    uint8_t length;                  // Length of GUTI contents (0x0B = 11)
     uint8_t type_of_identity : 3;    // Type = 2 for 5G-GUTI
-    uint8_t spare1 : 1;              // Spare bit
+    uint8_t spare1 : 1;              // Spare bit (0)
     uint8_t spare2 : 4;              // Spare bits (0xF)
     
     // PLMN (MCC + MNC) in BCD format
