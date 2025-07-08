@@ -22,38 +22,36 @@ typedef struct {
 } Additional5GSecurityInfo;
 
 // Complete Security Mode Command message
+// Based on ROADMAP-phase2.md actual structure
 typedef struct {
     // Security header
     NasSecurityHeader security_header;
     
     // Inner message
     uint8_t inner_epd;               // Extended Protocol Discriminator (0x7E)
-    uint8_t inner_security_header : 4; // Security header type (0 = plain)
-    uint8_t inner_spare : 4;         // Spare half octet
+    uint8_t inner_security_header;   // Security header type (0 = plain) with spare
     uint8_t message_type;            // Message type (0x5D)
     
-    // Selected algorithms
-    SelectedAlgorithms algorithms;
+    // Selected NAS security algorithms - actual binary shows different layout
+    uint8_t selected_algo_byte1;     // Contains integrity algorithm
+    uint8_t selected_algo_byte2;     // Contains ciphering algorithm
     
-    // NAS key set identifier
-    uint8_t nas_key_set_id : 3;      // Key set identifier
-    uint8_t tsc : 1;                 // Type of security context
-    uint8_t spare2 : 4;              // Spare bits
+    // UE security capability length
+    uint8_t ue_capability_length;    // Length of security capability (0x04)
     
-    // Replayed UE security capability (without IEI, mandatory field)
-    uint8_t ue_capability_length;    // Length of security capability
-    uint8_t ea_byte1;                // EA algorithms byte 1
-    uint8_t ia_byte1;                // IA algorithms byte 1
-    uint8_t ea_byte2;                // EA algorithms byte 2 
-    uint8_t ia_byte2;                // IA algorithms byte 2
+    // UE security capabilities (4 bytes)
+    uint8_t ea_byte1;                // 5G EA algorithms (0x80)
+    uint8_t ia_byte1;                // 5G IA algorithms (0xF0)
+    uint8_t ea_byte2;                // EPS EA algorithms (0x80)
+    uint8_t ia_byte2;                // EPS IA algorithms (0xF0)
     
-    // Optional IEs
-    uint8_t imeisv_request_iei : 4;  // IEI = 0xE
-    uint8_t imeisv_request_value : 3; // IMEISV request value
-    uint8_t imeisv_request_spare : 1; // Spare bit
+    // IMEISV request (Type 1 IE) - combined byte
+    uint8_t imeisv_request_combined; // IEI in upper nibble, value in lower
     
     // Additional 5G security information
-    Additional5GSecurityInfo additional_security_info;
+    uint8_t additional_sec_info_iei; // IEI = 0x36
+    uint8_t additional_sec_info_len; // Length = 0x01
+    uint8_t additional_sec_info_val; // Value byte (RINMR bit, etc)
 } SecurityModeCommand;
 
 #pragma pack(pop)
