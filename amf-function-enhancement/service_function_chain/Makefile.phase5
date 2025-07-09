@@ -1,0 +1,37 @@
+# Makefile for Phase 5 testing
+
+CC = gcc
+CFLAGS = -Wall -Wextra -g -I.. -I../../../src/nflambda/event_system
+LDFLAGS = 
+
+# Source files
+PHASE5_SRCS = phase5_handlers.c
+TEST_SRCS = test_phase5.c
+
+# Object files
+PHASE5_OBJS = $(PHASE5_SRCS:.c=.o)
+TEST_OBJS = $(TEST_SRCS:.c=.o)
+
+# Target
+TARGET = ../bin/test_phase5
+
+# Default target
+all: $(TARGET)
+
+# Build the test executable
+$(TARGET): $(PHASE5_OBJS) $(TEST_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+# Compile source files
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Run the test
+test: $(TARGET)
+	./$(TARGET)
+
+# Clean build artifacts
+clean:
+	rm -f $(PHASE5_OBJS) $(TEST_OBJS) $(TARGET)
+
+.PHONY: all test clean

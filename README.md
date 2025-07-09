@@ -16,6 +16,51 @@ UERANSIM introduces the world's first open source 5G-SA UE and gNodeB implementa
 > [!IMPORTANT]
 > UERANSIM is no longer actively developed by the maintainer. However community contributions are welcomed.
 
+## Key Components
+
+UERANSIM provides multiple executables for different use cases and architectures:
+
+### Core Simulators
+
+#### **nr-ue** - 5G User Equipment (Mobile Device) Simulator  
+- Simulates 5G-SA UE devices (mobile phones, IoT devices, etc.)
+- Supports simultaneous simulation of multiple UEs with unique IMSI identities
+- Implements NAS (Non-Access Stratum) and RRC protocol layers
+- Handles authentication, registration, and session management procedures
+- Configurable routing and network settings via YAML configuration
+
+#### **nr-cli** - Command Line Interface Tool
+- Provides runtime control and monitoring of active gNodeB and UE instances
+- Discovers running UERANSIM processes automatically
+- Enables sending commands to specific nodes by name or ID
+- Supports operations like status queries, procedure triggers, and configuration updates
+- Essential tool for testing and debugging 5G scenarios
+
+### gNodeB (Base Station) Implementations
+
+UERANSIM provides three different gNodeB executables, each serving a specific purpose:
+
+#### 1. **nr-gnb** - Traditional Implementation
+- Original 5G-SA gNodeB simulator using standard network protocols
+- Communicates with external 5G Core via SCTP/NGAP protocol
+- Implements full RRC, NGAP, and GTP protocol stacks
+- Production-ready for testing with real 5G Core networks (Open5GS, free5GC, etc.)
+- Best choice for end-to-end 5G network testing
+
+#### 2. **nr-gnb-nflambda** - Event-Driven Implementation  
+- Integrates with NFLambda event-driven runtime framework
+- Uses IPC (Inter-Process Communication) via Unix sockets to communicate with NFLambda-based 5G Core
+- Leverages NFLambda's actor model for high-performance, cache-efficient processing
+- Ideal for testing with NFLambda's experimental 5G Core implementation
+- Demonstrates event-driven architecture for network functions
+
+#### 3. **nr-gnb-direct** - Direct Call Testing
+- Testing and development version for rapid prototyping
+- Directly calls NAS message generation functions from the `5gcore_without_runtime` library
+- Bypasses both network protocols and IPC for immediate function execution
+- Useful for unit testing, debugging NAS flows, and development
+- Provides fastest iteration cycle for testing 5G message sequences
+
 ## Current Status
 
 Basic functionalities of UE and gNodeB are fully functional and ready to use. However some of the features are not complete.
