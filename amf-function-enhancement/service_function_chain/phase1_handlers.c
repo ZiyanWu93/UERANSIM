@@ -156,20 +156,20 @@ EVENT_HANDLER(amf_build_authentication_request) {
     g_auth_req->spare2 = 0;                     // Spare bits
     
     // ABBA (Anti-Bidding down Between Architectures)
-    g_auth_req->abba.length = 2;                // ABBA length
-    g_auth_req->abba.contents[0] = 0x00;        // ABBA contents
-    g_auth_req->abba.contents[1] = 0x00;
+    g_auth_req->abba_length = 2;                // ABBA length
+    g_auth_req->abba_contents[0] = 0x00;        // ABBA contents
+    g_auth_req->abba_contents[1] = 0x00;
     
     // Authentication Parameter RAND (copy from UDM vector)
-    g_auth_req->rand.iei = 0x21;                // RAND element identifier
-    memcpy(g_auth_req->rand.rand, g_rand, 16);
+    g_auth_req->rand_iei = 0x21;                // RAND element identifier
+    memcpy(g_auth_req->rand, g_rand, 16);
     
     // Authentication Parameter AUTN (copy from UDM vector)
-    g_auth_req->autn.iei = 0x20;                // AUTN element identifier
-    g_auth_req->autn.length = 16;               // AUTN length
-    memcpy(g_auth_req->autn.sqn_xor_ak, g_autn, 6);      // SQN⊕AK
-    memcpy(g_auth_req->autn.amf, g_autn + 6, 2);         // AMF
-    memcpy(g_auth_req->autn.mac, g_autn + 8, 8);         // MAC
+    g_auth_req->autn_iei = 0x20;                // AUTN element identifier
+    g_auth_req->autn_length = 16;               // AUTN length
+    memcpy(g_auth_req->autn_sqn_xor_ak, g_autn, 6);      // SQN⊕AK
+    memcpy(g_auth_req->autn_amf, g_autn + 6, 2);         // AMF
+    memcpy(g_auth_req->autn_mac, g_autn + 8, 8);         // MAC
     
     // Set output length
     g_output_len = sizeof(AuthenticationRequest);

@@ -5,28 +5,7 @@
 
 #pragma pack(push, 1)
 
-// ABBA (Anti-Bidding down Between Architectures) parameter
-typedef struct {
-    uint8_t length;                  // Length of ABBA contents
-    uint8_t contents[2];             // ABBA contents (usually 00:00)
-} AbbaParameter;
-
-// RAND (Random challenge) parameter
-typedef struct {
-    uint8_t iei;                     // IEI = 0x21
-    uint8_t rand[16];                // 16-byte random challenge
-} RandParameter;
-
-// AUTN (Authentication Token) parameter
-typedef struct {
-    uint8_t iei;                     // IEI = 0x20
-    uint8_t length;                  // Length = 16
-    uint8_t sqn_xor_ak[6];          // SQN ⊕ AK (Sequence Number XOR Anonymity Key)
-    uint8_t amf[2];                  // Authentication Management Field
-    uint8_t mac[8];                  // Message Authentication Code
-} AutnParameter;
-
-// Complete Authentication Request message
+// Complete Authentication Request message - flat structure
 typedef struct {
     // Message header
     uint8_t epd;                     // Extended Protocol Discriminator (0x7E)
@@ -39,12 +18,20 @@ typedef struct {
     uint8_t tsc : 1;                 // Type of security context (0)
     uint8_t spare2 : 4;              // Spare bits
     
-    // ABBA
-    AbbaParameter abba;
+    // ABBA (Anti-Bidding down Between Architectures)
+    uint8_t abba_length;             // Length of ABBA contents
+    uint8_t abba_contents[2];        // ABBA contents (usually 00:00)
     
-    // Authentication parameters
-    RandParameter rand;
-    AutnParameter autn;
+    // RAND (Random challenge)
+    uint8_t rand_iei;                // IEI = 0x21
+    uint8_t rand[16];                // 16-byte random challenge
+    
+    // AUTN (Authentication Token)
+    uint8_t autn_iei;                // IEI = 0x20
+    uint8_t autn_length;             // Length = 16
+    uint8_t autn_sqn_xor_ak[6];      // SQN ⊕ AK (Sequence Number XOR Anonymity Key)
+    uint8_t autn_amf[2];             // Authentication Management Field
+    uint8_t autn_mac[8];             // Message Authentication Code
 } AuthenticationRequest;
 
 #pragma pack(pop)

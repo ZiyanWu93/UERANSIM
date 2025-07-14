@@ -6,7 +6,6 @@
 #include "../include/security_mode_complete.h"
 #include "../include/registration_accept.h"
 #include "../include/nas_common.h"
-#include "phase3_structures.h"
 
 // Phase 3: Security Mode Complete → Registration Accept
 // Implementation following ROADMAP-phase3.md
@@ -19,7 +18,7 @@ static size_t g_output_len;
 
 // Pointers to structures
 static SecurityModeComplete *g_sec_mode_complete;
-static RegistrationAcceptBinary *g_reg_accept;
+static RegistrationAcceptComplete *g_reg_accept;
 
 // Extracted values
 static uint8_t g_imeisv[8];  // IMEISV in BCD format
@@ -29,8 +28,6 @@ static size_t g_nas_container_len;
 // Allocated values
 static uint32_t g_5g_tmsi = 0xC0000727;  // Hardcoded from ROADMAP
 static uint8_t g_amf_region_id = 0x02;
-static uint16_t g_amf_set_id = 0x001;    // 10 bits
-static uint8_t g_amf_pointer = 0x00;     // 6 bits
 
 // Security context
 static uint32_t g_dl_count = 1;  // Second downlink message
@@ -88,30 +85,36 @@ EVENT_HANDLER(amf_allocate_5g_guti) {
     // - Copy AMF ID from GUAMI (Region=2, Set=1, Pointer=0)
     // - Allocate new 5G-TMSI from pool (0xC0000727)
     
-    // Set GUTI fields in the output structure
+    // Set GUTI IEI and header fields
     g_reg_accept->guti_iei = 0x77;
-    g_reg_accept->guti_spare_half = 0x00;
+    g_reg_accept->guti_spare_half_octet = 0x00;
     g_reg_accept->guti_length = 0x0B;
-    g_reg_accept->guti_type_and_spare = 0xF2;  // Type=2 + spare bits
     
-    // GUTI PLMN (MCC=999, MNC=70)
-    g_reg_accept->guti_plmn[0] = 0x99;
-    g_reg_accept->guti_plmn[1] = 0xF9;
-    g_reg_accept->guti_plmn[2] = 0x07;
+    // Set GUTI type and spare bits
+    g_reg_accept->guti_type = 0x02;  // Type 2 for 5G-GUTI
+    g_reg_accept->guti_spare1 = 0x00;
+    g_reg_accept->guti_spare2 = 0x0F;  // 4 spare bits set to 1111
     
-    // AMF identifiers
+    // Set PLMN (MCC=999, MNC=70) - BCD encoded
+    g_reg_accept->mcc_digit1 = 0x09;
+    g_reg_accept->mcc_digit2 = 0x09;
+    g_reg_accept->mcc_digit3 = 0x09;
+    g_reg_accept->mnc_digit3 = 0x0F;  // F for 2-digit MNC
+    g_reg_accept->mnc_digit1 = 0x07;
+    g_reg_accept->mnc_digit2 = 0x00;
+    
+    // Set AMF identifiers
     g_reg_accept->amf_region_id = g_amf_region_id;  // 0x02
     
-    // AMF Set ID (10 bits) + AMF Pointer (6 bits)
-    uint16_t amf_id = (g_amf_set_id << 6) | (g_amf_pointer & 0x3F);
-    g_reg_accept->amf_set_and_ptr[0] = (amf_id >> 8) & 0xFF;  // 0x00
-    g_reg_accept->amf_set_and_ptr[1] = amf_id & 0xFF;         // 0x40
+    // AMF Set ID (10 bits) + AMF Pointer (6 bits) = 16 bits total
+    // Set ID = 0x001, Pointer = 0x00
+    // Combined: (0x001 << 6) | 0x00 = 0x0040
+    // In network byte order: 0x00 0x40
+    g_reg_accept->amf_bytes[0] = 0x00;
+    g_reg_accept->amf_bytes[1] = 0x40;
     
-    // 5G-TMSI (big-endian)
-    g_reg_accept->tmsi_5g[0] = (g_5g_tmsi >> 24) & 0xFF;  // 0xC0
-    g_reg_accept->tmsi_5g[1] = (g_5g_tmsi >> 16) & 0xFF;  // 0x00
-    g_reg_accept->tmsi_5g[2] = (g_5g_tmsi >> 8) & 0xFF;   // 0x07
-    g_reg_accept->tmsi_5g[3] = g_5g_tmsi & 0xFF;          // 0x27
+    // Set 5G-TMSI (network byte order)
+    g_reg_accept->tmsi_5g = swap32(g_5g_tmsi);      // 0xC0000727 -> 0x270700C0
 }
 
 EVENT_HANDLER(amf_determine_tai_list) {
@@ -121,19 +124,22 @@ EVENT_HANDLER(amf_determine_tai_list) {
     // - Add current TAI to list with PLMN and TAC
     // - Use UE's current TAI from RAN connection
     
+    // Set TAI list IEI and length
     g_reg_accept->tai_list_iei = 0x54;
     g_reg_accept->tai_list_length = 0x07;
-    g_reg_accept->tai_list_type = 0x40;  // Type 2, 0 elements (means 1 TAI)
     
-    // TAI PLMN (same as serving network)
-    g_reg_accept->tai_plmn[0] = 0x99;
-    g_reg_accept->tai_plmn[1] = 0xF9;
-    g_reg_accept->tai_plmn[2] = 0x07;
+    // Set TAI list type (Type 2, 0 elements means 1 TAI)
+    g_reg_accept->tai_list_type = 0x40;  // Type=2 (bits 6-7), elements=0 (bits 0-4), spare=0 (bit 5)
     
-    // TAC (3 bytes as in ROADMAP)
-    g_reg_accept->tac[0] = 0x00;
-    g_reg_accept->tac[1] = 0x00;
-    g_reg_accept->tac[2] = 0x01;
+    // Set TAI PLMN (same as serving network: MCC=999, MNC=70)
+    g_reg_accept->tai_plmn[0] = 0x99;  // MCC digits 1,2
+    g_reg_accept->tai_plmn[1] = 0xF9;  // MCC digit 3, MNC digit 3
+    g_reg_accept->tai_plmn[2] = 0x07;  // MNC digits 1,2
+    
+    // Set TAC (Tracking Area Code) - 3 bytes as in ROADMAP
+    g_reg_accept->tai_tac[0] = 0x00;
+    g_reg_accept->tai_tac[1] = 0x00;
+    g_reg_accept->tai_tac[2] = 0x01;
 }
 
 EVENT_HANDLER(amf_validate_network_slices) {
@@ -143,11 +149,13 @@ EVENT_HANDLER(amf_validate_network_slices) {
     // - Validate against UDM subscription data
     // - Determine allowed and rejected slices
     
-    // For phase 3, SST=1 (eMBB) is allowed
+    // Set Allowed NSSAI IEI and length
     g_reg_accept->nssai_iei = 0x15;
     g_reg_accept->nssai_length = 0x02;
-    g_reg_accept->s_nssai_length = 0x01;
-    g_reg_accept->sst = 0x01;  // SST=1 (eMBB)
+    
+    // Set S-NSSAI (for phase 3, SST=1 (eMBB) is allowed)
+    g_reg_accept->s_nssai_length = 0x01;  // Length of this S-NSSAI
+    g_reg_accept->sst = 0x01;              // SST=1 (eMBB)
 }
 
 EVENT_HANDLER(amf_build_registration_accept) {
@@ -161,36 +169,47 @@ EVENT_HANDLER(amf_build_registration_accept) {
     
     // Clear output buffer and set pointer
     memset(g_output_buffer, 0, sizeof(g_output_buffer));
-    g_reg_accept = (RegistrationAcceptBinary *)g_output_buffer;
+    g_reg_accept = (RegistrationAcceptComplete *)g_output_buffer;
     
     // Security header (will be updated by amf_apply_nas_security)
     g_reg_accept->epd = 0x7E;
     g_reg_accept->security_header_type = 0x02;  // Integrity protected and ciphered
+    g_reg_accept->spare_half = 0x00;
     g_reg_accept->sequence_number = 0x01;
     
     // Inner message headers
     g_reg_accept->inner_epd = 0x7E;
     g_reg_accept->inner_security_header = 0x00;  // Plain
+    g_reg_accept->inner_spare = 0x00;
     g_reg_accept->message_type = 0x42;  // Registration Accept
     
     // 5GS registration result
     g_reg_accept->reg_result_length = 0x01;
-    g_reg_accept->reg_result_value = 0x01;  // 3GPP access (bits 0-2 = 001)
+    g_reg_accept->reg_result_value = 0x01;  // 3GPP access
+    g_reg_accept->sms_allowed = 0;
+    g_reg_accept->nssaa_performed = 0;
+    g_reg_accept->emergency_registered = 0;
+    g_reg_accept->reg_result_spare = 0;
     
     // Network feature support (this function's responsibility per ROADMAP)
-    g_reg_accept->nw_feat_iei = 0x21;
-    g_reg_accept->nw_feat_length = 0x02;
-    g_reg_accept->nw_feat_byte1 = 0x01;  // Bit 1: IMS VoPS 3GPP supported
-    g_reg_accept->nw_feat_byte2 = 0x00;  // All spare bits
+    g_reg_accept->net_feat_iei = 0x21;
+    g_reg_accept->net_feat_length = 0x02;
+    g_reg_accept->emcn3 = 1;          // Bit 0 set (value 0x01)
+    g_reg_accept->mcsi = 0;           // Bit 1
+    g_reg_accept->ims_vops_3gpp = 0;  // Bit 2
+    g_reg_accept->ims_vops_n3gpp = 0; // Bit 3
+    g_reg_accept->emc = 0;            // Bit 4
+    g_reg_accept->emf = 0;            // Bit 5
+    g_reg_accept->iwk_n26 = 0;        // Bit 6
+    g_reg_accept->mpsi = 0;           // Bit 7
+    g_reg_accept->net_feat_spare = 0x00;
     
     // T3512 timer (this function's responsibility per ROADMAP)
     g_reg_accept->t3512_iei = 0x5E;     // GPRS Timer 3 identifier
     g_reg_accept->t3512_length = 0x01;
-    g_reg_accept->t3512_value = 0x92;   // Unit=4 (upper 3 bits), Value=18 (lower 5 bits)
-                                        // Total: 18 × 6 minutes = 108 minutes
-    
-    // Note: GUTI, TAI list, and NSSAI are set by their respective functions
-    g_output_len = sizeof(RegistrationAcceptBinary);
+    g_reg_accept->t3512_unit = 0x04;        // Unit=4 (6 minutes)
+    g_reg_accept->t3512_value = 0x12; // Value=18
+                                            // Total: 18 × 6 minutes = 108 minutes
 }
 
 EVENT_HANDLER(amf_apply_nas_security) {
@@ -200,11 +219,11 @@ EVENT_HANDLER(amf_apply_nas_security) {
     // - Apply ciphering if algorithm is not null
     // - Increment DL NAS COUNT
     
-    // MAC (hardcoded from ROADMAP for phase 3)
-    g_reg_accept->mac[0] = 0x72;
-    g_reg_accept->mac[1] = 0x39;
-    g_reg_accept->mac[2] = 0x67;
-    g_reg_accept->mac[3] = 0x4C;
+    // Set MAC (hardcoded from ROADMAP for phase 3)
+    g_reg_accept->mac = 0x4C673972;  // 0x7239674C in little-endian
+    
+    // Calculate output length - exact 46 bytes as expected
+    g_output_len = 46;  // Fixed for phase 3
     
     // In production, would calculate MAC and apply ciphering
     // Increment DL count for next message

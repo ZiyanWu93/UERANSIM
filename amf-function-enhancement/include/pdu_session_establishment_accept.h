@@ -5,80 +5,7 @@
 
 #pragma pack(push, 1)
 
-// PDU address
-typedef struct {
-    uint8_t iei;                        // IEI = 0x29
-    uint8_t length;                     // Length of PDU address contents
-    uint8_t pdu_session_type_value : 3; // PDU session type
-    uint8_t spare : 5;                  // Spare bits
-    union {
-        uint32_t ipv4_address;          // IPv4 address (4 bytes)
-        uint8_t ipv6_interface_id[8];   // IPv6 interface identifier
-        struct {
-            uint32_t ipv4_address;
-            uint8_t ipv6_interface_id[8];
-        } ipv4v6;
-    } address;
-} PduAddress;
-
-// Authorized QoS rules (mandatory - no IEI)
-typedef struct {
-    uint16_t length;                    // Length of QoS rules (big endian)
-    uint8_t qos_rules[];                // QoS rule data (variable)
-} AuthorizedQosRules;
-
-// Session AMBR (mandatory - no IEI)
-typedef struct {
-    uint8_t length;                     // Length of session AMBR
-    uint8_t unit_for_session_ambr_dl;   // Unit for downlink
-    uint16_t session_ambr_dl;           // Downlink rate (big endian)
-    uint8_t unit_for_session_ambr_ul;   // Unit for uplink
-    uint16_t session_ambr_ul;           // Uplink rate (big endian)
-} SessionAmbr;
-
-// QoS flow descriptions
-typedef struct {
-    uint8_t iei;                        // IEI = 0x79
-    uint16_t length;                    // Length (big endian)
-    uint8_t qos_flow_data[];            // QoS flow description data
-} QosFlowDescriptions;
-
-// S-NSSAI
-typedef struct {
-    uint8_t iei;                        // IEI = 0x22
-    uint8_t length;                     // Length
-    uint8_t sst;                        // Slice/Service Type
-    uint8_t sd[3];                      // Slice Differentiator (optional)
-} SNssai;
-
-// Extended protocol configuration options
-typedef struct {
-    uint8_t iei;                        // IEI = 0x7B
-    uint16_t length;                    // Length (big endian)
-    uint8_t config_protocol;            // Configuration protocol
-    uint8_t pco_data[];                 // PCO data
-} ExtendedPco;
-
-// DNN
-typedef struct {
-    uint8_t iei;                        // IEI = 0x25
-    uint8_t length;                     // Length
-    uint8_t dnn[];                      // DNN value
-} Dnn;
-
-// QoS rule structure
-typedef struct {
-    uint8_t qos_rule_id;                // QoS rule identifier
-    uint16_t length;                    // Length of QoS rule contents (big endian)
-    uint8_t rule_operation_code : 3;    // Rule operation code
-    uint8_t dqr_bit : 1;                // Default QoS rule
-    uint8_t num_of_packet_filters : 4;  // Number of packet filters
-    // Packet filters follow
-    uint8_t packet_filter_list[];       // Variable length
-} QosRule;
-
-// Complete PDU Session Establishment Accept message structure
-// This is a hardcoded structure for the specific test case
+// Complete PDU Session Establishment Accept message structure - flat structure
 typedef struct {
     // Extended protocol discriminator
     uint8_t epd;                        // Extended Protocol Discriminator (0x2E for 5GSM)
@@ -138,7 +65,7 @@ typedef struct {
     uint8_t dnn_iei;                    // 0x25
     uint8_t dnn_length;                 // 0x09
     uint8_t dnn_value[9];               // "internet" in DNN format
-} __attribute__((packed)) PduSessionEstablishmentAccept;
+} PduSessionEstablishmentAccept;
 
 #pragma pack(pop)
 

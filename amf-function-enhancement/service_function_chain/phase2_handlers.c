@@ -138,31 +138,31 @@ EVENT_HANDLER(amf_build_security_mode_command) {
     g_sec_cmd = (SecurityModeCommand *)g_output_buffer;
     
     // Security header (per ROADMAP: Sets security header type for new context)
-    g_sec_cmd->security_header.epd = 0x7E;
-    g_sec_cmd->security_header.security_header = 0x03;  // Integrity protected with new context
-    g_sec_cmd->security_header.spare = 0;
+    g_sec_cmd->epd = 0x7E;
+    g_sec_cmd->security_header_type = 0x03;  // Integrity protected with new context
+    g_sec_cmd->spare_half = 0;
     // MAC will be filled by amf_calculate_mac()
-    g_sec_cmd->security_header.mac = 0;  // Placeholder
-    g_sec_cmd->security_header.sequence_number = 0;  // First protected message
+    g_sec_cmd->mac = 0;  // Placeholder
+    g_sec_cmd->sequence_number = 0;  // First protected message
     
     // Inner message
     g_sec_cmd->inner_epd = 0x7E;
-    g_sec_cmd->inner_security_header = 0x00;  // Plain message with spare bits
-    g_sec_cmd->message_type = 0x5D;  // Security Mode Command
+    g_sec_cmd->inner_security_header = 0x00;  // Plain message
+    g_sec_cmd->inner_spare = 0x00;            // Spare bits
+    g_sec_cmd->message_type = 0x5D;           // Security Mode Command
     
-    // NOTE: The test case uses a simplified encoding that differs from ROADMAP
     // Selected algorithms from amf_select_security_algorithms
-    g_sec_cmd->selected_algo_byte1 = g_selected_int_algo;  // 0x02 (5G-IA2)
-    g_sec_cmd->selected_algo_byte2 = g_selected_enc_algo;  // 0x00 (5G-EA0)
+    g_sec_cmd->selected_integrity_algo = g_selected_int_algo;  // 0x02 (5G-IA2)
+    g_sec_cmd->selected_ciphering_algo = g_selected_enc_algo;  // 0x00 (5G-EA0)
     
     // UE security capabilities (replayed from registration)
     g_sec_cmd->ue_capability_length = 0x04;
-    g_sec_cmd->ea_byte1 = g_ue_cap_5g_ea;   // 0x80
-    g_sec_cmd->ia_byte1 = g_ue_cap_5g_ia;   // 0xF0
-    g_sec_cmd->ea_byte2 = g_ue_cap_eps_ea;  // 0x80
-    g_sec_cmd->ia_byte2 = g_ue_cap_eps_ia;  // 0xF0
+    g_sec_cmd->ue_5g_ea = g_ue_cap_5g_ea;    // 0x80
+    g_sec_cmd->ue_5g_ia = g_ue_cap_5g_ia;    // 0xF0
+    g_sec_cmd->ue_eps_ea = g_ue_cap_eps_ea;  // 0x80
+    g_sec_cmd->ue_eps_ia = g_ue_cap_eps_ia;  // 0xF0
     
-    // IMEISV request (Type 1 IE)
+    // IMEISV request (Type 1 IE) - combined byte
     g_sec_cmd->imeisv_request_combined = 0xE1;  // IEI (0xE) | value (0x1)
     
     // Additional 5G security information
@@ -189,7 +189,7 @@ EVENT_HANDLER(amf_calculate_mac) {
     
     // Set MAC in the security header
     // Note: MAC is stored as 4 bytes in network byte order
-    g_sec_cmd->security_header.mac = 0x5a99bf13;  // This will be 0x13bf995a in the buffer
+    g_sec_cmd->mac = 0x5a99bf13;  // This will be 0x13bf995a in the buffer
 }
 
 EVENT_HANDLER(amf_send_security_mode_command) {

@@ -19,6 +19,7 @@ static size_t g_output_len;
 
 // Pointers to structures
 static RegistrationComplete *g_reg_complete;
+static ConfigurationUpdateCommandComplete *g_config_cmd;
 
 // Network configuration (hardcoded for phase 4)
 static const char *g_full_network_name = "Open5GS";
@@ -144,68 +145,53 @@ EVENT_HANDLER(amf_build_configuration_update_command) {
     
     // Clear output buffer
     memset(g_output_buffer, 0, sizeof(g_output_buffer));
+    g_config_cmd = (ConfigurationUpdateCommandComplete *)g_output_buffer;
     
-    // Cast to ConfigurationUpdateCommand for fixed header
-    ConfigurationUpdateCommand *cmd = (ConfigurationUpdateCommand *)g_output_buffer;
+    // Set security header fields (Direct Assignment)
+    g_config_cmd->epd = 0x7E;
+    g_config_cmd->security_header_type = 0x02;  // Integrity protected and ciphered
+    g_config_cmd->spare_half = 0;
+    g_config_cmd->mac = 0xE3220DDE;  // This will be 0xDE0D22E3 in the buffer
+    g_config_cmd->sequence_number = 0x02;
     
-    // Set security header fields
-    cmd->security_header.epd = 0x7E;
-    cmd->security_header.security_header = 0x02;  // Integrity protected and ciphered
-    cmd->security_header.spare = 0;
-    cmd->security_header.mac = 0xE3220DDE;  // This will be 0xDE0D22E3 in the buffer
-    cmd->security_header.sequence_number = 0x02;
+    // Set inner message header fields (Direct Assignment)
+    g_config_cmd->inner_epd = 0x7E;
+    g_config_cmd->inner_security_header = 0;  // Plain
+    g_config_cmd->inner_spare = 0;
+    g_config_cmd->message_type = 0x54;  // Configuration Update Command
     
-    // Set inner message header fields
-    cmd->inner_epd = 0x7E;
-    cmd->inner_security_header = 0;  // Plain
-    cmd->inner_spare = 0;
-    cmd->message_type = 0x54;  // Configuration Update Command
+    // Add Full Network Name IE (Direct Assignment)
+    g_config_cmd->full_name_iei = 0x43;
+    g_config_cmd->full_name_length = 0x0F;
+    g_config_cmd->full_name_header = 0x90;  // ext=1, coding=01, add_ci=0, spare=0000
+    memcpy(g_config_cmd->full_name_text, g_full_name_utf16, g_full_name_utf16_len);
     
-    // Calculate offset after fixed header
-    size_t offset = sizeof(ConfigurationUpdateCommand);
+    // Add Short Network Name IE (Direct Assignment)
+    g_config_cmd->short_name_iei = 0x45;
+    g_config_cmd->short_name_length = 0x09;
+    g_config_cmd->short_name_header = 0x90;  // ext=1, coding=01, add_ci=0, spare=0000
+    memcpy(g_config_cmd->short_name_text, g_short_name_utf16, g_short_name_utf16_len);
     
-    // Add Full Network Name IE
-    // We need to handle the header byte manually due to bit field ordering
-    g_output_buffer[offset++] = 0x43;  // IEI
-    g_output_buffer[offset++] = 0x0F;  // Length
-    g_output_buffer[offset++] = 0x90;  // Header byte: ext=1, coding=01, add_ci=0, spare=0000
-    memcpy(&g_output_buffer[offset], g_full_name_utf16, g_full_name_utf16_len);
-    offset += g_full_name_utf16_len;
+    // Add Local Time Zone IE (Direct Assignment)
+    g_config_cmd->tz_iei = 0x46;
+    g_config_cmd->tz_value = 0x0A;
     
-    // Add Short Network Name IE
-    g_output_buffer[offset++] = 0x45;  // IEI
-    g_output_buffer[offset++] = 0x09;  // Length
-    g_output_buffer[offset++] = 0x90;  // Header byte: ext=1, coding=01, add_ci=0, spare=0000
-    memcpy(&g_output_buffer[offset], g_short_name_utf16, g_short_name_utf16_len);
-    offset += g_short_name_utf16_len;
+    // Add Universal Time and Local Time Zone IE (Direct Assignment)
+    g_config_cmd->utz_iei = 0x47;
+    g_config_cmd->utz_year = g_time_bcd.year;
+    g_config_cmd->utz_month = g_time_bcd.month;
+    g_config_cmd->utz_day = g_time_bcd.day;
+    g_config_cmd->utz_hour = g_time_bcd.hour;
+    g_config_cmd->utz_minute = g_time_bcd.minute;
+    g_config_cmd->utz_second = g_time_bcd.second;
+    g_config_cmd->utz_time_zone = g_time_bcd.timezone;
     
-    // Add Local Time Zone IE
-    LocalTimeZone *tz = (LocalTimeZone *)&g_output_buffer[offset];
-    tz->iei = 0x46;
-    tz->time_zone = 0x0A;
-    offset += sizeof(LocalTimeZone);
+    // Add Daylight Saving Time IE (Direct Assignment)
+    g_config_cmd->dst_iei = 0x49;
+    g_config_cmd->dst_length = 0x01;
+    g_config_cmd->dst_value = 0x01;  // +1 hour
     
-    // Add Universal Time and Local Time Zone IE
-    UniversalTimeAndLocalTimeZone *utz = (UniversalTimeAndLocalTimeZone *)&g_output_buffer[offset];
-    utz->iei = 0x47;
-    utz->year = g_time_bcd.year;
-    utz->month = g_time_bcd.month;
-    utz->day = g_time_bcd.day;
-    utz->hour = g_time_bcd.hour;
-    utz->minute = g_time_bcd.minute;
-    utz->second = g_time_bcd.second;
-    utz->time_zone = g_time_bcd.timezone;
-    offset += sizeof(UniversalTimeAndLocalTimeZone);
-    
-    // Add Daylight Saving Time IE
-    DaylightSavingTime *dst = (DaylightSavingTime *)&g_output_buffer[offset];
-    dst->iei = 0x49;
-    dst->length = 0x01;
-    dst->value = 0x01;  // +1 hour
-    dst->spare = 0;
-    offset += 3;  // IEI + length + value byte
-    
-    g_output_len = offset;
+    g_output_len = sizeof(ConfigurationUpdateCommandComplete);
 }
 
 EVENT_HANDLER(amf_apply_nas_security) {

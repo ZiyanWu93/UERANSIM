@@ -4,7 +4,7 @@
 #include <arpa/inet.h>  // For htons
 #include "../include/pdu_session_establishment_request.h"
 #include "../include/pdu_session_establishment_accept.h"
-#include "../include/nas_common.h"
+#include "../include/dl_nas_transport.h"
 #include "../../src/nflambda/event_system/event.h"
 
 // Message type definitions
@@ -13,11 +13,9 @@
 #define MSG_TYPE_PDU_SESSION_EST_REQUEST 0xC1
 #define MSG_TYPE_PDU_SESSION_EST_ACCEPT 0xC2
 
-// PDU session ID 2 structure (for DL NAS Transport)
-typedef struct {
-    uint8_t iei;                        // IEI = 0x12
-    uint8_t pdu_session_id;             // PDU session identity value
-} PduSessionId2;
+// Working pointers
+static DlNasTransportComplete *g_dl_nas_transport;
+static PduSessionEstablishmentAccept *g_pdu_accept;
 
 // Global variables for phase5
 static uint8_t g_input_buffer[256];
@@ -168,121 +166,120 @@ EVENT_HANDLER(smf_create_default_qos_flows) {
 
 EVENT_HANDLER(smf_build_pdu_session_accept) {
     // Build PDU Session Establishment Accept using the hardcoded structure
-    PduSessionEstablishmentAccept *pdu_accept = (PduSessionEstablishmentAccept *)(g_output_buffer + 100);
+    g_pdu_accept = (PduSessionEstablishmentAccept *)(g_output_buffer + 100);
     
-    // Fill 5GSM header
-    pdu_accept->epd = 0x2E;
-    pdu_accept->pdu_session_id = g_pdu_session_id;
-    pdu_accept->pti = g_pti;
-    pdu_accept->message_type = MSG_TYPE_PDU_SESSION_EST_ACCEPT;
+    // Fill 5GSM header (Direct Assignment)
+    g_pdu_accept->epd = 0x2E;
+    g_pdu_accept->pdu_session_id = g_pdu_session_id;
+    g_pdu_accept->pti = g_pti;
+    g_pdu_accept->message_type = MSG_TYPE_PDU_SESSION_EST_ACCEPT;
     
     // Selected PDU session type and SSC mode
-    pdu_accept->type_and_ssc = 0x11;  // SSC mode 1, PDU type IPv4
+    g_pdu_accept->type_and_ssc = 0x11;  // SSC mode 1, PDU type IPv4
     
-    // Authorized QoS rules
-    pdu_accept->qos_rules_length = htons(9);
-    pdu_accept->qos_rule_id = 0x01;
-    pdu_accept->qos_rule_length = htons(6);
-    pdu_accept->rule_operation_code = 0x31;  // Create new, default, 1 filter
+    // Authorized QoS rules (Direct Assignment)
+    g_pdu_accept->qos_rules_length = htons(9);
+    g_pdu_accept->qos_rule_id = 0x01;
+    g_pdu_accept->qos_rule_length = htons(6);
+    g_pdu_accept->rule_operation_code = 0x31;  // Create new, default, 1 filter
     
-    // Packet filter
-    pdu_accept->packet_filter_list[0] = 0x31;  // Bidirectional, ID=1
-    pdu_accept->packet_filter_list[1] = 0x01;  // Filter length
-    pdu_accept->packet_filter_list[2] = 0x01;  // Match all
+    // Packet filter (Direct Assignment)
+    g_pdu_accept->packet_filter_list[0] = 0x31;  // Bidirectional, ID=1
+    g_pdu_accept->packet_filter_list[1] = 0x01;  // Filter length
+    g_pdu_accept->packet_filter_list[2] = 0x01;  // Match all
     
-    pdu_accept->qos_rule_precedence = 0xFF;
-    pdu_accept->qfi = 0x01;
+    g_pdu_accept->qos_rule_precedence = 0xFF;
+    g_pdu_accept->qfi = 0x01;
     
-    // Session AMBR
-    pdu_accept->ambr_length = 0x06;
-    pdu_accept->dl_unit = 0x03;  // Mbps
-    pdu_accept->dl_rate = htons(62500);
-    pdu_accept->ul_unit = 0x03;  // Mbps
-    pdu_accept->ul_rate = htons(62500);
+    // Session AMBR (Direct Assignment)
+    g_pdu_accept->ambr_length = 0x06;
+    g_pdu_accept->dl_unit = 0x03;  // Mbps
+    g_pdu_accept->dl_rate = htons(62500);
+    g_pdu_accept->ul_unit = 0x03;  // Mbps
+    g_pdu_accept->ul_rate = htons(62500);
     
-    // PDU address
-    pdu_accept->pdu_addr_iei = 0x29;
-    pdu_accept->pdu_addr_length = 0x05;
-    pdu_accept->pdu_addr_type = 0x01;  // IPv4
-    memcpy(pdu_accept->ipv4_addr, g_allocated_ipv4, 4);
+    // PDU address (Direct Assignment)
+    g_pdu_accept->pdu_addr_iei = 0x29;
+    g_pdu_accept->pdu_addr_length = 0x05;
+    g_pdu_accept->pdu_addr_type = 0x01;  // IPv4
+    memcpy(g_pdu_accept->ipv4_addr, g_allocated_ipv4, 4);
     
-    // S-NSSAI
-    pdu_accept->snssai_iei = 0x22;
-    pdu_accept->snssai_length = 0x01;
-    pdu_accept->sst = g_sst;
+    // S-NSSAI (Direct Assignment)
+    g_pdu_accept->snssai_iei = 0x22;
+    g_pdu_accept->snssai_length = 0x01;
+    g_pdu_accept->sst = g_sst;
     
-    // QoS flow descriptions
-    pdu_accept->qos_flow_iei = 0x79;
-    pdu_accept->qos_flow_length = htons(6);
-    pdu_accept->qos_flow_data[0] = 0x01;  // QFI
-    pdu_accept->qos_flow_data[1] = 0x20;  // Operation code
-    pdu_accept->qos_flow_data[2] = 0x41;  // E bit + num params
-    pdu_accept->qos_flow_data[3] = 0x01;  // Parameter ID: 5QI
-    pdu_accept->qos_flow_data[4] = 0x01;  // Parameter length
-    pdu_accept->qos_flow_data[5] = 0x09;  // 5QI value
+    // QoS flow descriptions (Direct Assignment)
+    g_pdu_accept->qos_flow_iei = 0x79;
+    g_pdu_accept->qos_flow_length = htons(6);
+    g_pdu_accept->qos_flow_data[0] = 0x01;  // QFI
+    g_pdu_accept->qos_flow_data[1] = 0x20;  // Operation code
+    g_pdu_accept->qos_flow_data[2] = 0x41;  // E bit + num params
+    g_pdu_accept->qos_flow_data[3] = 0x01;  // Parameter ID: 5QI
+    g_pdu_accept->qos_flow_data[4] = 0x01;  // Parameter length
+    g_pdu_accept->qos_flow_data[5] = 0x09;  // 5QI value
     
-    // Extended PCO
-    pdu_accept->pco_iei = 0x7B;
-    pdu_accept->pco_length = htons(15);
-    pdu_accept->pco_data[0] = 0x80;  // Extension=1, config protocol=0
+    // Extended PCO (Direct Assignment)
+    g_pdu_accept->pco_iei = 0x7B;
+    g_pdu_accept->pco_length = htons(15);
+    g_pdu_accept->pco_data[0] = 0x80;  // Extension=1, config protocol=0
     // DNS Server 1
-    pdu_accept->pco_data[1] = 0x00;  // Protocol ID high
-    pdu_accept->pco_data[2] = 0x0D;  // Protocol ID low (DNS IPv4)
-    pdu_accept->pco_data[3] = 0x04;  // Length
-    pdu_accept->pco_data[4] = 0x08;  // 8.8.8.8
-    pdu_accept->pco_data[5] = 0x08;
-    pdu_accept->pco_data[6] = 0x08;
-    pdu_accept->pco_data[7] = 0x08;
+    g_pdu_accept->pco_data[1] = 0x00;  // Protocol ID high
+    g_pdu_accept->pco_data[2] = 0x0D;  // Protocol ID low (DNS IPv4)
+    g_pdu_accept->pco_data[3] = 0x04;  // Length
+    g_pdu_accept->pco_data[4] = 0x08;  // 8.8.8.8
+    g_pdu_accept->pco_data[5] = 0x08;
+    g_pdu_accept->pco_data[6] = 0x08;
+    g_pdu_accept->pco_data[7] = 0x08;
     // DNS Server 2
-    pdu_accept->pco_data[8] = 0x00;  // Protocol ID high
-    pdu_accept->pco_data[9] = 0x0D;  // Protocol ID low
-    pdu_accept->pco_data[10] = 0x04;  // Length
-    memcpy(&pdu_accept->pco_data[11], g_dns_server, 4);
+    g_pdu_accept->pco_data[8] = 0x00;  // Protocol ID high
+    g_pdu_accept->pco_data[9] = 0x0D;  // Protocol ID low
+    g_pdu_accept->pco_data[10] = 0x04;  // Length
+    memcpy(&g_pdu_accept->pco_data[11], g_dns_server, 4);
     
-    // DNN
-    pdu_accept->dnn_iei = 0x25;
-    pdu_accept->dnn_length = g_dnn_len;
-    memcpy(pdu_accept->dnn_value, g_dnn, g_dnn_len);
+    // DNN (Direct Assignment)
+    g_pdu_accept->dnn_iei = 0x25;
+    g_pdu_accept->dnn_length = g_dnn_len;
+    memcpy(g_pdu_accept->dnn_value, g_dnn, g_dnn_len);
     
     // Calculate PDU accept length
     g_output_len = sizeof(PduSessionEstablishmentAccept);
 }
 
 EVENT_HANDLER(amf_build_dl_nas_transport) {
-    // Build security header
-    NasSecurityHeader *sec_hdr = (NasSecurityHeader *)g_output_buffer;
-    sec_hdr->epd = 0x7E;
-    sec_hdr->security_header = 0x2;  // Integrity protected and ciphered
-    sec_hdr->spare = 0x0;
+    // Build DL NAS Transport message using flat structure
+    g_dl_nas_transport = (DlNasTransportComplete *)g_output_buffer;
     
-    // MAC (hardcoded for testing) - network byte order
-    sec_hdr->mac = htonl(0xFBD62D81);  // MAC is stored as a single uint32_t
-    sec_hdr->sequence_number = 0x03;
+    // Security header (Direct Assignment)
+    g_dl_nas_transport->epd = 0x7E;
+    g_dl_nas_transport->security_header_type = 0x02;  // Integrity protected and ciphered
+    g_dl_nas_transport->spare_half = 0x00;
+    g_dl_nas_transport->mac = 0x812DD6FB;  // 0xFBD62D81 in little-endian
+    g_dl_nas_transport->sequence_number = 0x03;
     
-    uint8_t *ptr = g_output_buffer + sizeof(NasSecurityHeader);
+    // Inner message (Direct Assignment)
+    g_dl_nas_transport->inner_epd = 0x7E;
+    g_dl_nas_transport->inner_security_header = 0x00;  // Plain NAS
+    g_dl_nas_transport->inner_spare = 0x00;
+    g_dl_nas_transport->message_type = MSG_TYPE_DL_NAS_TRANSPORT;
     
-    // Plain NAS message header for DL NAS Transport
-    *ptr++ = 0x7E;  // EPD
-    *ptr++ = 0x00;  // Security header type = plain NAS
-    *ptr++ = MSG_TYPE_DL_NAS_TRANSPORT;
+    // Payload container type (Direct Assignment)
+    g_dl_nas_transport->payload_container_type = 0x01;  // N1 SM information
+    g_dl_nas_transport->spare_bits = 0x00;
     
-    // Payload container type (inline) and length
-    *ptr++ = 0x01;  // Payload container type = N1 SM information
-    *ptr++ = 0x00;  // Length high byte
-    *ptr++ = g_output_len;  // Length low byte
+    // Payload container length (Direct Assignment)
+    g_dl_nas_transport->payload_length_high = 0x00;
+    g_dl_nas_transport->payload_length_low = g_output_len;
     
-    // Copy PDU Session Establishment Accept
-    memcpy(ptr, g_output_buffer + 100, g_output_len);
-    ptr += g_output_len;
+    // Copy PDU Session Establishment Accept (Direct Assignment)
+    memcpy(g_dl_nas_transport->payload, g_output_buffer + 100, g_output_len);
     
-    // PDU session ID 2
-    PduSessionId2 *pdu_id2 = (PduSessionId2 *)ptr;
-    pdu_id2->iei = 0x12;
-    pdu_id2->pdu_session_id = g_pdu_session_id;
-    ptr += sizeof(PduSessionId2);
+    // PDU session ID 2 (Direct Assignment)
+    g_dl_nas_transport->pdu_session_id2_iei = 0x12;
+    g_dl_nas_transport->pdu_session_id2_value = g_pdu_session_id;
     
     // Update total output length
-    g_output_len = ptr - g_output_buffer;
+    g_output_len = sizeof(DlNasTransportComplete);
 }
 
 EVENT_HANDLER(amf_send_dl_nas_transport) {
