@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 // Event IDs for NAS message flow between UE/gNB and AMF
 // Start at 160 to avoid conflicts with existing events
@@ -39,6 +40,6 @@ typedef enum {
 // Event payload is accessed via EVENT_PAYLOAD macro from event.h
 
 // Utility function to print hex PDU
-void print_nas_pdu(const char* label, const char* pdu);
+void print_nas_pdu(const char* label, const uint8_t* pdu, size_t len);
 
 #endif // AMF_COMMON_H
