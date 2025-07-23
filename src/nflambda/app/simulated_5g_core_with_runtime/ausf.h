@@ -4,16 +4,11 @@
 #include "../../event_system/event.h"
 
 // AUSF Dispatcher
-void ausf_dispatcher(EventNf* event);
+EVENT_HANDLER(ausf_dispatcher);
 
-// Phase 1: Authentication procedures
-void ausf_authenticate_request(void);
 
-// Phase 2: Authentication confirmation
-void ausf_confirm_authentication(void);
-void ausf_derive_kseaf(void);
-
-// Service Function Chain Handler
-void ausf_set_rand(void);
+// Internal Event Handlers
+EVENT_HANDLER(ausf_process_auth_request);
+EVENT_HANDLER(ausf_complete_auth_data);
 
 #endif // AUSF_H

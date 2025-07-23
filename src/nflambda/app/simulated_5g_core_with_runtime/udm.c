@@ -6,53 +6,56 @@
 #include "../../runtime/runtime.h"
 
 // UDM (Unified Data Management) Dispatcher
-void udm_dispatcher(EventNf* event)
+EVENT_HANDLER(udm_dispatcher)
 {
-    printf("[UDM Dispatcher] Received event ID: %d\n", event->event_id);
-    printf("[UDM Dispatcher] Message length: %d bytes\n", event->input_payload_length);
+    printf("[UDM Dispatcher] Received event ID: %d\n", event_nf_ptr->event_id);
+    printf("[UDM Dispatcher] Message length: %d bytes\n", event_nf_ptr->input_payload_length);
     
-    // Read message and classify (prototype only)
-    if (event->input_payload_length > 0) {
-        printf("[UDM Dispatcher] Would route subscriber data related message\n");
+    if (event_nf_ptr->input_payload_length == 0) {
+        printf("[UDM Dispatcher] Empty message, ignoring\n");
+        return;
+    }
+    
+    // Check request type
+    uint8_t request_type = EVENT_PAYLOAD[0];
+    
+    switch(request_type) {
+        case SFC_TYPE_GET_AUTH_VECTORS_REQ:
+            printf("[UDM Dispatcher] Get Authentication Vectors request from AUSF\n");
+            // Trigger internal event for processing
+            trigger_event(EVENT_UDM_GEN_AUTH_VECTORS, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+            break;
+            
+        default:
+            printf("[UDM Dispatcher] Unknown request type: 0x%02x\n", request_type);
+            break;
     }
 }
 
-// Phase 1: Authentication vector generation
-void udm_generate_authentication_vector(void)
-{
-    printf("[UDM] Generating authentication vector\n");
-}
 
-// Phase 3: Subscriber data retrieval
-void udm_retrieve_subscription_data(void)
+// Handle authentication vectors request from AUSF
+EVENT_HANDLER(udm_gen_auth_vectors)
 {
-    printf("[UDM] Retrieving subscription data\n");
-}
-
-void udm_update_subscriber_status(void)
-{
-    printf("[UDM] Updating subscriber status\n");
-}
-
-// Service Function Chain Handler for Authentication Request
-
-EVENT_HANDLER(udm_set_autn)
-{
-    printf("[UDM] Setting AUTN value in authentication request\n");
+    printf("[UDM] Generating authentication vectors\n");
     
-    // Set AUTN IEI at byte 24
-    EVENT_PAYLOAD[24] = 0x20;  // AUTN IEI
+    // Set AUTN IEI at byte 25 (accounting for request type byte)
+    EVENT_PAYLOAD[25] = 0x20;  // AUTN IEI
     
-    // Set AUTN length at byte 25
-    EVENT_PAYLOAD[25] = 0x10;  // AUTN length (16 bytes)
+    // Set AUTN length at byte 26
+    EVENT_PAYLOAD[26] = 0x10;  // AUTN length (16 bytes)
     
-    // Set AUTN value at bytes 26-41 (16 bytes)
+    // Set AUTN value at bytes 27-42 (16 bytes)
     uint8_t autn_value[16] = {
         0x40, 0x62, 0x96, 0x99, 0x30, 0x82, 0x80, 0x00,
         0x30, 0xb7, 0x62, 0x45, 0x5c, 0x89, 0x0b, 0x19
     };
-    memcpy(&EVENT_PAYLOAD[26], autn_value, 16);
+    memcpy(&EVENT_PAYLOAD[27], autn_value, 16);
     
-    // Trigger AMF to send the complete authentication request
-    trigger_event(EVENT_AMF_SEND_AUTH_REQUEST, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+    // Change request type for AUSF response
+    EVENT_PAYLOAD[0] = SFC_TYPE_AUTH_VECTORS_RESP;
+    
+    printf("[UDM] Generated authentication vectors, sending response to AUSF\n");
+    
+    // Send response back to AUSF
+    trigger_event(EVENT_TO_AUSF, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
 }

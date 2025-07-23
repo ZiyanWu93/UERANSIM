@@ -4,6 +4,7 @@ NC=\033[0m
 # Default to release build
 build: build-release
 
+
 build-release: FORCE
 	rm -fr logs # Old version log files
 	mkdir -p build
@@ -26,7 +27,7 @@ build-release: FORCE
 	@if [ -f cmake-build-release/src/nflambda/event_system/event_system_test ]; then cp cmake-build-release/src/nflambda/event_system/event_system_test build/; fi
 	@if [ -f cmake-build-release/src/nflambda/event_system/event_pool_test ]; then cp cmake-build-release/src/nflambda/event_system/event_pool_test build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/ping_pong/ping_pong_demo ]; then cp cmake-build-release/src/nflambda/app/ping_pong/ping_pong_demo build/; fi
-	@if [ -f cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo ]; then cp cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo build/; fi
+	@if [ -f cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/end_to_end_5g ]; then cp cmake-build-release/src/nflambda/app/simulated_5g_core_with_runtime/end_to_end_5g build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-release/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
 	@if [ -f cmake-build-release/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test ]; then cp cmake-build-release/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test build/; fi
@@ -57,7 +58,7 @@ build-debug: FORCE
 	@if [ -f cmake-build-debug/src/nflambda/event_system/event_system_test ]; then cp cmake-build-debug/src/nflambda/event_system/event_system_test build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/event_system/event_pool_test ]; then cp cmake-build-debug/src/nflambda/event_system/event_pool_test build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/ping_pong/ping_pong_demo ]; then cp cmake-build-debug/src/nflambda/app/ping_pong/ping_pong_demo build/; fi
-	@if [ -f cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo ]; then cp cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/simulated_5g_core_with_runtime_demo build/; fi
+	@if [ -f cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/end_to_end_5g ]; then cp cmake-build-debug/src/nflambda/app/simulated_5g_core_with_runtime/end_to_end_5g build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_echo_demo build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo ]; then cp cmake-build-debug/src/nflambda/app/ipc_echo/ipc_client_demo build/; fi
 	@if [ -f cmake-build-debug/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test ]; then cp cmake-build-debug/src/nflambda/app/nflambda_5gcore/nas_ipc_protocol_test build/; fi

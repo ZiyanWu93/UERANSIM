@@ -10,69 +10,90 @@
 // trigger_event is already declared in runtime.h
 
 // AMF (Access and Mobility Management Function) Dispatcher
-void amf_dispatcher(EventNf* event)
+EVENT_HANDLER(amf_dispatcher)
 {
-    printf("[AMF Dispatcher] Received event ID: %d\n", event->event_id);
-    printf("[AMF Dispatcher] Message length: %d bytes\n", event->input_payload_length);
+    printf("[AMF Dispatcher] Received event ID: %d\n", event_nf_ptr->event_id);
+    printf("[AMF Dispatcher] Message length: %d bytes\n", event_nf_ptr->input_payload_length);
     
-    if (event->input_payload_length == 0) {
+    if (event_nf_ptr->input_payload_length == 0) {
         printf("[AMF Dispatcher] Empty message, ignoring\n");
         return;
     }
     
-    uint8_t message_type;
+    // Check for service chain request/response type
+    uint8_t request_type = EVENT_PAYLOAD[0];
     
-    // Check if message has security header (0x7e followed by non-zero)
-    if (event->input_payload[0] == 0x7e && event->input_payload[1] != 0x00) {
-        // Security protected message - message type at byte 9
-        if (event->input_payload_length > 9) {
-            message_type = event->input_payload[9];
-            printf("[AMF Dispatcher] Security protected message, type: 0x%02x\n", message_type);
-        } else {
-            printf("[AMF Dispatcher] Security protected message too short\n");
-            return;
-        }
-    } else {
-        // Plain message - type at byte 2
-        if (event->input_payload_length > 2) {
-            message_type = event->input_payload[2];
-            printf("[AMF Dispatcher] Plain message, type: 0x%02x\n", message_type);
-        } else {
-            printf("[AMF Dispatcher] Plain message too short\n");
-            return;
-        }
+    if (request_type == SFC_TYPE_AUTH_DATA_RESP) {
+        // Authentication data response from AUSF
+        printf("[AMF Dispatcher] Received authentication data response from AUSF\n");
+        // Trigger internal event to finalize and send
+        trigger_event(EVENT_AMF_FINALIZE_AUTH_REQUEST, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+        return;
     }
     
-    // Route to appropriate internal handler
-    switch(message_type) {
-        case NAS_MSG_REGISTRATION_REQUEST:
-            printf("[AMF Dispatcher] Routing to Registration Request handler\n");
-            trigger_event(EVENT_AMF_REGISTRATION_REQUEST, event->input_payload, (int)event->input_payload_length);
-            break;
-            
-        case NAS_MSG_AUTH_RESPONSE:
-            printf("[AMF Dispatcher] Routing to Authentication Response handler\n");
-            trigger_event(EVENT_AMF_AUTH_RESPONSE, event->input_payload, (int)event->input_payload_length);
-            break;
-            
-        case NAS_MSG_SECURITY_MODE_COMPLETE:
-            printf("[AMF Dispatcher] Routing to Security Mode Complete handler\n");
-            trigger_event(EVENT_AMF_SECURITY_MODE_COMPLETE, event->input_payload, (int)event->input_payload_length);
-            break;
-            
-        case NAS_MSG_REGISTRATION_COMPLETE:
-            printf("[AMF Dispatcher] Routing to Registration Complete handler\n");
-            trigger_event(EVENT_AMF_REGISTRATION_COMPLETE, event->input_payload, (int)event->input_payload_length);
-            break;
-            
-        case NAS_MSG_PDU_SESSION_EST_REQ:
-            printf("[AMF Dispatcher] PDU Session Request - forwarding to SMF\n");
-            trigger_event(EVENT_TO_SMF, event->input_payload, (int)event->input_payload_length);
-            break;
-            
-        default:
-            printf("[AMF Dispatcher] Unknown message type: 0x%02x\n", message_type);
-            break;
+    // Regular NAS message processing
+    if (request_type == SFC_TYPE_REGULAR_MESSAGE || EVENT_PAYLOAD[0] == 0x7e) {
+        uint8_t message_type;
+        
+        // Check if message has security header (0x7e followed by non-zero)
+        if (EVENT_PAYLOAD[0] == 0x7e && EVENT_PAYLOAD[1] != 0x00) {
+            // Security protected message - message type at byte 9
+            if (event_nf_ptr->input_payload_length > 9) {
+                message_type = EVENT_PAYLOAD[9];
+                printf("[AMF Dispatcher] Security protected message, type: 0x%02x\n", message_type);
+            } else {
+                printf("[AMF Dispatcher] Security protected message too short\n");
+                return;
+            }
+        } else {
+            // Plain message - type at byte 2
+            if (event_nf_ptr->input_payload_length > 2) {
+                message_type = EVENT_PAYLOAD[2];
+                printf("[AMF Dispatcher] Plain message, type: 0x%02x\n", message_type);
+            } else {
+                printf("[AMF Dispatcher] Plain message too short\n");
+                return;
+            }
+        }
+        
+        // Route to appropriate internal handler
+        switch(message_type) {
+            case NAS_MSG_REGISTRATION_REQUEST:
+                printf("[AMF Dispatcher] Routing to Registration Request handler\n");
+                trigger_event(EVENT_AMF_REGISTRATION_REQUEST, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+                break;
+                
+            case NAS_MSG_AUTH_RESPONSE:
+                printf("[AMF Dispatcher] Routing to Authentication Response handler\n");
+                trigger_event(EVENT_AMF_AUTH_RESPONSE, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+                break;
+                
+            case NAS_MSG_SECURITY_MODE_COMPLETE:
+                printf("[AMF Dispatcher] Routing to Security Mode Complete handler\n");
+                trigger_event(EVENT_AMF_SECURITY_MODE_COMPLETE, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+                break;
+                
+            case NAS_MSG_REGISTRATION_COMPLETE:
+                printf("[AMF Dispatcher] Routing to Registration Complete handler\n");
+                trigger_event(EVENT_AMF_REGISTRATION_COMPLETE, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+                break;
+                
+            case NAS_MSG_PDU_SESSION_EST_REQ:
+                printf("[AMF Dispatcher] Routing to PDU Session Request handler\n");
+                trigger_event(EVENT_AMF_PDU_SESSION_REQUEST, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+                break;
+                
+            case 0x67:  // UL NAS Transport (carrying PDU session messages)
+                printf("[AMF Dispatcher] UL NAS Transport - routing to PDU Session Request handler\n");
+                trigger_event(EVENT_AMF_PDU_SESSION_REQUEST, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+                break;
+                
+            default:
+                printf("[AMF Dispatcher] Unknown message type: 0x%02x\n", message_type);
+                break;
+        }
+    } else {
+        printf("[AMF Dispatcher] Unknown request type: 0x%02x\n", request_type);
     }
 }
 
@@ -87,25 +108,36 @@ EVENT_HANDLER(amf_handle_registration_request)
     print_nas_pdu("Input NAS PDU", EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
     
     // Save the input registration request for validation
-    // In production, would extract and validate fields here
+    // In production, would extract SUCI and validate fields here
     
-    // Start service function chain by setting headers
+    // Build authentication request with AMF's portion
     // Clear the payload for building authentication request
     memset(EVENT_PAYLOAD, 0, MAX_EVENT_PAYLOAD_SIZE);
     
-    // Set EPD header and message type (bytes 0-2)
-    EVENT_PAYLOAD[0] = 0x7e;  // EPD
-    EVENT_PAYLOAD[1] = 0x00;  // Security header (plain)
-    EVENT_PAYLOAD[2] = 0x56;  // Message type (Authentication Request)
+    // Set request type for AUSF
+    EVENT_PAYLOAD[0] = SFC_TYPE_GEN_AUTH_DATA_REQ;
     
-    // Set initial length for authentication request message
-    event_nf_ptr->input_payload_length = 42;  // Total size of auth request
+    // Set EPD header and message type (bytes 1-3)
+    EVENT_PAYLOAD[1] = 0x7e;  // EPD
+    EVENT_PAYLOAD[2] = 0x00;  // Security header (plain)
+    EVENT_PAYLOAD[3] = 0x56;  // Message type (Authentication Request)
     
-    printf("[AMF] Set authentication request headers, starting service chain\n");
+    // Set ngKSI field (byte 4)
+    EVENT_PAYLOAD[4] = 0x00;  // ngKSI: TSC=0, KSI=0
+    
+    // Set ABBA IE (bytes 5-7)
+    EVENT_PAYLOAD[5] = 0x02;  // ABBA length
+    EVENT_PAYLOAD[6] = 0x00;  // ABBA contents
+    EVENT_PAYLOAD[7] = 0x00;  // ABBA contents
+    
+    // Set length to account for request type + headers + space for RAND/AUTN
+    event_nf_ptr->input_payload_length = 43;  // 1 (type) + 42 (auth request)
+    
+    printf("[AMF] Prepared authentication headers, requesting AUSF to generate auth data\n");
     ue_state = UE_STATE_REGISTERING;
     
-    // Trigger next event in the chain
-    trigger_event(EVENT_AMF_SET_AUTH_NGKSI, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
+    // Send request to AUSF
+    trigger_event(EVENT_TO_AUSF, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
 }
 
 void amf_extract_suci_from_mobile_identity(void)
@@ -128,35 +160,14 @@ void amf_send_authentication_request(void)
     printf("[AMF] Sending authentication request\n");
 }
 
-// Service Function Chain Handlers for Authentication Request
-
-EVENT_HANDLER(amf_set_auth_ngksi)
-{
-    printf("[AMF] Setting authentication ngKSI field\n");
-    
-    // Set ngKSI field at byte 3
-    EVENT_PAYLOAD[3] = 0x00;  // ngKSI: TSC=0, KSI=0
-    
-    // Trigger next event in the chain
-    trigger_event(EVENT_AMF_SET_ABBA, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
-}
-
-EVENT_HANDLER(amf_set_abba)
-{
-    printf("[AMF] Setting ABBA IE\n");
-    
-    // Set ABBA IE at bytes 4-6
-    EVENT_PAYLOAD[4] = 0x02;  // ABBA length
-    EVENT_PAYLOAD[5] = 0x00;  // ABBA contents
-    EVENT_PAYLOAD[6] = 0x00;  // ABBA contents
-    
-    // Trigger AUSF to set RAND
-    trigger_event(EVENT_AUSF_SET_RAND, EVENT_PAYLOAD, (int)event_nf_ptr->input_payload_length);
-}
-
-EVENT_HANDLER(amf_send_auth_request)
+// Handle authentication data response from AUSF
+EVENT_HANDLER(amf_finalize_auth_request)
 {
     printf("[AMF] Authentication request complete, sending to UE\n");
+    
+    // Remove the request type byte (shift bytes 1-42 to 0-41)
+    memmove(EVENT_PAYLOAD, EVENT_PAYLOAD + 1, 42);
+    event_nf_ptr->input_payload_length = 42;
     
     print_nas_pdu("Generated Auth Request", EVENT_PAYLOAD, event_nf_ptr->input_payload_length);
     
@@ -390,7 +401,6 @@ EVENT_HANDLER(amf_handle_pdu_session_request)
     
     // Complete the flow
     printf("[AMF] Registration and PDU session flow completed\n");
-    sleep(1);
 }
 
 void amf_forward_sm_message_to_smf(void)

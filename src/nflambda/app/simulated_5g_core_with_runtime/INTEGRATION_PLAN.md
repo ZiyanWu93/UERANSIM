@@ -10,27 +10,17 @@ Transform the current monolithic message handlers into service function chains w
 
 ## Message 1: Registration Request → Authentication Request
 
-**Current Implementation**: Single array in `amf_handle_registration_request()`
-```c
-uint8_t auth_request[] = {
-    0x7e, 0x00,  // EPD header
-    0x56,        // Message type
-    0x00,        // ngKSI field
-    0x02, 0x00, 0x00,  // ABBA IE
-    0x21,        // RAND IEI
-    // ... RAND value (16 bytes)
-    0x20,        // AUTN IEI
-    0x10,        // AUTN length
-    // ... AUTN value (16 bytes)
-};
-```
+The service function chain for generating an authentication request has been implemented using a fully event-driven architecture that demonstrates proper separation of concerns between network functions.
 
-**Service Function Chain**:
-1. `amf_handle_registration_request()` - Initialize message with headers (bytes 0-2)
-2. `amf_set_auth_ngksi()` - Set ngKSI field at offset 3
-3. `amf_set_abba()` - Set ABBA IE at offset 4-6
-4. `ausf_set_rand()` - Set RAND IEI and value at offset 7-23
-5. `udm_set_autn()` - Set AUTN IEI, length and value at offset 24-41
+When the AMF receives a registration request, the `amf_handle_registration_request` event handler processes it by building the initial portion of the authentication request message, including the EPD header, message type, ngKSI field, and ABBA information element. Rather than constructing the entire message locally, the AMF sends a high-level "Generate Authentication Data" request to the AUSF through the EVENT_TO_AUSF event, marking the beginning of the service function chain.
+
+The AUSF dispatcher receives this request and, instead of directly calling internal functions, triggers an internal event EVENT_AUSF_PROCESS_AUTH_REQ. This allows the runtime to schedule the `ausf_process_auth_request` handler, which adds the RAND (Random challenge) value to the message. The AUSF then forwards a "Get Authentication Vectors" request to the UDM through EVENT_TO_UDM, continuing the chain.
+
+Similarly, the UDM dispatcher triggers EVENT_UDM_GEN_AUTH_VECTORS, allowing the runtime to schedule the `udm_gen_auth_vectors` handler. This handler adds the AUTN (Authentication Token) value, completing the authentication vector generation. The UDM sends an "Authentication Vectors Response" back to the AUSF through EVENT_TO_AUSF.
+
+The AUSF dispatcher receives this response and triggers EVENT_AUSF_COMPLETE_AUTH_DATA, which causes the `ausf_complete_auth_data` handler to forward the complete authentication data back to the AMF through EVENT_TO_AMF. Finally, the AMF dispatcher triggers EVENT_AMF_FINALIZE_AUTH_REQUEST, and the `amf_finalize_auth_request` handler removes the service chain request type byte and sends the complete 42-byte authentication request message to the UE.
+
+This implementation fully utilizes the NFLambda event-driven runtime for scheduling all operations. Each network function maintains its autonomy by processing requests through its dispatcher and internal events, while the runtime handles the scheduling and execution of all event handlers. The approach ensures loose coupling between network functions and allows for better scalability, testability, and adherence to 5G service-based architecture principles.
 
 ## Message 2: Authentication Response → Security Mode Command
 

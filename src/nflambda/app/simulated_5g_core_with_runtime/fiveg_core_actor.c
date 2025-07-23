@@ -48,8 +48,10 @@ void fiveg_core_register_handlers(void)
 {
     printf("  - 5G Core actor: Registering handlers\n");
     
-    // Register NF dispatcher for AMF
+    // Register NF dispatchers
     register_event_handler(EVENT_TO_AMF, amf_dispatcher);
+    register_event_handler(EVENT_TO_AUSF, ausf_dispatcher);
+    register_event_handler(EVENT_TO_UDM, udm_dispatcher);
     
     // Register AMF internal events
     register_event_handler(EVENT_AMF_REGISTRATION_REQUEST, amf_handle_registration_request);
@@ -57,17 +59,14 @@ void fiveg_core_register_handlers(void)
     register_event_handler(EVENT_AMF_SECURITY_MODE_COMPLETE, amf_handle_security_mode_complete);
     register_event_handler(EVENT_AMF_REGISTRATION_COMPLETE, amf_handle_registration_complete);
     register_event_handler(EVENT_AMF_PDU_SESSION_REQUEST, amf_handle_pdu_session_request);
+    register_event_handler(EVENT_AMF_FINALIZE_AUTH_REQUEST, amf_finalize_auth_request);
     
-    // Register AMF service function chain events
-    register_event_handler(EVENT_AMF_SET_AUTH_NGKSI, amf_set_auth_ngksi);
-    register_event_handler(EVENT_AMF_SET_ABBA, amf_set_abba);
-    register_event_handler(EVENT_AMF_SEND_AUTH_REQUEST, amf_send_auth_request);
+    // Register AUSF internal events
+    register_event_handler(EVENT_AUSF_PROCESS_AUTH_REQ, ausf_process_auth_request);
+    register_event_handler(EVENT_AUSF_COMPLETE_AUTH_DATA, ausf_complete_auth_data);
     
-    // Register AUSF service function chain events
-    register_event_handler(EVENT_AUSF_SET_RAND, ausf_set_rand);
-    
-    // Register UDM service function chain events
-    register_event_handler(EVENT_UDM_SET_AUTN, udm_set_autn);
+    // Register UDM internal events
+    register_event_handler(EVENT_UDM_GEN_AUTH_VECTORS, udm_gen_auth_vectors);
     
     // Control events
     register_event_handler(EVENT_STOP, handle_stop);

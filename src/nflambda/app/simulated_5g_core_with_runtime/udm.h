@@ -4,16 +4,10 @@
 #include "../../event_system/event.h"
 
 // UDM Dispatcher
-void udm_dispatcher(EventNf* event);
+EVENT_HANDLER(udm_dispatcher);
 
-// Phase 1: Authentication vector generation
-void udm_generate_authentication_vector(void);
 
-// Phase 3: Subscriber data retrieval
-void udm_retrieve_subscription_data(void);
-void udm_update_subscriber_status(void);
-
-// Service Function Chain Handler
-void udm_set_autn(void);
+// Internal Event Handler
+EVENT_HANDLER(udm_gen_auth_vectors);
 
 #endif // UDM_H

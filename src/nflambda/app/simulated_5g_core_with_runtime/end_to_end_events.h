@@ -43,12 +43,13 @@
 // AUSF (Authentication Server Function) - Range: 1300-1399
 #define EVENT_TO_AUSF                  1300  // Main AUSF dispatcher event
 // Reserved: 1301-1399 for AUSF internal events
-#define EVENT_AUSF_SET_RAND            1301  // AUSF sets RAND in authentication request
+#define EVENT_AUSF_PROCESS_AUTH_REQ    1301  // Internal: Process auth data request
+#define EVENT_AUSF_COMPLETE_AUTH_DATA  1302  // Internal: Complete auth data response
 
 // UDM (Unified Data Management) - Range: 1400-1499
 #define EVENT_TO_UDM                   1400  // Main UDM dispatcher event
 // Reserved: 1401-1499 for UDM internal events
-#define EVENT_UDM_SET_AUTN             1401  // UDM sets AUTN in authentication request
+#define EVENT_UDM_GEN_AUTH_VECTORS     1401  // Internal: Generate auth vectors
 
 // PCF (Policy Control Function) - Range: 1500-1599
 #define EVENT_TO_PCF                   1500  // Main PCF dispatcher event
@@ -64,12 +65,14 @@
 #define EVENT_AMF_SECURITY_MODE_COMPLETE 1003
 #define EVENT_AMF_REGISTRATION_COMPLETE  1004
 #define EVENT_AMF_PDU_SESSION_REQUEST    1005
+#define EVENT_AMF_FINALIZE_AUTH_REQUEST  1006  // Internal: Finalize and send auth request
 
-// AMF Service Function Chain Events for Authentication Request
-#define EVENT_AMF_SET_AUTH_HEADERS       1006
-#define EVENT_AMF_SET_AUTH_NGKSI         1007
-#define EVENT_AMF_SET_ABBA               1008
-#define EVENT_AMF_SEND_AUTH_REQUEST      1009
+// Service Chain Request/Response Types (stored in payload[0])
+#define SFC_TYPE_REGULAR_MESSAGE         0x00  // Regular NAS message processing
+#define SFC_TYPE_GEN_AUTH_DATA_REQ       0x10  // AMF → AUSF: Generate Authentication Data
+#define SFC_TYPE_GET_AUTH_VECTORS_REQ    0x11  // AUSF → UDM: Get Authentication Vectors  
+#define SFC_TYPE_AUTH_VECTORS_RESP       0x20  // UDM → AUSF: Auth Vectors Response
+#define SFC_TYPE_AUTH_DATA_RESP          0x21  // AUSF → AMF: Auth Data Response
 
 // NAS Message Type Constants
 #define NAS_MSG_REGISTRATION_REQUEST     0x41
