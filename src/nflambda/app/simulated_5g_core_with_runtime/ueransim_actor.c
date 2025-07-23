@@ -1,5 +1,5 @@
 #include "ueransim_actor.h"
-#include "amf_common.h"
+#include "end_to_end_events.h"
 #include "../../runtime/runtime.h"
 #include <stdio.h>
 #include <string.h>
@@ -79,7 +79,7 @@ void ueransim_startup_event_source(void)
             print_received_pdu("Sending NAS PDU", EVENT_PAYLOAD, reg_request_len);
             ue_state = UE_STATE_REGISTERING;
             
-            trigger_event(EVENT_REGISTRATION_REQUEST, EVENT_PAYLOAD, reg_request_len);
+            trigger_event(EVENT_TO_AMF, EVENT_PAYLOAD, reg_request_len);
             started = true;
         }
     }
@@ -124,7 +124,7 @@ EVENT_HANDLER(handle_auth_request)
     ue_state = UE_STATE_AUTHENTICATED;
     
     // Trigger authentication response event
-    trigger_event(EVENT_AUTH_RESPONSE, EVENT_PAYLOAD, auth_response_len);
+    trigger_event(EVENT_TO_AMF, EVENT_PAYLOAD, auth_response_len);
 }
 
 // Handler for Security Mode Command
@@ -168,7 +168,7 @@ EVENT_HANDLER(handle_security_mode_command)
     ue_state = UE_STATE_SECURITY_ESTABLISHED;
     
     // Trigger security mode complete event
-    trigger_event(EVENT_SECURITY_MODE_COMPLETE, EVENT_PAYLOAD, sec_mode_complete_len);
+    trigger_event(EVENT_TO_AMF, EVENT_PAYLOAD, sec_mode_complete_len);
 }
 
 // Handler for Registration Accept
@@ -212,7 +212,7 @@ EVENT_HANDLER(handle_registration_accept)
     ue_state = UE_STATE_REGISTERED;
     
     // Trigger registration complete event
-    trigger_event(EVENT_REGISTRATION_COMPLETE, EVENT_PAYLOAD, reg_complete_len);
+    trigger_event(EVENT_TO_AMF, EVENT_PAYLOAD, reg_complete_len);
 }
 
 // Handler for Configuration Update Command
@@ -254,7 +254,7 @@ EVENT_HANDLER(handle_configuration_update)
     print_received_pdu("Sending PDU Session Establishment Request", EVENT_PAYLOAD, pdu_session_req_len);
     
     // Trigger PDU session request event
-    trigger_event(EVENT_PDU_SESSION_REQUEST, EVENT_PAYLOAD, pdu_session_req_len);
+    trigger_event(EVENT_TO_AMF, EVENT_PAYLOAD, pdu_session_req_len);
 }
 
 // Handler for PDU Session Establishment Accept

@@ -2,7 +2,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include "amf_common.h"
+#include "end_to_end_events.h"
 #include "fiveg_core_actor.h"
 #include "ueransim_actor.h"
 #include "../../runtime/runtime.h"

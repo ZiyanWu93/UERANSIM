@@ -1,192 +1,201 @@
-# Multi-Network Function 5G Core Integration Plan
+# Service Function Chain Implementation Plan
 
 ## Overview
+Transform the current monolithic message handlers into service function chains where each network function is responsible for specific message fields. The output messages remain identical, but the construction is distributed across multiple handlers.
 
-This plan outlines the step-by-step integration of the AMF function enhancement service chains into the existing simulated 5G core runtime application, transforming it from a monolithic AMF implementation to a multi-network function 5G core system.
+## Implementation Strategy
+- Split each hardcoded message array into field-specific handlers
+- Each handler modifies EVENT_PAYLOAD directly by setting its designated fields
+- Maintain the exact same byte sequences as the current implementation
 
-## Current State Analysis
+## Message 1: Registration Request → Authentication Request
 
-### Existing Implementation
-- **Location**: `src/nflambda/app/simulated_5g_core_with_runtime/`
-- **Architecture**: Two-actor system (fiveg_core_actor + ueransim_actor)
-- **Message Processing**: Hardcoded NAS PDU string concatenation
-- **Event Flow**: Direct string-based event processing with EVENT_PAYLOAD
-
-### Enhancement Materials
-- **Location**: `amf-function-enhancement/`
-- **Architecture**: Granular service function chains across 5 phases
-- **Message Processing**: Structured binary message handling with proper header definitions
-- **Event Flow**: Modular handler chains with proper state management
-
-## Integration Goals
-
-1. **Modular Network Functions**: Replace monolithic AMF with separate AMF, AUSF, UDM, SMF, and PCF functions
-2. **Service Function Chains**: Implement the 5-phase service function chain architecture
-3. **Runtime Integration**: Maintain NFLambda runtime event-driven architecture
-4. **Backward Compatibility**: Preserve existing event IDs and message flow patterns
-
-## Implementation Steps
-
-### Step 1: Create Network Function Actor Infrastructure
-**Objective**: Establish separate actors for each network function. Add function definitions/declarations with no implementation
-**Verification**: Each network function actor can be compiledd into the simulator without no alternation of the execution outcome.
-
-**Tasks**:
-1.1. Create `amf_actor.c/h` - AMF (Access and Mobility Management Function)
-1.2. Create `ausf_actor.c/h` - AUSF (Authentication Server Function)  
-1.3. Create `udm_actor.c/h` - UDM (Unified Data Management)
-1.4. Create `smf_actor.c/h` - SMF (Session Management Function)
-1.5. Create `pcf_actor.c/h` - PCF (Policy Control Function)
-1.6. Update `amf_common.h` with new inter-NF event definitions
-1.7. Update `CMakeLists.txt` to include new actor files
-1.8. Add verifucation at UE side so that the 
-
-### Step 2: Implement Phase 1 Service Function Chain
-**Objective**: Replace hardcoded authentication request with modular phase 1 handlers
-**Verification**: Registration Request → Authentication Request produces identical output
-
-**Tasks**:
-2.1. Copy phase 1 handlers from `amf-function-enhancement/service_function_chain/phase1_handlers.c`
-2.2. Adapt handlers to work with EVENT_PAYLOAD instead of buffer parameters
-2.3. Integrate handlers into AMF actor's `handle_registration_request` function
-2.4. Add inter-NF communication between AMF → AUSF → UDM for authentication vectors
-2.5. Update message event triggers to use service function chain
-
-### Step 3: Implement Phase 2 Service Function Chain  
-**Objective**: Replace hardcoded security mode command with modular phase 2 handlers
-**Verification**: Authentication Response → Security Mode Command produces identical output
-
-**Tasks**:
-3.1. Copy phase 2 handlers from `amf-function-enhancement/service_function_chain/phase2_handlers.c`
-3.2. Adapt handlers for EVENT_PAYLOAD format
-3.3. Integrate key derivation and security algorithm selection
-3.4. Add AUSF authentication verification logic
-3.5. Update `handle_authentication_response` in AMF actor
-
-### Step 4: Implement Phase 3 Service Function Chain
-**Objective**: Replace hardcoded registration accept with modular phase 3 handlers  
-**Verification**: Security Mode Complete → Registration Accept produces identical output
-
-**Tasks**:
-4.1. Copy phase 3 handlers from `amf-function-enhancement/service_function_chain/phase3_handlers.c`
-4.2. Implement GUTI allocation in AMF actor
-4.3. Add UDM subscription data retrieval
-4.4. Integrate security context activation
-4.5. Update `handle_security_mode_complete` in AMF actor
-
-### Step 5: Implement Phase 4 Service Function Chain
-**Objective**: Replace hardcoded configuration update with modular phase 4 handlers
-**Verification**: Registration Complete → Configuration Update produces identical output
-
-**Tasks**:
-5.1. Copy phase 4 handlers from `amf-function-enhancement/service_function_chain/phase4_handlers.c`
-5.2. Implement configuration parameter encoding
-5.3. Add PCF policy retrieval for configuration updates
-5.4. Update `handle_registration_complete` in AMF actor
-
-### Step 6: Implement Phase 5 Service Function Chain
-**Objective**: Replace hardcoded PDU session establishment with modular phase 5 handlers
-**Verification**: PDU Session Request → PDU Session Accept produces identical output
-
-**Tasks**:
-6.1. Copy phase 5 handlers from `amf-function-enhancement/service_function_chain/phase5_handlers.c`
-6.2. Implement SMF actor for session management
-6.3. Add UPF selection logic in SMF
-6.4. Integrate QoS flow creation
-6.5. Update `handle_pdu_session_request` in AMF actor
-
-### Step 7: Implement Inter-NF Communication
-**Objective**: Enable proper communication between network function actors
-**Verification**: All network functions can send/receive events and maintain state
-
-**Tasks**:
-7.1. Define inter-NF event types (AMF_TO_AUSF, AUSF_TO_UDM, etc.)
-7.2. Implement message routing between actors
-7.3. Add proper event payload marshalling/unmarshalling
-7.4. Create shared context management for UE state across NFs
-7.5. Add proper error handling for inter-NF communication failures
-
-### Step 8: Update Runtime Integration
-**Objective**: Maintain seamless integration with NFLambda runtime
-**Verification**: All events are properly handled by runtime and statistics are correct
-
-**Tasks**:
-8.1. Update `amf_main.c` to initialize all network function actors
-8.2. Register all new actors with runtime system
-8.3. Update event registration for new inter-NF events
-8.4. Maintain existing external event IDs for UERANSIM compatibility
-8.5. Add runtime statistics for multi-NF processing
-
-### Step 9: Testing and Validation
-**Objective**: Ensure all functionality works correctly and produces expected outputs
-**Verification**: Complete end-to-end flow produces identical results to original implementation
-
-**Tasks**:
-9.1. Create unit tests for each network function actor
-9.2. Test individual service function chains
-9.3. Test complete end-to-end registration flow
-9.4. Test PDU session establishment flow
-9.5. Validate runtime performance metrics
-9.6. Test error scenarios and recovery
-
-### Step 10: Documentation and Cleanup
-**Objective**: Ensure code is well-documented and maintainable
-**Verification**: All code is documented and follows project conventions
-
-**Tasks**:
-10.1. Update README.md with new multi-NF architecture
-10.2. Add code documentation for all new actors and handlers
-10.3. Create architecture diagrams showing inter-NF communication
-10.4. Clean up any temporary/development code
-10.5. Update build instructions and examples
-
-## Event Flow Architecture
-
-### Current Event Flow
-```
-UE → AMF (monolithic) → UE
+**Current Implementation**: Single array in `amf_handle_registration_request()`
+```c
+uint8_t auth_request[] = {
+    0x7e, 0x00,  // EPD header
+    0x56,        // Message type
+    0x00,        // ngKSI field
+    0x02, 0x00, 0x00,  // ABBA IE
+    0x21,        // RAND IEI
+    // ... RAND value (16 bytes)
+    0x20,        // AUTN IEI
+    0x10,        // AUTN length
+    // ... AUTN value (16 bytes)
+};
 ```
 
-### Target Event Flow  
-```
-UE → AMF → AUSF → UDM → AMF → UE
-UE → AMF → SMF → UPF → PCF → SMF → AMF → UE
-```
+**Service Function Chain**:
+1. `amf_handle_registration_request()` - Initialize message with headers (bytes 0-2)
+2. `amf_set_auth_ngksi()` - Set ngKSI field at offset 3
+3. `amf_set_abba()` - Set ABBA IE at offset 4-6
+4. `ausf_set_rand()` - Set RAND IEI and value at offset 7-23
+5. `udm_set_autn()` - Set AUTN IEI, length and value at offset 24-41
 
-## File Structure After Integration
+## Message 2: Authentication Response → Security Mode Command
 
-```
-src/nflambda/app/simulated_5g_core_with_runtime/
-├── CMakeLists.txt
-├── README.md
-├── INTEGRATION_PLAN.md (this file)
-├── amf_common.h (updated with inter-NF events)
-├── amf_main.c (updated for multi-NF initialization)
-├── amf_actor.c/h (core AMF functionality)
-├── ausf_actor.c/h (authentication server)
-├── udm_actor.c/h (unified data management)
-├── smf_actor.c/h (session management)
-├── pcf_actor.c/h (policy control)
-├── ueransim_actor.c/h (existing UE simulator)
-└── handlers/
-    ├── phase1_handlers.c (registration → authentication)
-    ├── phase2_handlers.c (authentication → security)
-    ├── phase3_handlers.c (security → registration accept)
-    ├── phase4_handlers.c (registration complete → config update)
-    └── phase5_handlers.c (PDU session establishment)
+**Current Implementation**: Single array in `amf_handle_authentication_response()`
+```c
+uint8_t sec_mode_cmd[] = {
+    0x7e, 0x03,              // Outer header
+    0x13, 0xbf, 0x99, 0x5a,  // MAC
+    0x00,                    // Sequence number
+    0x7e, 0x00,              // Inner header
+    0x5d,                    // Message type
+    0x02,                    // NAS algorithms
+    0x00,                    // ngKSI field
+    0x04,                    // UE security capability length
+    0x80, 0xf0, 0x80, 0xf0,  // UE security capability value
+    0xe1,                    // IMEISV request
+    0x36, 0x01, 0x02         // Additional security info
+};
 ```
 
-## Success Criteria
+**Service Function Chain**:
+1. `amf_handle_authentication_response()` - Set outer header (bytes 0-1)
+2. `amf_calculate_mac()` - Set MAC at offset 2-5
+3. `amf_set_sequence_number()` - Set sequence at offset 6
+4. `amf_set_inner_security_header()` - Set inner header and message type at offset 7-9
+5. `amf_select_algorithms()` - Set NAS algorithms at offset 10
+6. `amf_set_security_context()` - Set ngKSI at offset 11
+7. `amf_set_ue_security_capability()` - Set UE security capability at offset 12-16
+8. `amf_request_imeisv()` - Set IMEISV request at offset 17
+9. `amf_add_security_info()` - Set additional security info at offset 18-20
 
-1. **Functional**: All existing test cases pass with identical outputs
-2. **Performance**: Runtime performance is maintained or improved
-3. **Maintainable**: Code is modular and follows project conventions
-4. **Extensible**: New network functions can be easily added
-5. **Compatible**: Existing UERANSIM integration continues to work
+## Message 3: Security Mode Complete → Registration Accept
 
-## Risk Mitigation
+**Current Implementation**: Single array in `amf_handle_security_mode_complete()`
+```c
+uint8_t reg_accept[] = {
+    0x7e, 0x02,              // Outer header
+    0x72, 0x39, 0x67, 0x4c,  // MAC
+    0x01,                    // Sequence number
+    0x7e, 0x00,              // Inner header
+    0x42,                    // Message type
+    0x01, 0x01,              // Registration result
+    0x77, 0x00, 0x0b, 0xf2, 0x99, 0xf9, 0x07, 0x02, 0x00, 0x40, 0xc0, 0x00, 0x07, 0x27,  // GUTI IE
+    0x54, 0x07, 0x40, 0x99, 0xf9, 0x07, 0x00, 0x00, 0x01,  // TAI list
+    0x15, 0x02, 0x01, 0x01,  // NSSAI
+    0x21, 0x02, 0x01, 0x00,  // Network features
+    0x5e, 0x01, 0x92         // GPRS timer
+};
+```
 
-1. **Backup**: Keep original implementation as reference
-2. **Incremental**: Implement one phase at a time with validation
-3. **Testing**: Comprehensive testing at each step
-4. **Documentation**: Clear documentation of all changes and integration points
+**Service Function Chain**:
+1. `amf_handle_security_mode_complete()` - Set outer header (bytes 0-1)
+2. `amf_set_reg_accept_mac()` - Set MAC at offset 2-5
+3. `amf_increment_sequence()` - Set sequence number at offset 6
+4. `amf_set_reg_accept_header()` - Set inner header and message type at offset 7-9
+5. `amf_set_registration_result()` - Set registration result at offset 10-11
+6. `amf_allocate_guti()` - Set GUTI IE at offset 12-25
+7. `amf_set_tai_list()` - Set TAI list at offset 26-34
+8. `udm_provide_nssai()` - Set allowed NSSAI at offset 35-38
+9. `amf_set_network_features()` - Set 5GS network feature support at offset 39-42
+10. `amf_set_t3512_timer()` - Set T3512 timer value at offset 43-45
+
+## Message 4: Registration Complete → Configuration Update
+
+**Current Implementation**: Single array in `amf_handle_registration_complete()`
+```c
+uint8_t config_update[] = {
+    0x7e, 0x02,              // Outer header
+    0xde, 0x0d, 0x22, 0xe3,  // MAC
+    0x02,                    // Sequence number
+    0x7e, 0x00,              // Inner header
+    0x54,                    // Message type
+    0x43, 0x0f, 0x90, 0x00, 0x4f, 0x00, 0x70, 0x00, 0x65, 0x00, 0x6e, 0x00, 0x35, 0x00, 0x47, 0x00, 0x53,  // Network name full
+    0x45, 0x09, 0x90, 0x00, 0x4e, 0x00, 0x65, 0x00, 0x78, 0x00, 0x74,  // Network name short
+    0x46, 0x0a,              // TZ local
+    0x47, 0x52, 0x60, 0x90, 0x30, 0x35, 0x53, 0x0a,  // TZ and time
+    0x49, 0x01, 0x01         // DST
+};
+```
+
+**Service Function Chain**:
+1. `amf_handle_registration_complete()` - Set outer header (bytes 0-1)
+2. `amf_set_config_mac()` - Set MAC at offset 2-5
+3. `amf_set_config_sequence()` - Set sequence number at offset 6
+4. `amf_set_config_header()` - Set inner header and message type at offset 7-9
+5. `pcf_provide_network_name_full()` - Set full network name at offset 10-26
+6. `pcf_provide_network_name_short()` - Set short network name at offset 27-37
+7. `amf_set_timezone_info()` - Set timezone information at offset 38-39
+8. `amf_set_time_info()` - Set universal time and timezone at offset 40-47
+9. `amf_set_daylight_saving()` - Set daylight saving time at offset 48-50
+
+## Message 5: PDU Session Request → PDU Session Accept
+
+**Current Implementation**: Single array in `amf_handle_pdu_session_request()`
+```c
+uint8_t pdu_accept[] = {
+    0x7e, 0x02,              // Outer header
+    0xfb, 0xd6, 0x2d, 0x81,  // MAC
+    0x03,                    // Sequence
+    0x7e, 0x00,              // Inner header
+    0x68,                    // DL message
+    0x01,                    // Spare/PT
+    0x00, 0x47,              // Procedure code length
+    0x2e,                    // SM EPD
+    0x01,                    // PDU session ID
+    0x01,                    // PTI
+    0xc2,                    // SM message type
+    0x11,                    // SSC mode/PDU session type
+    // ... QoS rules, AMBR, PDU address, etc.
+};
+```
+
+**Service Function Chain**:
+1. `amf_handle_pdu_session_request()` - Set outer header and forward to SMF (bytes 0-1)
+2. `amf_set_pdu_mac()` - Set MAC at offset 2-5
+3. `amf_set_pdu_sequence()` - Set sequence at offset 6
+4. `smf_handle_pdu_session_create()` - Set PDU session headers at offset 7-14
+5. `smf_set_pdu_session_type()` - Set SSC mode and PDU session type at offset 15
+6. `smf_set_qos_rules()` - Set authorized QoS rules at offset 16-26
+7. `smf_set_session_ambr()` - Set session AMBR at offset 27-33
+8. `upf_allocate_pdu_address()` - Set PDU address at offset 34-39
+9. `smf_set_allowed_snssai()` - Set S-NSSAI at offset 40-42
+10. `smf_set_qos_flow_descriptions()` - Set QoS flow descriptions at offset 43-51
+11. `pcf_provide_pcc_rules()` - Set extended protocol configuration options at offset 52-67
+12. `smf_set_dnn()` - Set DNN at offset 68-77
+13. `smf_set_5gsm_cause()` - Set 5GSM cause at offset 78-79
+
+## Implementation Details
+
+Each handler will:
+1. Access EVENT_PAYLOAD directly
+2. Write its specific fields at the correct offset
+3. Not modify fields outside its responsibility
+4. Maintain the exact byte values from the original arrays
+
+Example implementation pattern:
+```c
+// In amf.c
+void amf_set_auth_ngksi(void) {
+    EVENT_PAYLOAD[3] = 0x00;  // ngKSI field
+}
+
+// In ausf.c
+void ausf_set_rand(void) {
+    EVENT_PAYLOAD[7] = 0x21;  // RAND IEI
+    // Copy RAND value
+    uint8_t rand[] = {0x5c, 0xa0, 0xdf, 0x8c, 0x9b, 0xb8, 0xdb, 0xcf, 
+                      0x3c, 0x2a, 0x7d, 0xd4, 0x48, 0xda, 0x13, 0x69};
+    memcpy(&EVENT_PAYLOAD[8], rand, 16);
+}
+
+// In udm.c
+void udm_set_autn(void) {
+    EVENT_PAYLOAD[24] = 0x20;  // AUTN IEI
+    EVENT_PAYLOAD[25] = 0x10;  // AUTN length
+    // Copy AUTN value
+    uint8_t autn[] = {0x40, 0x62, 0x96, 0x99, 0x30, 0x82, 0x80, 0x00,
+                      0x30, 0xb7, 0x62, 0x45, 0x5c, 0x89, 0x0b, 0x19};
+    memcpy(&EVENT_PAYLOAD[26], autn, 16);
+}
+```
+
+## Benefits
+- Demonstrates service function chaining architecture
+- Shows how different NFs contribute to message construction
+- Maintains exact compatibility with current implementation
+- Provides clear separation of concerns between network functions
+- Easy to extend or modify individual field handlers
