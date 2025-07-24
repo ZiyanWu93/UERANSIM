@@ -177,6 +177,43 @@ This demo's patterns can be extended:
 - **Modular Components**: Use [5gcore_without_runtime](../5gcore_without_runtime/) handlers
 - **Production Deployment**: Scale to [NFLambda 5G Core](../nflambda_5gcore/) architecture
 
+## Implementation Status
+
+### Completed
+- ✅ Basic event-driven architecture with AMF, AUSF, UDM, SMF, UPF, PCF, and NSSF actors
+- ✅ Complete 5G registration and PDU session establishment flow
+- ✅ NAS message handling and verification
+- ✅ Event-based communication between NFs using NFLambda runtime
+- ✅ Hex PDU validation for all messages
+- ✅ Message 1 Service Function Chain: Registration Request → Authentication Request
+  - AMF → AUSF → UDM → AUSF → AMF event flow
+  - Each NF triggers internal events for processing
+  - Proper separation of concerns with request/response types
+- ✅ Message 2 Service Function Chain: Authentication Response → Security Mode Command
+  - AMF → AUSF → UDM → AUSF → AMF event flow
+  - Security context established through inter-NF collaboration
+  - MAC calculation, NAS algorithms, and UE security capabilities distributed across NFs
+- ✅ Message 3 Service Function Chain: Security Mode Complete → Registration Accept
+  - AMF → UDM → AMF event flow
+  - UDM provides subscription data (allowed NSSAI)
+  - AMF completes registration with GUTI allocation, TAI list, network features, and timer values
+- ✅ Message 4 Service Function Chain: Registration Complete → Configuration Update
+  - AMF → PCF → AMF event flow
+  - PCF provides network names (Open5GS, Next) in UCS2 encoding
+  - AMF adds timezone, universal time, and daylight saving information
+  - Demonstrates PCF's role in providing network configuration data
+- ✅ Message 5 Service Function Chain: PDU Session Request → PDU Session Accept
+  - AMF → SMF → UPF → SMF → PCF → SMF → UDM → SMF → AMF event flow
+  - Most complex chain involving 5 network functions
+  - SMF orchestrates session establishment with QoS rules and Session-AMBR
+  - UPF allocates IP address (10.45.0.2)
+  - PCF provides PCC rules and DNS configuration
+  - UDM provides DNN and S-NSSAI information
+  - Demonstrates full 5G service-based architecture in action
+
+### In Progress
+- 🔄 Integration with NFLambda's memory management system
+
 ## See Also
 
 - **[Runtime Framework](../../runtime/)** - Event processing fundamentals

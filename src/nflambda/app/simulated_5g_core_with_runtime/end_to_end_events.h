@@ -35,25 +35,37 @@
 // SMF (Session Management Function) - Range: 1100-1199
 #define EVENT_TO_SMF                   1100  // Main SMF dispatcher event
 // Reserved: 1101-1199 for SMF internal events
+#define EVENT_SMF_PROCESS_PDU_REQ      1101  // Internal: Process PDU session request
+#define EVENT_SMF_REQUEST_POLICY       1102  // Internal: Request policy from PCF
+#define EVENT_SMF_REQUEST_DNN          1103  // Internal: Request DNN from UDM
+#define EVENT_SMF_COMPLETE_PDU         1104  // Internal: Complete PDU session
 
 // UPF (User Plane Function) - Range: 1200-1299
 #define EVENT_TO_UPF                   1200  // Main UPF dispatcher event
 // Reserved: 1201-1299 for UPF internal events
+#define EVENT_UPF_ALLOCATE_IP          1201  // Internal: Allocate IP address
 
 // AUSF (Authentication Server Function) - Range: 1300-1399
 #define EVENT_TO_AUSF                  1300  // Main AUSF dispatcher event
 // Reserved: 1301-1399 for AUSF internal events
 #define EVENT_AUSF_PROCESS_AUTH_REQ    1301  // Internal: Process auth data request
 #define EVENT_AUSF_COMPLETE_AUTH_DATA  1302  // Internal: Complete auth data response
+#define EVENT_AUSF_PROCESS_SEC_MODE    1303  // Internal: Process security mode request
+#define EVENT_AUSF_COMPLETE_SEC_MODE   1304  // Internal: Complete security mode data
 
 // UDM (Unified Data Management) - Range: 1400-1499
 #define EVENT_TO_UDM                   1400  // Main UDM dispatcher event
 // Reserved: 1401-1499 for UDM internal events
 #define EVENT_UDM_GEN_AUTH_VECTORS     1401  // Internal: Generate auth vectors
+#define EVENT_UDM_PROVIDE_SEC_CAP      1402  // Internal: Provide UE security capabilities
+#define EVENT_UDM_PROVIDE_SUBSCRIPTION 1403  // Internal: Provide subscription data
+#define EVENT_UDM_PROVIDE_DNN          1404  // Internal: Provide DNN information
 
 // PCF (Policy Control Function) - Range: 1500-1599
 #define EVENT_TO_PCF                   1500  // Main PCF dispatcher event
 // Reserved: 1501-1599 for PCF internal events
+#define EVENT_PCF_PROVIDE_CONFIG       1501  // Internal: Provide network configuration
+#define EVENT_PCF_PROVIDE_PCC          1502  // Internal: Provide PCC rules
 
 // NSSF (Network Slice Selection Function) - Range: 1600-1699
 #define EVENT_TO_NSSF                  1600  // Main NSSF dispatcher event
@@ -66,13 +78,35 @@
 #define EVENT_AMF_REGISTRATION_COMPLETE  1004
 #define EVENT_AMF_PDU_SESSION_REQUEST    1005
 #define EVENT_AMF_FINALIZE_AUTH_REQUEST  1006  // Internal: Finalize and send auth request
+#define EVENT_AMF_FINALIZE_SEC_MODE      1007  // Internal: Finalize and send security mode command
+#define EVENT_AMF_FINALIZE_REG_ACCEPT    1008  // Internal: Finalize and send registration accept
+#define EVENT_AMF_FINALIZE_CONFIG_UPDATE 1009  // Internal: Finalize and send configuration update
+#define EVENT_AMF_FINALIZE_PDU_ACCEPT    1010  // Internal: Finalize and send PDU session accept
 
-// Service Chain Request/Response Types (stored in payload[0])
-#define SFC_TYPE_REGULAR_MESSAGE         0x00  // Regular NAS message processing
-#define SFC_TYPE_GEN_AUTH_DATA_REQ       0x10  // AMF → AUSF: Generate Authentication Data
-#define SFC_TYPE_GET_AUTH_VECTORS_REQ    0x11  // AUSF → UDM: Get Authentication Vectors  
-#define SFC_TYPE_AUTH_VECTORS_RESP       0x20  // UDM → AUSF: Auth Vectors Response
-#define SFC_TYPE_AUTH_DATA_RESP          0x21  // AUSF → AMF: Auth Data Response
+// Request/Response Types (stored in payload[0])
+#define REQ_TYPE_REGULAR_MESSAGE         0x00  // Regular NAS message processing
+#define REQ_TYPE_GEN_AUTH_DATA           0x10  // AMF → AUSF: Generate Authentication Data
+#define REQ_TYPE_GET_AUTH_VECTORS        0x11  // AUSF → UDM: Get Authentication Vectors
+#define REQ_TYPE_PREPARE_SEC_MODE        0x12  // AMF → AUSF: Prepare Security Mode
+#define REQ_TYPE_GET_UE_SEC_CAP          0x13  // AUSF → UDM: Get UE Security Capabilities
+#define REQ_TYPE_PREPARE_REG_ACCEPT      0x14  // AMF → UDM: Prepare Registration Accept
+#define REQ_TYPE_GET_SUBSCRIPTION_DATA   0x15  // UDM → PCF: Get Policy Data (optional)
+#define REQ_TYPE_GET_CONFIG_DATA         0x16  // AMF → PCF: Get Configuration Data
+#define REQ_TYPE_CREATE_PDU_SESSION      0x17  // AMF → SMF: Create PDU Session
+#define REQ_TYPE_ALLOCATE_IP             0x18  // SMF → UPF: Allocate IP Address
+#define REQ_TYPE_GET_PCC_RULES           0x19  // SMF → PCF: Get PCC Rules
+#define REQ_TYPE_GET_DNN_INFO            0x1A  // SMF → UDM: Get DNN Information
+#define RESP_TYPE_AUTH_VECTORS           0x20  // UDM → AUSF: Auth Vectors Response
+#define RESP_TYPE_AUTH_DATA              0x21  // AUSF → AMF: Auth Data Response
+#define RESP_TYPE_UE_SEC_CAP             0x22  // UDM → AUSF: UE Security Capabilities
+#define RESP_TYPE_SEC_MODE_DATA          0x23  // AUSF → AMF: Security Mode Data
+#define RESP_TYPE_SUBSCRIPTION_DATA      0x24  // UDM → AMF: Subscription Data
+#define RESP_TYPE_POLICY_DATA            0x25  // PCF → UDM: Policy Data (optional)
+#define RESP_TYPE_CONFIG_DATA            0x26  // PCF → AMF: Configuration Data
+#define RESP_TYPE_IP_ALLOCATED           0x27  // UPF → SMF: IP Address Allocated
+#define RESP_TYPE_PCC_RULES              0x28  // PCF → SMF: PCC Rules
+#define RESP_TYPE_DNN_INFO               0x29  // UDM → SMF: DNN Information
+#define RESP_TYPE_PDU_SESSION_CREATED    0x2A  // SMF → AMF: PDU Session Created
 
 // NAS Message Type Constants
 #define NAS_MSG_REGISTRATION_REQUEST     0x41

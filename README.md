@@ -61,6 +61,35 @@ UERANSIM provides three different gNodeB executables, each serving a specific pu
 - Useful for unit testing, debugging NAS flows, and development
 - Provides fastest iteration cycle for testing 5G message sequences
 
+### NFLambda 5G Core Features
+
+The NFLambda-based 5G Core implementation provides:
+
+#### **Event-Driven Architecture**
+- All network functions (AMF, SMF, UPF, AUSF, UDM, PCF) operate as event-driven actors
+- Service function chaining through high-level network function requests
+- Internal event triggering for all processing steps within each NF
+- Leverages NFLambda runtime for optimal scheduling and cache efficiency
+
+#### **State-Based Message Routing**
+- AMF implements UE state machine with proper state transitions
+- State-aware message validation and routing ensures protocol compliance
+- Supported UE states:
+  - DEREGISTERED: Initial state, only accepts Registration Request
+  - REGISTERING: Awaiting Authentication Response
+  - AUTHENTICATED: Awaiting Security Mode Complete
+  - SECURITY_ESTABLISHED: Awaiting Registration Complete
+  - REGISTERED: Can process PDU Session requests
+  - PDU_SESSION_ACTIVE: Full connectivity established
+- Invalid messages for current state are rejected with appropriate logging
+
+#### **Complete 5G NAS Message Flow**
+- Message 1: Registration Request → Authentication Request (AMF → AUSF → UDM → AUSF → AMF)
+- Message 2: Authentication Response → Security Mode Command (AMF → AUSF → UDM → AUSF → AMF)
+- Message 3: Security Mode Complete → Registration Accept (AMF → UDM → AMF)
+- Message 4: Registration Complete → Configuration Update (AMF → PCF → AMF)
+- Message 5: PDU Session Request → PDU Session Accept (AMF → SMF → UPF → SMF → PCF → SMF → UDM → SMF → AMF)
+
 ## Current Status
 
 Basic functionalities of UE and gNodeB are fully functional and ready to use. However some of the features are not complete.

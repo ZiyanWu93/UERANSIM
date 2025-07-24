@@ -7,11 +7,15 @@
 EVENT_HANDLER(amf_dispatcher);
 
 // AMF Event Handlers
-void amf_handle_registration_request(void);
-void amf_handle_authentication_response(void);
-void amf_handle_security_mode_complete(void);
-void amf_handle_registration_complete(void);
-void amf_handle_pdu_session_request(void);
-void amf_finalize_auth_request(void);
+EVENT_HANDLER(amf_handle_registration_request);
+EVENT_HANDLER(amf_handle_authentication_response);
+EVENT_HANDLER(amf_handle_security_mode_complete);
+EVENT_HANDLER(amf_handle_registration_complete);
+EVENT_HANDLER(amf_handle_pdu_session_request);
+EVENT_HANDLER(amf_finalize_auth_request);
+EVENT_HANDLER(amf_finalize_sec_mode);
+EVENT_HANDLER(amf_finalize_reg_accept);
+EVENT_HANDLER(amf_finalize_config_update);
+EVENT_HANDLER(amf_finalize_pdu_accept);
 
 #endif // AMF_H
